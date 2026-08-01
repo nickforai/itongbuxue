@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="学习乐园">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#FFB300">
+  <title>学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="home-header">
+      <div>
+        <div class="hello-title">你好，小凡！👋</div>
+        <div class="hello-date" id="todayLabel"></div>
+      </div>
+      <div class="streak-badge" id="streakBadge">🔥 连续 0 天</div>
+    </header>
+
+    <section class="stars-row">
+      <div class="stars-total" data-star-key="total">⭐ 0</div>
+      <button class="btn-checkin" id="checkinBtn">📅 今天打卡 +4⭐</button>
+    </section>
+
+    <main class="subject-grid">
+      <a class="subject-card sc-yuwen" href="yuwen.html">
+        <div class="sc-emoji">📖</div>
+        <div class="sc-name">语文</div>
+        <div class="sc-desc">古诗 · 生字 · 阅读</div>
+        <div class="sc-stars" data-star-key="yuwen">⭐ 0</div>
+      </a>
+      <a class="subject-card sc-shuxue" href="kousuan.html">
+        <div class="sc-emoji">🔢</div>
+        <div class="sc-name">数学</div>
+        <div class="sc-desc">口算 · 竖式 · 应用</div>
+        <div class="sc-stars" data-star-key="shuxue">⭐ 0</div>
+      </a>
+      <a class="subject-card sc-yingyu" href="yingyu.html">
+        <div class="sc-emoji">🔤</div>
+        <div class="sc-name">英语</div>
+        <div class="sc-desc">单词卡 · 小测验</div>
+        <div class="sc-stars" data-star-key="yingyu">⭐ 0</div>
+      </a>
+      <a class="subject-card sc-kexue" href="kexue.html">
+        <div class="sc-emoji">🔬</div>
+        <div class="sc-name">科学</div>
+        <div class="sc-desc">科普阅读 · 问答</div>
+        <div class="sc-stars" data-star-key="kexue">⭐ 0</div>
+      </a>
+    </main>
+
+    <a class="parent-link" href="parent.html">👨‍👩‍👧 家长空间</a>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

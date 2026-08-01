@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="数学口算">
+  <meta name="format-detection" content="telephone=no">
+  <title>数学口算 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🔢 数学口算</h1>
+      <div class="star-pill" data-star-key="shuxue">⭐ 0</div>
+    </div>
+
+    <!-- 选难度 -->
+    <section id="levelScreen">
+      <div class="panel">
+        <h2>选一个难度开始吧！</h2>
+        <div class="level-grid" id="levelGrid"></div>
+      </div>
+      <div class="panel" style="text-align:center;color:var(--muted);font-size:.9rem">
+        💡 每轮 10 题，全对 3 颗星，错题会记进错题本。
+      </div>
+    </section>
+
+    <!-- 做题 -->
+    <section id="gameScreen" class="hidden">
+      <div class="quiz-head">
+        <span id="levelLabel"></span>
+        <span id="progressLabel">第 1 / 10 题</span>
+      </div>
+      <div class="progress-dots" id="dots"></div>
+      <div class="quiz-box">
+        <div class="question-text" id="questionText"></div>
+        <div class="answer-display" id="answerDisplay"></div>
+      </div>
+      <div class="pad" id="keypad"></div>
+    </section>
+
+    <!-- 结果 -->
+    <section id="resultScreen" class="hidden">
+      <div class="panel result-box">
+        <div class="result-emoji" id="resultEmoji"></div>
+        <div class="result-score" id="resultScore"></div>
+        <div class="result-line" id="resultLine"></div>
+        <ul class="wrong-list hidden" id="wrongList"></ul>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="againBtn">🔄 再来一组</button>
+          <button class="btn btn-ghost" id="changeLevelBtn">📋 换难度</button>
+        </div>
+        <div style="height:12px"></div>
+        <button class="btn btn-gold" id="homeBtn">🏠 回首页</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/kousuan.js"></script>
+</body>
+</html>

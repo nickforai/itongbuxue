@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="科学乐园">
+  <meta name="format-detection" content="telephone=no">
+  <title>科学乐园 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🔬 科学乐园</h1>
+      <div class="star-pill" data-star-key="kexue">⭐ 0</div>
+    </div>
+
+    <section id="topicList">
+      <div class="panel" style="padding:14px 18px;color:var(--muted);font-size:.92rem">
+        🔭 先读一读小知识，再回答 3 个小问题，答对 3 题得 2 颗星。
+      </div>
+      <div id="topicListBox"></div>
+    </section>
+
+    <section id="topicDetail" class="hidden">
+      <div class="panel">
+        <div class="poem-head" style="padding-top:8px">
+          <div style="font-size:3.2rem" id="topicEmoji"></div>
+          <h2 style="margin-top:8px" id="topicTitle"></h2>
+        </div>
+        <div class="science-content" id="topicContent"></div>
+        <button class="btn btn-purple" id="topicRead">🔊 听一听</button>
+        <div style="height:14px"></div>
+        <button class="btn btn-gold" id="topicStart">🚀 开始答题 +2⭐</button>
+      </div>
+    </section>
+
+    <section id="quizScreen" class="hidden">
+      <div class="quiz-head">
+        <span id="qzProgress">第 1 / 3 题</span>
+        <span id="qzScore">答对 0 题</span>
+      </div>
+      <div class="quiz-box">
+        <div class="question-text" id="qzQuestion" style="font-size:1.45rem;line-height:1.6"></div>
+      </div>
+      <div class="quiz-options" id="qzOptions"></div>
+      <div style="height:14px"></div>
+      <button class="btn btn-ghost hidden" id="qzNext">下一题 ▶</button>
+    </section>
+
+    <section id="qzResult" class="hidden">
+      <div class="panel result-box">
+        <div class="result-emoji" id="qzResultEmoji"></div>
+        <div class="result-score" id="qzResultScore"></div>
+        <div class="result-line" id="qzResultLine"></div>
+        <ul class="wrong-list hidden" id="qzWrongList"></ul>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="qzAgain">🔄 再答一次</button>
+          <button class="btn btn-ghost" id="qzBack">📚 返回主题</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/kexue.js"></script>
+</body>
+</html>

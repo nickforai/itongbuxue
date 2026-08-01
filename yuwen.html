@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="语文古诗">
+  <meta name="format-detection" content="telephone=no">
+  <title>语文古诗 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>📖 语文 · 古诗</h1>
+      <div class="star-pill" data-star-key="yuwen">⭐ 0</div>
+    </div>
+
+    <section id="listScreen">
+      <div class="panel" style="padding:14px 18px;color:var(--muted);font-size:.92rem">
+        🎵 点一首诗，跟着朗读学一学；会背了按「我会背了」，每天每首可拿 1 颗星。
+      </div>
+      <div id="poemList"></div>
+    </section>
+
+    <section id="detailScreen" class="hidden">
+      <div class="panel">
+        <div class="poem-head">
+          <h2 id="poemTitle"></h2>
+          <div class="poem-author" id="poemAuthor"></div>
+        </div>
+        <div class="poem-text" id="poemLines"></div>
+        <div class="poem-actions">
+          <button class="btn btn-red" id="readBtn">🔊 听一听</button>
+          <button class="btn btn-gold" id="reciteBtn">✅ 我会背了 +1⭐</button>
+        </div>
+      </div>
+      <div class="poem-nav">
+        <button class="btn btn-ghost" id="prevBtn">◀ 上一首</button>
+        <button class="btn btn-ghost" id="nextBtn">下一首 ▶</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/yuwen.js"></script>
+</body>
+</html>

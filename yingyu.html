@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="英语单词">
+  <meta name="format-detection" content="telephone=no">
+  <title>英语单词 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🔤 英语单词</h1>
+      <div class="star-pill" data-star-key="yingyu">⭐ 0</div>
+    </div>
+
+    <div class="tab-bar">
+      <button id="tabCard" class="on">🎴 学单词</button>
+      <button id="tabQuiz">✏️ 考一考</button>
+    </div>
+
+    <!-- 单词卡片 -->
+    <section id="cardScreen">
+      <div class="topic-chips" id="topicChips"></div>
+      <button class="speak-btn" id="speakWord" aria-label="朗读单词">🔊</button>
+      <div class="word-card-wrap">
+        <div class="word-card" id="wordCard">
+          <div class="wc-emoji" id="wcEmoji"></div>
+          <div class="wc-main" id="wcMain"></div>
+          <div class="wc-sub" id="wcSub"></div>
+          <div class="wc-hint" id="wcHint">👆 点卡片看答案</div>
+        </div>
+      </div>
+      <div class="word-nav">
+        <button class="nav-btn" id="prevWord">◀</button>
+        <div class="counter" id="wordCounter">1 / 10</div>
+        <button class="nav-btn" id="nextWord">▶</button>
+      </div>
+    </section>
+
+    <!-- 小测验 -->
+    <section id="quizScreen" class="hidden">
+      <div class="quiz-head">
+        <span id="quizProgress">第 1 / 10 题</span>
+        <span id="quizScore">答对 0 题</span>
+      </div>
+      <div class="quiz-box">
+        <div class="wc-emoji" id="qzEmoji" style="font-size:4rem"></div>
+        <div class="question-text" id="qzWord" style="font-size:2.2rem"></div>
+        <button class="speak-btn" id="qzSpeak" aria-label="朗读单词">🔊</button>
+      </div>
+      <div class="quiz-options" id="qzOptions"></div>
+      <div style="height:14px"></div>
+      <button class="btn btn-ghost hidden" id="qzNext">下一题 ▶</button>
+    </section>
+
+    <!-- 测验结果 -->
+    <section id="qzResult" class="hidden">
+      <div class="panel result-box">
+        <div class="result-emoji" id="qzResultEmoji"></div>
+        <div class="result-score" id="qzResultScore"></div>
+        <div class="result-line" id="qzResultLine"></div>
+        <ul class="wrong-list hidden" id="qzWrongList"></ul>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="qzAgain">🔄 再来一轮</button>
+          <button class="btn btn-ghost" id="qzCards">🎴 回卡片</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/yingyu.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="家长空间">
+  <meta name="format-detection" content="telephone=no">
+  <title>家长空间 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>👨‍👩‍👧 家长空间</h1>
+    </div>
+
+    <div class="panel">
+      <h2>📊 一周学习情况</h2>
+      <div class="week-bars" id="weekBars"></div>
+    </div>
+
+    <div class="panel">
+      <h2>⭐ 星星与打卡</h2>
+      <div class="stat-grid">
+        <div class="stat-cell"><div class="sv" id="stTotal">0</div><div class="sl">总星星</div></div>
+        <div class="stat-cell"><div class="sv" id="stStreak">0</div><div class="sl">连续打卡（天）</div></div>
+        <div class="stat-cell"><div class="sv" id="stYuwen">0</div><div class="sl">语文</div></div>
+        <div class="stat-cell"><div class="sv" id="stShuxue">0</div><div class="sl">数学</div></div>
+        <div class="stat-cell"><div class="sv" id="stYingyu">0</div><div class="sl">英语</div></div>
+        <div class="stat-cell"><div class="sv" id="stKexue">0</div><div class="sl">科学</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>📕 错题本</h2>
+      <div class="wrong-group">
+        <h3>数学口算</h3>
+        <div id="wrongShuxue" style="color:var(--muted)">暂无</div>
+        <h3>英语单词</h3>
+        <div id="wrongYingyu" style="color:var(--muted)">暂无</div>
+        <h3>科学问答</h3>
+        <div id="wrongKexue" style="color:var(--muted)">暂无</div>
+      </div>
+      <button class="btn btn-ghost" id="clearWrongBtn" style="margin-top:14px">🧹 清空错题本</button>
+    </div>
+
+    <div class="panel">
+      <h2>💾 数据管理</h2>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px">
+        学习数据保存在这台设备上（浏览器本地），不会上传到任何服务器。
+      </p>
+      <button class="btn btn-ghost" id="exportBtn">📤 导出学习记录</button>
+      <div style="height:12px"></div>
+      <div class="danger-zone">
+        <b style="color:var(--bad)">⚠️ 危险操作</b>
+        <button class="btn btn-red" id="resetBtn">🗑️ 重置所有数据</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/parent.js"></script>
+</body>
+</html>
