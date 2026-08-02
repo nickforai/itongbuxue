@@ -77,9 +77,13 @@
       width: 230,
       height: 230,
       padding: 12,
+      animate: true,
       showOutline: true,
       showCharacter: false,
       strokeAnimationSpeed: 1,
+      outlineColor: '#c9c9c9',
+      strokeColor: '#2f6fd6',
+      highlightColor: '#ffd24d',
       charDataLoader: function (targetChar, onComplete) {
         fetch('js/vendor/hanzi-data/' + encodeURIComponent(targetChar) + '.json')
           .then(function (r) { return r.json(); })
@@ -93,6 +97,12 @@
           });
       }
     });
+    // 自动重播一遍，确保孩子能看到动画
+    setTimeout(function () {
+      if (writer) {
+        try { writer.animateCharacter(); } catch (e) { /* ignore */ }
+      }
+    }, 1400);
   }
 
   App.el('charSpeak').addEventListener('click', function () {
@@ -107,6 +117,12 @@
 
   App.el('charNext').addEventListener('click', function () {
     openChar((idx + 1) % window.CHARS[grade].length);
+  });
+
+  App.el('strokeReplay').addEventListener('click', function () {
+    if (writer) {
+      try { writer.animateCharacter(); } catch (e) { App.toast('重写失败，请重试'); }
+    }
   });
 
   loadGrade();

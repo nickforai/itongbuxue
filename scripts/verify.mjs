@@ -445,6 +445,9 @@ async function main() {
   assert((await page.locator('#charWords .char-word').count()) >= 2, '显示组词');
   assert((await page.locator('#strokeBox svg').count()) === 1, '笔顺动画已渲染');
   assert((await page.textContent('#strokeHint')).includes('画'), '显示笔画数');
+  assert((await page.locator('#strokeReplay').count()) === 1, '重写一遍按钮存在');
+  await page.click('#strokeReplay');
+  await sleep(300);
   await shot(page, 'shengzi');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
