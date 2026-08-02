@@ -42,7 +42,9 @@ cd "/Users/nick/Documents/三年级（倪子凡）"
 python3 -m http.server 8000
 ```
 
-然后 iPad 用 Safari 打开 `http://电脑的局域网IP:8000`（Mac 上可到 系统设置 → Wi-Fi → 详细信息 查看 IP，例如 `192.168.1.5`）。注意：这种方式走 http，无法安装主屏幕图标和离线缓存，但全部功能可用；日常用还是建议 GitHub Pages。
+更省事：**双击项目里的 `start-server.command`**，它会自动启动服务并显示 iPad 该打开的地址。
+
+然后 iPad 用 Safari 打开 `http://电脑的局域网IP:8000`（Mac 上可到 系统设置 → Wi-Fi → 详细信息 查看 IP，例如 `192.168.0.25`）。注意：这种方式走 http，无法安装主屏幕图标和离线缓存，但全部功能可用；Mac 关机/睡眠后服务会停，重新双击脚本即可。日常用还是建议 GitHub Pages。
 
 ## 最省事的测试方式
 
