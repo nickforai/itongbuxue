@@ -100,6 +100,7 @@
     var btn = App.el('recBtn');
     btn.textContent = '🎤 开始录音';
     btn.classList.remove('recording');
+    btn.disabled = false;
   }
 
   function stopRec() {
@@ -159,9 +160,12 @@
   }
 
   function stopAndFinish() {
-    if (!recording) return;
-    recording = false;
-    try { if (rec) rec.stop(); } catch (e) { /* ignore */ }
+    if (!rec) return;
+    // 中间状态：告诉孩子正在算分
+    var btn = App.el('recBtn');
+    btn.textContent = '⏳ 正在计算得分中…';
+    btn.disabled = true;
+    try { rec.stop(); } catch (e) { finishRec(); }
   }
 
   function finishRec() {
@@ -173,10 +177,17 @@
     if (!text) {
       App.el('recResult').classList.remove('hidden');
       App.el('recResult').innerHTML = '<div class="rr-score">没有识别到内容</div><div>请靠近麦克风大声朗读</div>';
+      updateJifenPill();
       return;
     }
     var score = App.reciteScore(targetText(p), text);
     showReciteResult(p, score);
+  }
+
+  function updateJifenPill() {
+    data = App.store.load();
+    var pill = App.el('jifenPill');
+    if (pill) pill.textContent = '💰 ' + (data.jifen || 0);
   }
 
   function showReciteResult(p, score) {
@@ -198,7 +209,7 @@
         rec2.points = score.points;
         App.addJifen(data, diff);
         App.logActivity(data, '背诵《' + p.title + '》准确率' + score.accuracy + '%');
-        html += '<div class="rr-gain">🎉 积分 +' + diff + '</div>';
+        html += '<div class="rr-gain">🎉 积分 +' + diff + '，现在一共 ' + (data.jifen || 0) + ' 分</div>';
       } else {
         html += '<div class="rr-gain dim">刷新了今天的最好成绩（积分档位不变）</div>';
       }
@@ -208,6 +219,7 @@
       html += '<div class="rr-gain dim">今天这首诗的最好成绩是 ' + rec2.best + '%，再练练能拿更多积分</div>';
     }
     box.innerHTML = html;
+    updateJifenPill();
   }
 
   App.el('recBtn').addEventListener('click', function () {
@@ -217,4 +229,5 @@
 
   renderList();
   App.setStarsUI();
+  updateJifenPill();
 })();

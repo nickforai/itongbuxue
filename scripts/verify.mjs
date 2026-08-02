@@ -95,13 +95,43 @@ async function main() {
   assert(sc.p60.points === 1 && sc.p60.accuracy >= 60, '60-80% 得 1 分');
   assert(sc.low.points === 0 && sc.low.accuracy < 60, '低于 60% 不得分');
   assert(sc.noise.points === 0, '乱读不得分');
-  // 录音按钮存在且点击不崩溃（无麦克风环境走错误提示）
+  // 录音评分完整链路：注入模拟语音识别 → 满分 → +3 分 → 总数更新
   assert((await page.locator('#recBtn').count()) === 1, '录音按钮存在');
   const pageErrorsBefore = errors.filter((e) => e.startsWith('pageerror')).length;
+  await page.evaluate(() => {
+    window.FakeSR = class {
+      constructor() {
+        this.lang = '';
+        this.continuous = false;
+        this.interimResults = false;
+        this.onresult = null;
+        this.onend = null;
+        this.onerror = null;
+      }
+      start() {
+        const self = this;
+        setTimeout(() => {
+          if (self.onresult) {
+            self.onresult({
+              resultIndex: 0,
+              results: [{ 0: { transcript: '牧童骑黄牛歌声振林樾意欲捕鸣蝉忽然闭口立' }, isFinal: true }]
+            });
+          }
+          if (self.onend) self.onend();
+        }, 60);
+      }
+      stop() {}
+    };
+    window.SpeechRecognition = window.FakeSR;
+    window.webkitSpeechRecognition = window.FakeSR;
+  });
   await page.click('#recBtn');
   await sleep(600);
+  const recText = await page.textContent('#recResult');
+  assert(recText.includes('准确率 100%') && recText.includes('积分 +3'), '录音满分得 3 分并显示结果');
+  assert((await page.textContent('#jifenPill')).includes('💰'), '积分总数已更新');
   const pageErrorsAfter = errors.filter((e) => e.startsWith('pageerror')).length;
-  assert(pageErrorsAfter === pageErrorsBefore, '点击录音无页面崩溃');
+  assert(pageErrorsAfter === pageErrorsBefore, '录音评分无页面崩溃');
   await shot(page, 'yuwen');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
