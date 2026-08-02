@@ -12,7 +12,8 @@
   var computing = false;
 
   function doneToday(poemId) {
-    return data.awarded.poems[poemId] === today;
+    var rec = data.awarded.recite && data.awarded.recite['p_' + poemId];
+    return !!(rec && rec.date === today && rec.points > 0);
   }
 
   function renderList() {
@@ -50,14 +51,6 @@
       return '<div>' + l + '</div>';
     }).join('');
 
-    var btn = App.el('reciteBtn');
-    if (doneToday(p.id)) {
-      btn.textContent = '✅ 今天背过了，明天再背吧！';
-      btn.disabled = true;
-    } else {
-      btn.textContent = '✅ 我会背了 +1⭐';
-      btn.disabled = false;
-    }
     resetRecBtn();
     App.el('recResult').classList.add('hidden');
     App.el('recLive').textContent = '';
@@ -65,18 +58,6 @@
 
   App.el('readBtn').addEventListener('click', function () {
     App.speak(window.poemText(window.Poems[idx]), 'zh-CN', 0.85);
-  });
-
-  App.el('reciteBtn').addEventListener('click', function () {
-    var p = window.Poems[idx];
-    if (doneToday(p.id)) return;
-    data.awarded.poems[p.id] = today;
-    App.addStars(data, 'yuwen', 1);
-    App.logActivity(data, '背诗《' + p.title + '》');
-    App.setStarsUI();
-    renderDetail();
-    renderList();
-    App.toast('《' + p.title + '》背得真棒，+1⭐！');
   });
 
   App.el('prevBtn').addEventListener('click', function () {

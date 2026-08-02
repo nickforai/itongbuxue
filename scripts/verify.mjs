@@ -73,10 +73,7 @@ async function main() {
   assert((await page.locator('.poem-list-item').count()) === 14, '14 首古诗');
   await page.locator('.poem-list-item').first().click();
   await page.waitForSelector('#detailScreen:not(.hidden)');
-  await page.click('#reciteBtn');
-  await sleep(300);
-  assert((await page.textContent('[data-star-key="yuwen"]')).includes('2'), '背诗后语文星 = 1(打卡)+1 = 2');
-  assert(await page.locator('#reciteBtn').isDisabled(), '当天重复背诵被禁用');
+  assert((await page.locator('#recBtn').count()) === 1, '开始背诵按钮在主操作区');
   // 录音评分函数（纯逻辑）
   const sc = await page.evaluate(() => {
     const E = '牧童骑黄牛歌声振林樾意欲捕鸣蝉忽然闭口立';
