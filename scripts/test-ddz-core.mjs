@@ -77,6 +77,34 @@ ok(DDZ.chooseLead(mk('3♠', '3♥', '3♣', '5♦', '6♠')).length === 4, '三
 ok(DDZ.chooseLead(mk('3♠', '3♥', '4♣', '4♦', '5♠', '5♥')).length === 6, '连对先出');
 ok(DDZ.chooseLead(mk('3♠', '4♥', '5♣', '6♦', '7♠', '8♥')).length === 6, '顺子先出（整手）');
 
+console.log('\n[3b] 出牌决策（pass 策略）');
+function aiDecision(hand, lastSpecs, opts) {
+  const ctx = {
+    lastPlay: lastSpecs ? DDZ.analyze(mk(...lastSpecs)) : null,
+    lastPlayer: opts.lastPlayer,
+    myIndex: opts.myIndex,
+    landlordIndex: opts.landlordIndex,
+    counts: opts.counts || [17, 17, 17]
+  };
+  return DDZ.aiPlay(hand, ctx);
+}
+ok(
+  aiDecision(mk('3♠', '4♥', '5♣', '6♦', '7♠', 'K♣'), ['3♠'], { lastPlayer: 1, myIndex: 0, landlordIndex: 1 }) === null,
+  '地主出小单张时农民不硬顶'
+);
+ok(
+  aiDecision(mk('3♠', '4♥', '5♣', '6♦', '7♠', 'A♠'), ['K♣'], { lastPlayer: 1, myIndex: 0, landlordIndex: 1 }) !== null,
+  '地主出大单张（K）时农民正常压'
+);
+ok(
+  aiDecision(mk('3♠', '4♥', '5♣', '6♦', '7♠', 'J♣'), ['9♠'], { lastPlayer: 2, myIndex: 0, landlordIndex: 1 }) === null,
+  '队友出小单张时不抢'
+);
+ok(
+  aiDecision(mk('10♠'), ['9♠'], { lastPlayer: 1, myIndex: 0, landlordIndex: 1 }) !== null,
+  '只剩一张牌时必出'
+);
+
 console.log('\n[4] 整局模拟（机器人互打 300 局）');
 let done = 0, turnsMax = 0, errors = 0;
 for (let game = 0; game < 300; game++) {

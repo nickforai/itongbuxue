@@ -450,18 +450,26 @@
       teammate = 3 - mine - landlord; // 另一个农民
     }
 
-    // 队友出牌且队友手牌少时，让队友走
-    if (ctx.lastPlayer === teammate && ctx.counts[teammate] <= 6) {
-      if (hand.length - beat.length > 0) return null;
+    // 队友出的小单张/小对子不抢，让队友多出
+    if (ctx.lastPlayer === teammate && hand.length - beat.length > 0) {
+      var tb = analyze(beat);
+      var smallish = (tb.type === TYPE.SINGLE && tb.main <= 12) || (tb.type === TYPE.PAIR && tb.main <= 10);
+      if (smallish) return null;
     }
 
     // 自己能一把走完就出
     if (hand.length - beat.length === 0) return { cards: beat };
 
+    // 地主出小单张时，农民不急着顶，避免单张互顶
+    if (mine !== landlord && ctx.lastPlayer === landlord) {
+      var b = analyze(beat);
+      if (b.type === TYPE.SINGLE && b.main <= 10 && hand.length > 2) return null;
+    }
+
     // 队友先手且自己能接上时，不浪费炸弹
     if (ctx.lastPlayer === teammate && hand.length - beat.length > 0) {
-      var b = analyze(beat);
-      if (b.type === TYPE.BOMB || b.type === TYPE.ROCKET) return null;
+      var b2 = analyze(beat);
+      if (b2.type === TYPE.BOMB || b2.type === TYPE.ROCKET) return null;
     }
 
     return { cards: beat };
