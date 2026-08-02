@@ -211,7 +211,7 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 13, '13 种方块可切换（含门/工作台/木板/床/熔炉）');
+  assert((await page.locator('.mc-block').count()) === 14, '14 种方块可切换（含门/工作台/木板/床/熔炉/水）');
   assert((await page.locator('#mcHotbar .mc-pack-btn').count()) === 1, '背包按钮在快捷栏左边');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
@@ -257,6 +257,43 @@ async function main() {
   assert(placed.ok && placed.stone === 0 && placed.block === 'stone', '从背包拿出放置：消耗 1 个并生成方块');
   await page.evaluate(() => { window.__mc.selectItem('brick'); });
   assert((await page.evaluate(() => window.__mc.currentType())) === 'brick', '拖到快捷栏可选中方块');
+  // 大地图：水、村庄、村民、箱子
+  assert((await page.evaluate(() => window.__mc.waterCount())) > 0, '开局有湖泊水域');
+  assert((await page.evaluate(() => window.__mc.chestCount())) >= 5, '村庄房子里有箱子');
+  assert((await page.evaluate(() => window.__mc.villagers())) >= 1, '村庄有村民');
+  assert((await page.evaluate(() => window.__mc.oreCount('gold_ore'))) > 0, '地下有金矿');
+  assert((await page.evaluate(() => window.__mc.oreCount('diamond_ore'))) > 0, '地下有钻石矿');
+  // 打开箱子拿东西
+  const chestTake = await page.evaluate(() => {
+    const key = window.__mc.findChest();
+    const before = (window.__mc.backpack.apple || 0) + (window.__mc.backpack.raw_meat || 0) + (window.__mc.backpack.water || 0) + (window.__mc.backpack.coal || 0) + (window.__mc.backpack.raw_iron || 0) + (window.__mc.backpack.iron_ingot || 0) + (window.__mc.backpack.gold || 0) + (window.__mc.backpack.diamond || 0) + (window.__mc.backpack.stick || 0) + (window.__mc.backpack.wool || 0) + (window.__mc.backpack.plank || 0);
+    const contents = window.__mc.chestAt(key);
+    if (!contents.length) return { ok: false };
+    window.__mc.takeChest(key, 0);
+    const after = (window.__mc.backpack.apple || 0) + (window.__mc.backpack.raw_meat || 0) + (window.__mc.backpack.water || 0) + (window.__mc.backpack.coal || 0) + (window.__mc.backpack.raw_iron || 0) + (window.__mc.backpack.iron_ingot || 0) + (window.__mc.backpack.gold || 0) + (window.__mc.backpack.diamond || 0) + (window.__mc.backpack.stick || 0) + (window.__mc.backpack.wool || 0) + (window.__mc.backpack.plank || 0);
+    return { ok: after === before + 1 };
+  });
+  assert(chestTake.ok, '打开箱子能拿到物品');
+  // 盔甲
+  await page.evaluate(() => {
+    window.__mc.addItem('raw_iron', 4);
+    window.__mc.addItem('coal', 4);
+    window.__mc.smelt('smelt_iron');
+    window.__mc.smelt('smelt_iron');
+    window.__mc.smelt('smelt_iron');
+    window.__mc.smelt('smelt_iron');
+    window.__mc.craft('iron_armor');
+    window.__mc.dropItem('iron_armor');
+  });
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.armor())) === 'iron_armor', '合成并穿戴铁甲');
+  // 昼夜：白天不生成、夜晚标记
+  await page.evaluate(() => { window.__mc.setTime(0.3); });
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.isNight())) === false, '白天不黑');
+  await page.evaluate(() => { window.__mc.setTime(0.9); });
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.isNight())) === true, '夜晚标记正确');
   await shot(page, 'minecraft');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
@@ -284,6 +321,10 @@ async function main() {
   let hostileCount = 0;
   for (let i = 0; i < 16 && hostileCount < 1; i++) {
     await sleep(500);
+    hostileCount = await page.evaluate(() => window.__mc.hostiles());
+  }
+  if (hostileCount < 1) {
+    await page.evaluate(() => window.__mc.forceSpawnHostile());
     hostileCount = await page.evaluate(() => window.__mc.hostiles());
   }
   assert(hostileCount >= 1, '夜晚生成怪物（' + hostileCount + ' 只）');

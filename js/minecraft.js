@@ -6,27 +6,33 @@
 
   /* ---------- 物品定义 ---------- */
   var ITEMS = {
-    grass: { name: '草方块', color: 0x66C74F, kind: 'block' },
-    dirt: { name: '泥土', color: 0x8B5A2B, kind: 'block' },
-    stone: { name: '石头', color: 0x9A9A9A, kind: 'block' },
-    wood: { name: '木头', color: 0x7A5230, kind: 'block' },
-    leaves: { name: '树叶', color: 0x2E8B2E, kind: 'block' },
-    sand: { name: '沙子', color: 0xE8D98A, kind: 'block' },
-    brick: { name: '砖块', color: 0xB5453A, kind: 'block' },
-    glass: { name: '玻璃', color: 0xBDE9F5, kind: 'block' },
-    plank: { name: '木板', color: 0xC49A5C, kind: 'block' },
-    door: { name: '门', color: 0x9C6B30, kind: 'block' },
-    door_open: { name: '门（开）', color: 0x7A5230, kind: 'block' },
-    workbench: { name: '工作台', color: 0xC98A3D, kind: 'block' },
-    bed: { name: '床', color: 0xE8508A, kind: 'block' },
-    coal_ore: { name: '煤矿石', color: 0x3A3A3A, kind: 'block' },
-    iron_ore: { name: '铁矿石', color: 0xB87333, kind: 'block' },
-    furnace: { name: '熔炉', color: 0x777777, kind: 'block' },
+    grass: { name: '草方块', color: 0x66C74F, emoji: '🌱', kind: 'block' },
+    dirt: { name: '泥土', color: 0x8B5A2B, emoji: '🟫', kind: 'block' },
+    stone: { name: '石头', color: 0x9A9A9A, emoji: '🪨', kind: 'block' },
+    wood: { name: '木头', color: 0x7A5230, emoji: '🪵', kind: 'block' },
+    leaves: { name: '树叶', color: 0x2E8B2E, emoji: '🍃', kind: 'block' },
+    sand: { name: '沙子', color: 0xE8D98A, emoji: '🏖️', kind: 'block' },
+    brick: { name: '砖块', color: 0xB5453A, emoji: '🧱', kind: 'block' },
+    glass: { name: '玻璃', color: 0xBDE9F5, emoji: '🪟', kind: 'block' },
+    plank: { name: '木板', color: 0xC49A5C, emoji: '🟨', kind: 'block' },
+    door: { name: '门', color: 0x9C6B30, emoji: '🚪', kind: 'block' },
+    door_open: { name: '门（开）', color: 0x7A5230, emoji: '🚪', kind: 'block' },
+    workbench: { name: '工作台', color: 0xC98A3D, emoji: '🛠️', kind: 'block' },
+    bed: { name: '床', color: 0xE8508A, emoji: '🛏️', kind: 'block' },
+    furnace: { name: '熔炉', color: 0x777777, emoji: '🔥', kind: 'block' },
+    water: { name: '水', color: 0x3D9BE9, emoji: '💧', kind: 'block' },
+    chest: { name: '箱子', color: 0xA9743F, emoji: '📦', kind: 'block' },
+    coal_ore: { name: '煤矿石', color: 0x3A3A3A, emoji: '⬛', kind: 'block' },
+    iron_ore: { name: '铁矿石', color: 0xB87333, emoji: '🟠', kind: 'block' },
+    gold_ore: { name: '金矿石', color: 0xF2C94C, emoji: '🪙', kind: 'block' },
+    diamond_ore: { name: '钻石矿石', color: 0x66E0E8, emoji: '💎', kind: 'block' },
     stick: { name: '木棒', color: 0xC49A5C, emoji: '🥢', kind: 'material' },
     wool: { name: '羊毛', color: 0xF5F5F5, emoji: '🐑', kind: 'material' },
     coal: { name: '煤', color: 0x2C2C2C, emoji: '⬛', kind: 'material' },
-    raw_iron: { name: '粗铁', color: 0xB87333, kind: 'material' },
-    iron_ingot: { name: '铁锭', color: 0xD9D9E3, kind: 'material' },
+    raw_iron: { name: '粗铁', color: 0xB87333, emoji: '🟠', kind: 'material' },
+    iron_ingot: { name: '铁锭', color: 0xD9D9E3, emoji: '🔩', kind: 'material' },
+    gold: { name: '金', color: 0xF2C94C, emoji: '🪙', kind: 'material' },
+    diamond: { name: '钻石', color: 0x66E0E8, emoji: '💎', kind: 'material' },
     apple: { name: '苹果', emoji: '🍎', kind: 'food', value: 3 },
     raw_meat: { name: '生肉', emoji: '🍖', kind: 'food', value: 4 },
     cooked_meat: { name: '烤肉', emoji: '🥩', kind: 'food', value: 6 },
@@ -34,10 +40,12 @@
     pickaxe: { name: '稿子', emoji: '⛏️', kind: 'tool' },
     axe: { name: '斧头', emoji: '🪓', kind: 'tool' },
     iron_sword: { name: '铁剑', emoji: '⚔️', kind: 'tool' },
-    iron_pickaxe: { name: '铁镐', emoji: '⛏️', kind: 'tool' }
+    iron_pickaxe: { name: '铁镐', emoji: '⛏️', kind: 'tool' },
+    iron_armor: { name: '铁甲', emoji: '🛡️', kind: 'armor', defense: 1 },
+    diamond_armor: { name: '钻石甲', emoji: '🛡️', kind: 'armor', defense: 2 }
   };
 
-  var HOTBAR = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand', 'brick', 'glass', 'plank', 'door', 'workbench', 'bed', 'furnace'];
+  var HOTBAR = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand', 'brick', 'glass', 'plank', 'door', 'workbench', 'bed', 'furnace', 'water'];
 
   var RECIPES = [
     { id: 'planks', name: '木板', result: 'plank', count: 4, need: { wood: 1 } },
@@ -50,7 +58,9 @@
     { id: 'bed', name: '床', result: 'bed', count: 1, need: { wool: 3, plank: 3 } },
     { id: 'furnace', name: '熔炉', result: 'furnace', count: 1, need: { stone: 8 } },
     { id: 'iron_sword', name: '铁剑', result: 'iron_sword', count: 1, need: { iron_ingot: 2, stick: 1 } },
-    { id: 'iron_pickaxe', name: '铁镐', result: 'iron_pickaxe', count: 1, need: { iron_ingot: 3, stick: 2 } }
+    { id: 'iron_pickaxe', name: '铁镐', result: 'iron_pickaxe', count: 1, need: { iron_ingot: 3, stick: 2 } },
+    { id: 'iron_armor', name: '铁甲', result: 'iron_armor', count: 1, need: { iron_ingot: 4 } },
+    { id: 'diamond_armor', name: '钻石甲', result: 'diamond_armor', count: 1, need: { diamond: 4 } }
   ];
 
   var SMELT_RECIPES = [
@@ -64,6 +74,8 @@
   var changes = {};
   var backpack = {};
   var equipped = null;
+  var armor = null;
+  var chestContents = {};
   var meshes = {};
   var meshList = [];
   var currentType = 'grass';
@@ -73,7 +85,7 @@
   var mode = 'creative'; // creative | survival
   var hp = 10, hunger = 10;
   var time = 0.15;
-  var DAY_LEN = 180;
+  var DAY_LEN = 240;
   var nightAmt = 0;
   var onGround = false, vy = 0, fallStart = null;
   var invulnUntil = 0;
@@ -94,7 +106,10 @@
     };
   }
 
-  function isSolid(x, y, z) { return !!world[vkey(x, y, z)]; }
+  function isSolid(x, y, z) {
+    var b = world[vkey(x, y, z)];
+    return !!b && b !== 'water';
+  }
 
   function groundY(x, z) {
     for (var y = 40; y >= -8; y--) {
@@ -103,47 +118,140 @@
     return 1;
   }
 
-  function generateWorld(s) {
-    var rng = mulberry32(s);
-    world = {};
-    var x, y, z;
-    for (x = -15; x <= 15; x++) {
-      for (z = -15; z <= 15; z++) {
-        for (y = 0; y >= -6; y--) {
-          world[vkey(x, y, z)] = y === 0 ? 'grass' : y >= -3 ? 'dirt' : 'stone';
-        }
-      }
-    }
-    for (var t = 0; t < 6; t++) {
-      var tx = Math.floor(rng() * 20) - 10;
-      var tz = Math.floor(rng() * 20) - 10;
-      for (y = 1; y <= 4; y++) world[vkey(tx, y, tz)] = 'wood';
-      for (var dy = 3; dy <= 5; dy++) {
-        var r = dy === 5 ? 1 : 2;
-        for (x = -r; x <= r; x++) {
-          for (z = -r; z <= r; z++) {
-            if (Math.abs(x) === r && Math.abs(z) === r && dy === 4) continue;
-            var k = vkey(tx + x, dy, tz + z);
-            if (!world[k]) world[k] = 'leaves';
+  var BOUND = 30;
+
+  function heightAt(x, z) {
+    return Math.max(-2, Math.round(
+      1.8 * Math.sin(x * 0.25) * Math.cos(z * 0.3) +
+      1.1 * Math.cos(x * 0.11 + z * 0.17) +
+      0.6 * Math.sin((x + z) * 0.07)
+    ));
+  }
+
+  function setVillageBlock(x, y, z, type) {
+    var k = vkey(x, y, z);
+    if (!world[k]) world[k] = type;
+  }
+
+  var CHEST_POOL = ['apple', 'raw_meat', 'cooked_meat', 'water', 'coal', 'raw_iron', 'iron_ingot', 'gold', 'diamond', 'stick', 'wool', 'plank'];
+
+  function genChestItems(rng) {
+    var n = 3 + Math.floor(rng() * 4);
+    var items = [];
+    for (var i = 0; i < n; i++) items.push(CHEST_POOL[Math.floor(rng() * CHEST_POOL.length)]);
+    return items;
+  }
+
+  function buildHouse(x0, z0, gy, rng) {
+    var w = 5, d = 4, x, z, y;
+    for (x = 0; x < w; x++) for (z = 0; z < d; z++) setVillageBlock(x0 + x, gy, z0 + z, 'plank');
+    for (y = gy + 1; y <= gy + 2; y++) {
+      for (x = 0; x < w; x++) {
+        for (z = 0; z < d; z++) {
+          if (x === 0 || x === w - 1 || z === 0 || z === d - 1) {
+            if (z === 0 && x === 2 && y === gy + 1) continue; // 门洞
+            setVillageBlock(x0 + x, y, z0 + z, 'plank');
           }
         }
       }
     }
-    // 矿脉：地下生成煤和铁
-    for (var v = 0; v < 26; v++) {
-      var ox = Math.floor(rng() * 28) - 14;
-      var oz = Math.floor(rng() * 28) - 14;
-      var oy = -1 - Math.floor(rng() * 5);
-      var oreType = 'coal_ore';
-      if (v >= 13) { oreType = 'iron_ore'; oy = -3 - Math.floor(rng() * 3); }
-      var vein = 2 + Math.floor(rng() * 3);
-      var vdx = Math.floor(rng() * 3) - 1;
-      var vdz = Math.floor(rng() * 3) - 1;
-      for (var b = 0; b < vein; b++) {
-        var k = vkey(ox + vdx * b, oy, oz + vdz * b);
-        if (world[k] === 'stone' || world[k] === 'dirt') world[k] = oreType;
+    for (x = 0; x < w; x++) for (z = 0; z < d; z++) setVillageBlock(x0 + x, gy + 3, z0 + z, 'wood');
+    // 箱子：优先放后角，被占则换屋内其他格子
+    var spots = [[3, 2], [1, 1], [2, 1], [3, 1], [1, 2], [2, 2]];
+    for (var s = 0; s < spots.length; s++) {
+      var chestKey = vkey(x0 + spots[s][0], gy + 1, z0 + spots[s][1]);
+      if (!world[chestKey]) {
+        world[chestKey] = 'chest';
+        chestContents[chestKey] = genChestItems(rng);
+        break;
       }
     }
+  }
+
+  function generateVillage(rng) {
+    var vx = 16, vz = -16;
+    [[0, 0], [7, 2], [-7, 3], [2, 7], [-3, -7], [8, -5], [-8, 6], [6, -8]].forEach(function (hh) {
+      var bx = vx + hh[0], bz = vz + hh[1];
+      var gy = Math.max(0, heightAt(bx, bz));
+      buildHouse(bx, bz, gy, rng);
+    });
+  }
+
+  function generateWorld(s) {
+    var rng = mulberry32(s);
+    world = {};
+    chestContents = {};
+    var x, y, z;
+    for (x = -BOUND; x <= BOUND; x++) {
+      for (z = -BOUND; z <= BOUND; z++) {
+        var h = heightAt(x, z);
+        for (y = h; y >= h - 7; y--) {
+          world[vkey(x, y, z)] = y === h ? 'grass' : y >= h - 3 ? 'dirt' : 'stone';
+        }
+        for (y = h + 1; y <= 0; y++) {
+          world[vkey(x, y, z)] = 'water';
+        }
+      }
+    }
+    // 洞穴
+    for (var c = 0; c < 12; c++) {
+      var cx = Math.floor(rng() * 54) - 27;
+      var cz = Math.floor(rng() * 54) - 27;
+      var cy = -2 - Math.floor(rng() * 6);
+      var clen = 6 + Math.floor(rng() * 8);
+      var cdx = rng() * 2 - 1, cdz = rng() * 2 - 1;
+      for (var i = 0; i < clen; i++) {
+        var px = Math.floor(cx + cdx * i);
+        var pz = Math.floor(cz + cdz * i);
+        var py = cy + Math.floor(Math.sin(i * 0.6) * 2);
+        for (var ox = 0; ox < 2; ox++) {
+          for (var oz = 0; oz < 2; oz++) {
+            var ck = vkey(px + ox, py, pz + oz);
+            if (world[ck] === 'stone' || world[ck] === 'dirt') delete world[ck];
+          }
+        }
+      }
+    }
+    // 树
+    for (var t = 0; t < 14; t++) {
+      var tx = Math.floor(rng() * 54) - 27;
+      var tz = Math.floor(rng() * 54) - 27;
+      var th = heightAt(tx, tz);
+      if (th < 0) continue;
+      for (y = th + 1; y <= th + 4; y++) world[vkey(tx, y, tz)] = 'wood';
+      for (var dy = th + 3; dy <= th + 5; dy++) {
+        var r = dy === th + 5 ? 1 : 2;
+        for (x = -r; x <= r; x++) {
+          for (z = -r; z <= r; z++) {
+            if (Math.abs(x) === r && Math.abs(z) === r && dy === th + 4) continue;
+            var lk = vkey(tx + x, dy, tz + z);
+            if (!world[lk]) world[lk] = 'leaves';
+          }
+        }
+      }
+    }
+    // 矿脉：煤/铁/金/钻石
+    [
+      { type: 'coal_ore', count: 24, y0: -1, y1: -5 },
+      { type: 'iron_ore', count: 18, y0: -3, y1: -6 },
+      { type: 'gold_ore', count: 10, y0: -4, y1: -7 },
+      { type: 'diamond_ore', count: 7, y0: -6, y1: -8 }
+    ].forEach(function (ore) {
+      for (var v = 0; v < ore.count; v++) {
+        var ox2 = Math.floor(rng() * 56) - 28;
+        var oz2 = Math.floor(rng() * 56) - 28;
+        var span = Math.abs(ore.y1 - ore.y0) + 1;
+        var oy2 = ore.y0 - Math.floor(rng() * span);
+        var vein = 2 + Math.floor(rng() * 2);
+        var vdx = Math.floor(rng() * 3) - 1;
+        var vdz = Math.floor(rng() * 3) - 1;
+        for (var b = 0; b < vein; b++) {
+          var ok = vkey(ox2 + vdx * b, oy2, oz2 + vdz * b);
+          if (world[ok] === 'stone') world[ok] = ore.type;
+        }
+      }
+    });
+    generateVillage(rng);
   }
 
   function applyChanges() {
@@ -160,16 +268,25 @@
       changes = raw.changes || {};
       backpack = raw.backpack || {};
       equipped = raw.equipped || null;
+      armor = raw.armor || null;
       mode = raw.mode || 'creative';
     } catch (e) {
       seed = Date.now() % 100000 + 1;
       changes = {};
       backpack = {};
       equipped = null;
+      armor = null;
       mode = 'creative';
     }
     generateWorld(seed);
     applyChanges();
+    // 箱子内容：用存档覆盖默认生成
+    try {
+      var st = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+      if (st.chestState) {
+        Object.keys(st.chestState).forEach(function (k) { chestContents[k] = st.chestState[k]; });
+      }
+    } catch (e) { /* ignore */ }
   }
 
   var saveTimer = null;
@@ -178,7 +295,8 @@
     saveTimer = setTimeout(function () {
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify({
-          seed: seed, changes: changes, backpack: backpack, equipped: equipped, mode: mode
+          seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
+          chestState: chestContents, mode: mode
         }));
       } catch (e) { /* 空间满就忽略 */ }
     }, 600);
@@ -362,6 +480,7 @@
     hp = 10; hunger = 10; time = 0.15; vy = 0; onGround = false; fallStart = null;
     bedPoint = null;
     spawnSheep(3);
+    spawnVillagers(5);
 
     bindControls();
     renderHotbar();
@@ -383,7 +502,7 @@
       backpack: backpack,
       mode: function () { return mode; },
       mobs: function () { return mobs.length; },
-      hostiles: function () { return mobs.filter(function (m) { return m.type !== 'sheep'; }).length; },
+      hostiles: function () { return mobs.filter(function (m) { return m.type === 'zombie' || m.type === 'skeleton'; }).length; },
       setTime: function (t) { time = t; },
       selectItem: selectItem,
       dropItem: dropItem,
@@ -392,7 +511,28 @@
         return Object.keys(world).filter(function (k) { return world[k] === 'coal_ore' || world[k] === 'iron_ore'; }).length;
       },
       placeAt: placeItemAt,
-      blockAt: function (x, y, z) { return world[vkey(x, y, z)] || null; }
+      blockAt: function (x, y, z) { return world[vkey(x, y, z)] || null; },
+      villagers: function () { return mobs.filter(function (m) { return m.type === 'villager'; }).length; },
+      waterCount: function () { return Object.keys(world).filter(function (k) { return world[k] === 'water'; }).length; },
+      chestCount: function () { return Object.keys(world).filter(function (k) { return world[k] === 'chest'; }).length; },
+      findChest: function () {
+        return Object.keys(world).find(function (k) { return world[k] === 'chest'; }) || null;
+      },
+      chestAt: function (key) { return (chestContents[key] || []).slice(); },
+      takeChest: function (key, idx) { currentChestKey = key; takeChestItem(idx); },
+      armor: function () { return armor; },
+      isNight: function () { return isNight(); },
+      oreCount: function (type) {
+        return Object.keys(world).filter(function (k) { return world[k] === type; }).length;
+      },
+      forceSpawnHostile: function () {
+        var ang = rnd(0, Math.PI * 2);
+        var rad = rnd(16, 26);
+        var mx = clamp(Math.round(camera.position.x + Math.cos(ang) * rad), -BOUND, BOUND);
+        var mz = clamp(Math.round(camera.position.z + Math.sin(ang) * rad), -BOUND, BOUND);
+        var gy = groundY(mx, mz);
+        if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
+      }
     };
   }
 
@@ -405,8 +545,8 @@
 
   function materialFor(id) {
     var b = ITEMS[id];
-    if (id === 'glass') {
-      return new THREE.MeshLambertMaterial({ color: b.color, transparent: true, opacity: 0.35, depthWrite: false });
+    if (id === 'glass' || id === 'water') {
+      return new THREE.MeshLambertMaterial({ color: b.color, transparent: true, opacity: id === 'glass' ? 0.35 : 0.55, depthWrite: false });
     }
     return new THREE.MeshLambertMaterial({ color: b.color });
   }
@@ -481,14 +621,18 @@
       if (world[above] === type) removeVoxel(above, type);
     }
     var drop = type === 'door' || type === 'door_open' ? 'door' : type;
-    var needPick = type === 'stone' || type === 'coal_ore' || type === 'iron_ore';
+    var needPick = type === 'stone' || type === 'coal_ore' || type === 'iron_ore' || type === 'gold_ore' || type === 'diamond_ore';
     if (needPick && equipped !== 'pickaxe' && equipped !== 'iron_pickaxe') {
       App.toast('没有稿子，挖不出石头/矿石');
+    } else if (type === 'diamond_ore' && equipped !== 'iron_pickaxe') {
+      App.toast('钻石要用铁镐才能挖');
     } else {
       if (type === 'coal_ore') drop = 'coal';
       else if (type === 'iron_ore') drop = 'raw_iron';
+      else if (type === 'gold_ore') drop = 'gold';
+      else if (type === 'diamond_ore') drop = 'diamond';
       var n = 1;
-      if (drop === 'raw_iron' && equipped === 'iron_pickaxe') n += 1;
+      if ((drop === 'raw_iron' || drop === 'gold' || drop === 'diamond') && equipped === 'iron_pickaxe') n += 1;
       if (drop === 'stone' && (equipped === 'pickaxe' || equipped === 'iron_pickaxe')) n += 1;
       if (drop === 'wood' && equipped === 'axe') n += 1;
       addItem(drop, n);
@@ -513,7 +657,7 @@
     var vz = Math.floor(t.point.z + t.normal.z * 0.05);
     var k = vkey(vx, vy, vz);
     if (world[k]) return;
-    if (vx < -16 || vx > 16 || vz < -16 || vz > 16 || vy > 40 || vy < -8) return;
+    if (vx < -BOUND - 1 || vx > BOUND + 1 || vz < -BOUND - 1 || vz > BOUND + 1 || vy > 40 || vy < -8) return;
     if (insidePlayer(vx, vy, vz)) return;
     putBlock(currentType, vx, vy, vz);
   }
@@ -544,7 +688,7 @@
     if ((backpack[id] || 0) < 1) { App.toast('背包里没有这个'); return false; }
     if (!ITEMS[id] || ITEMS[id].kind !== 'block') { App.toast('这个不能放出来'); return false; }
     if (world[vkey(x, y, z)]) return false;
-    if (x < -16 || x > 16 || z < -16 || z > 16 || y > 40 || y < -8) return false;
+    if (x < -BOUND - 1 || x > BOUND + 1 || z < -BOUND - 1 || z > BOUND + 1 || y > 40 || y < -8) return false;
     if (insidePlayer(x, y, z)) return false;
     if (!putBlock(id, x, y, z)) return false;
     backpack[id] -= 1;
@@ -573,6 +717,7 @@
     var type = world[k];
     if (type === 'workbench') { openCrafting(); return; }
     if (type === 'furnace') { openSmelt(); return; }
+    if (type === 'chest') { openChest(k); return; }
     if (type === 'bed') {
       if (mode !== 'survival') { App.toast('创造模式不用睡觉哦'); return; }
       if (!isNight()) { App.toast('现在睡不着，天黑再睡吧'); return; }
@@ -612,9 +757,17 @@
   /* ---------- 怪物 ---------- */
   function spawnSheep(n) {
     for (var i = 0; i < n; i++) {
-      var x = Math.floor(rnd(-14, 14));
-      var z = Math.floor(rnd(-14, 14));
+      var x = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+      var z = Math.floor(rnd(-BOUND + 3, BOUND - 3));
       addMob('sheep', x, groundY(x, z), z);
+    }
+  }
+
+  function spawnVillagers(n) {
+    for (var i = 0; i < n; i++) {
+      var x = Math.floor(16 + rnd(-6, 6));
+      var z = Math.floor(-16 + rnd(-6, 6));
+      addMob('villager', x, groundY(x, z), z);
     }
   }
 
@@ -623,14 +776,14 @@
       type: type,
       pos: { x: x, y: y, z: z },
       hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : 3,
-      speed: type === 'sheep' ? 1.5 : 2.4,
+      speed: type === 'sheep' || type === 'villager' ? 1.4 : 2.4,
       dir: null,
       wanderUntil: 0,
       nextAtk: 0,
       flashUntil: 0
     };
-    var bodyColor = type === 'zombie' ? 0x4CAF50 : type === 'skeleton' ? 0xE8E8E8 : 0xFFFFFF;
-    var headColor = type === 'zombie' ? 0x2E7D32 : type === 'skeleton' ? 0xD5D5D5 : 0xFFF3D0;
+    var bodyColor = type === 'zombie' ? 0x4CAF50 : type === 'skeleton' ? 0xE8E8E8 : type === 'villager' ? 0x6B8E4E : 0xFFFFFF;
+    var headColor = type === 'zombie' ? 0x2E7D32 : type === 'skeleton' ? 0xD5D5D5 : type === 'villager' ? 0xF0C8A0 : 0xFFF3D0;
     var group = new THREE.Group();
     var body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.4), new THREE.MeshLambertMaterial({ color: bodyColor }));
     body.position.y = 0.7;
@@ -659,7 +812,7 @@
 
   function clearHostiles() {
     mobs.slice().forEach(function (m) {
-      if (m.type !== 'sheep') removeMob(m);
+      if (m.type === 'zombie' || m.type === 'skeleton') removeMob(m);
     });
   }
 
@@ -679,6 +832,7 @@
       if (Math.random() < 0.4) drops.push(['stick', 1]);
     } else {
       drops.push(['wool', 1 + (Math.random() < 0.5 ? 1 : 0)]);
+      drops.push(['raw_meat', 1]); // 羊掉肉
     }
     drops.forEach(function (d) { addItem(d[0], d[1]); });
     renderBackpack();
@@ -693,6 +847,7 @@
     if (!hits.length) return;
     var mob = hits[0].object.userData.mob;
     if (!mob) return;
+    if (mob.type === 'villager') { App.toast('村民是好朋友，不能打哦'); return; }
     var d = Math.hypot(mob.pos.x - camera.position.x, mob.pos.z - camera.position.z);
     if (d > 8) return;
     var dmg = equipped === 'iron_sword' ? 6 : equipped === 'sword' ? 4 : 2;
@@ -716,6 +871,8 @@
     if (mode !== 'survival') return;
     var now = Date.now();
     if (now < invulnUntil) return;
+    if (armor) hearts = Math.max(0, hearts - ITEMS[armor].defense);
+    if (hearts <= 0) return;
     hp -= hearts;
     invulnUntil = now + 1000;
     updateHud();
@@ -885,7 +1042,8 @@
       var b = ITEMS[id];
       var btn = document.createElement('button');
       btn.className = 'mc-block mc-ui' + (id === currentType ? ' sel' : '');
-      btn.style.background = '#' + b.color.toString(16).padStart(6, '0');
+      btn.style.background = 'rgba(255,255,255,0.14)';
+      btn.textContent = b.emoji || '';
       btn.title = b.name;
       btn.addEventListener('click', function () {
         currentType = id;
@@ -913,6 +1071,12 @@
       renderBackpack();
       updateLabel();
       App.toast(equipped ? '已装备 ' + ITEMS[equipped].name : '已收起工具');
+    } else if (it.kind === 'armor') {
+      armor = armor === id ? null : id;
+      scheduleSave();
+      renderBackpack();
+      updateLabel();
+      App.toast(armor ? '已穿戴 ' + ITEMS[armor].name + '（减伤）' : '已脱下护甲');
     } else if (it.kind === 'food') {
       eatItem(id);
     } else if (it.kind === 'block') {
@@ -928,6 +1092,7 @@
     var act = currentAction === 'break' ? '⛏️ 拆' : currentAction === 'place' ? '🧱 放：' + ITEMS[currentType].name : '👆 使用';
     if (mode === 'survival') act += ' · 生存';
     if (equipped) act += ' · 手持 ' + ITEMS[equipped].name;
+    if (armor) act += ' · 🛡️ ' + ITEMS[armor].name;
     label.textContent = act;
   }
 
@@ -961,6 +1126,10 @@
         action = equipped === id
           ? '<button class="mc-pack-act on" data-equip="' + id + '">已装备</button>'
           : '<button class="mc-pack-act" data-equip="' + id + '">装备</button>';
+      } else if (it.kind === 'armor') {
+        action = armor === id
+          ? '<button class="mc-pack-act on" data-armor="' + id + '">已穿戴</button>'
+          : '<button class="mc-pack-act" data-armor="' + id + '">穿戴</button>';
       } else if (it.kind === 'food') {
         action = '<button class="mc-pack-act" data-eat="' + id + '">吃</button>';
       }
@@ -982,6 +1151,16 @@
     box.querySelectorAll('[data-eat]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         eatItem(btn.getAttribute('data-eat'));
+      });
+    });
+    box.querySelectorAll('[data-armor]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-armor');
+        armor = armor === id ? null : id;
+        scheduleSave();
+        renderBackpack();
+        updateLabel();
+        App.toast(armor ? '已穿戴 ' + ITEMS[armor].name + '（减伤）' : '已脱下护甲');
       });
     });
     box.querySelectorAll('[data-drag]').forEach(bindDragRow);
@@ -1061,6 +1240,7 @@
     App.el('mcBackpack').classList.add('hidden');
     App.el('mcCraftPanel').classList.add('hidden');
     App.el('mcSmeltPanel').classList.add('hidden');
+    App.el('mcChestPanel').classList.add('hidden');
   }
 
   function renderCrafting() {
@@ -1121,15 +1301,62 @@
     });
   }
 
+  /* ---------- 箱子 ---------- */
+  var currentChestKey = null;
+
+  function openChest(key) {
+    closeOverlays();
+    currentChestKey = key;
+    App.el('mcChestPanel').classList.remove('hidden');
+    renderChest();
+  }
+
+  function renderChest() {
+    var box = App.el('mcChestList');
+    box.innerHTML = '';
+    var items = chestContents[currentChestKey] || [];
+    if (!items.length) {
+      box.innerHTML = '<div style="color:var(--muted);text-align:center">箱子空空的 📭</div>';
+      return;
+    }
+    items.forEach(function (id, idx) {
+      var row = document.createElement('div');
+      row.className = 'mc-pack-row';
+      row.innerHTML = itemIcon(id) +
+        '<span class="mc-pack-name">' + ITEMS[id].name + '</span>' +
+        '<span class="mc-pack-count">×1</span>' +
+        '<button class="mc-pack-act" data-chest="' + idx + '">拿走</button>';
+      box.appendChild(row);
+    });
+    box.querySelectorAll('[data-chest]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        takeChestItem(+btn.getAttribute('data-chest'));
+      });
+    });
+  }
+
+  function takeChestItem(idx) {
+    var items = chestContents[currentChestKey] || [];
+    if (idx < 0 || idx >= items.length) return;
+    var id = items.splice(idx, 1)[0];
+    addItem(id, 1);
+    scheduleSave();
+    renderChest();
+    renderBackpack();
+    App.toast('拿到：' + ITEMS[id].name + ' ×1');
+  }
+
+  App.el('mcChestClose').addEventListener('click', function () { App.el('mcChestPanel').classList.add('hidden'); });
+
   /* ---------- 主循环 ---------- */
   function updateDayNight(dt) {
     time += dt / DAY_LEN;
     if (time >= 1) time -= 1;
     var t = time;
     var na = 1;
-    if (t >= 0.08 && t <= 0.58) na = 0;
-    else if (t > 0.58 && t < 0.68) na = (t - 0.58) / 0.10;
-    else if (t > 0 && t < 0.08) na = 1 - t / 0.08;
+    if (t >= 0.06 && t <= 0.78) na = 0;
+    else if (t > 0.78 && t < 0.86) na = (t - 0.78) / 0.08;
+    else if (t > 0 && t < 0.06) na = 1 - t / 0.06;
     var wasNight = isNight();
     nightAmt = clamp(na, 0, 1);
     if (wasNight && !isNight()) {
@@ -1153,26 +1380,26 @@
     var now = Date.now();
     // 夜晚生成怪物
     if (isNight()) {
-      var hostile = mobs.filter(function (m) { return m.type !== 'sheep'; }).length;
+      var hostile = mobs.filter(function (m) { return m.type === 'zombie' || m.type === 'skeleton'; }).length;
       if (hostile < 4 && Math.random() < dt * 0.6) {
         var ang = rnd(0, Math.PI * 2);
         var rad = rnd(16, 26);
-        var mx = clamp(Math.round(camera.position.x + Math.cos(ang) * rad), -15, 15);
-        var mz = clamp(Math.round(camera.position.z + Math.sin(ang) * rad), -15, 15);
+        var mx = clamp(Math.round(camera.position.x + Math.cos(ang) * rad), -BOUND, BOUND);
+        var mz = clamp(Math.round(camera.position.z + Math.sin(ang) * rad), -BOUND, BOUND);
         var gy = groundY(mx, mz);
         if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
       }
     } else if (mobs.filter(function (m) { return m.type === 'sheep'; }).length < 2) {
       if (Math.random() < dt * 0.1) {
-        var sx = Math.floor(rnd(-14, 14));
-        var sz = Math.floor(rnd(-14, 14));
+        var sx = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+        var sz = Math.floor(rnd(-BOUND + 3, BOUND - 3));
         addMob('sheep', sx, groundY(sx, sz), sz);
       }
     }
 
     for (var i = mobs.length - 1; i >= 0; i--) {
       var m = mobs[i];
-      if (m.type === 'sheep') {
+      if (m.type === 'sheep' || m.type === 'villager') {
         if (!m.wanderUntil || now > m.wanderUntil) {
           m.wanderUntil = now + rnd(1500, 3500);
           if (Math.random() < 0.7) {
@@ -1191,8 +1418,8 @@
           m.dir = { x: dx / d, z: dz / d };
           m.pos.x += m.dir.x * m.speed * dt;
           m.pos.z += m.dir.z * m.speed * dt;
-          m.pos.x = clamp(m.pos.x, -16, 16);
-          m.pos.z = clamp(m.pos.z, -16, 16);
+          m.pos.x = clamp(m.pos.x, -BOUND, BOUND);
+          m.pos.z = clamp(m.pos.z, -BOUND, BOUND);
         }
         if (d < 1.5 && Math.abs(camera.position.y - (m.pos.y + 1.3)) < 2 && now > m.nextAtk) {
           damagePlayer(1);
@@ -1272,8 +1499,8 @@
       hunger = clamp(hunger, 0, 10);
       if (hp <= 0) die();
     }
-    camera.position.x = clamp(camera.position.x, -17, 17);
-    camera.position.z = clamp(camera.position.z, -17, 17);
+      camera.position.x = clamp(camera.position.x, -BOUND - 1, BOUND + 1);
+      camera.position.z = clamp(camera.position.z, -BOUND - 1, BOUND + 1);
     updateHud();
   }
 
