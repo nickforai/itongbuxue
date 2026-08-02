@@ -997,6 +997,7 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 
 .mc-act.break { background: rgba(232, 85, 109, 0.85); }
 .mc-act.place { background: rgba(47, 181, 110, 0.85); }
+.mc-act.use { background: rgba(61, 123, 253, 0.85); }
 
 .mc-hotbar {
   position: absolute;
@@ -1008,6 +1009,9 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   background: rgba(20, 20, 35, 0.6);
   padding: 8px;
   border-radius: 18px;
+  max-width: 92vw;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mc-block {
@@ -1023,6 +1027,100 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   transform: translateY(-4px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
+
+.mc-pack-btn {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 14px;
+  background: rgba(20, 20, 35, 0.75);
+  color: #fff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  font-size: 1.2rem;
+}
+
+.mc-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 30, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+}
+
+.mc-overlay-inner {
+  width: min(560px, 92vw);
+  max-height: 78vh;
+  background: var(--card);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.mc-overlay-inner h3 { font-size: 1.25rem; text-align: center; }
+.mc-overlay-list {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 55vh;
+}
+
+.mc-pack-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F6F6FB;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.mc-item-emoji { font-size: 1.5rem; width: 34px; text-align: center; }
+.mc-item-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+.mc-pack-name { flex: 1; font-weight: 800; }
+.mc-pack-count { color: var(--muted); font-weight: 700; }
+.mc-pack-act {
+  background: var(--shuxue);
+  color: #fff;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.mc-pack-act.on { background: #E2E2EC; color: var(--muted); }
+
+.mc-recipe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F6F6FB;
+  border-radius: 14px;
+  padding: 10px 12px;
+  flex-wrap: wrap;
+}
+.mc-recipe-left { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; flex: 1; min-width: 150px; }
+.mc-recipe-plus { color: var(--muted); }
+.mc-recipe-arrow { color: var(--muted); font-weight: 900; }
+.mc-recipe-result { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.9rem; }
+.mc-recipe-btn {
+  background: linear-gradient(135deg, #55C98F, #2FB56E);
+  color: #fff;
+  border-radius: 12px;
+  padding: 9px 16px;
+  font-weight: 800;
+}
+.mc-recipe-btn.off { background: #E2E2EC; color: var(--muted); }
 
 @media (max-width: 480px) {
   .ddz-hand .ddz-card { width: 44px; height: 70px; font-size: 1.1rem; }

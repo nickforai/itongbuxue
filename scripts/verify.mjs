@@ -211,7 +211,29 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 8, '8 种方块可切换');
+  assert((await page.locator('.mc-block').count()) === 11, '11 种方块可切换（含门/工作台/木板）');
+  assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
+  await page.click('#mcPackBtn');
+  await sleep(200);
+  assert((await page.locator('#mcBackpack:not(.hidden)').count()) === 1, '背包面板可打开');
+  await page.click('#mcPackClose');
+  // 通过测试钩子验证收集与合成
+  await page.evaluate(() => {
+    window.__mc.addItem('wood', 1);
+    window.__mc.craft('planks');       // 木头×1 → 木板×4
+    window.__mc.addItem('stick', 1);
+    window.__mc.craft('sword');        // 木板×2 + 木棒×1 → 宝剑×1
+  });
+  await sleep(300);
+  const packText = await page.textContent('#mcBackpackList');
+  assert(packText.includes('木板') && packText.includes('宝剑'), '合成木板与宝剑成功');
+  await page.evaluate(() => {
+    window.__mc.addItem('wood', 1);
+    window.__mc.craft('planks');
+    window.__mc.craft('door');         // 木板×4 → 门×1
+  });
+  await sleep(300);
+  assert((await page.textContent('#mcBackpackList')).includes('门'), '合成门成功');
   await shot(page, 'minecraft');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
