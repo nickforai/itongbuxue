@@ -269,7 +269,10 @@
 
     if (last.type === TYPE.SINGLE) {
       tryMin(function () {
-        var c = g.find(function (x) { return x.power > last.main; });
+        // 优先用"散牌"，其次拆对子，最后才拆三张/炸弹
+        var c = g.find(function (x) { return x.count === 1 && x.power > last.main; });
+        if (!c) c = g.find(function (x) { return x.count === 2 && x.power > last.main; });
+        if (!c) c = g.find(function (x) { return x.count >= 3 && x.power > last.main; });
         return c ? [c.cards[0]] : null;
       });
     } else if (last.type === TYPE.PAIR) {
@@ -369,20 +372,52 @@
     if (hand.length === 2 && hand[0].power === hand[1].power) return hand;
     if (hand.length === 2 && hand[0].power === 16 && hand[1].power === 17) return hand;
 
+    // 整手牌能一次出完（顺子/连对/飞机/三带/四带二/炸弹等）就直接出
+    if (analyze(hand)) return hand;
+
     // 有顺子先出顺子
     if (hand.length >= 5) {
       var run = findRun(g, 1, 5, 12, 3, 14);
       if (run) return takeRun(g, run.start, run.len, 1);
     }
 
-    // 最小的单张（先不用 2 和王）
-    var single = g.find(function (x) { return x.power <= 14; });
-    if (single) return [single.cards[0]];
+    // 连对（3 对起）
+    if (hand.length >= 6) {
+      var pr = findRun(g, 2, 3, 12, 3, 14);
+      if (pr) return takeRun(g, pr.start, pr.len, 2);
+    }
 
-    // 最小的对子
-    var pair = g.find(function (x) { return x.count >= 2; });
+    // 三顺（飞机）
+    if (hand.length >= 6) {
+      var triRun = findRun(g, 3, 2, 12, 3, 14);
+      if (triRun) return takeRun(g, triRun.start, triRun.len, 3);
+    }
+
+    // 三张：能带就带（先带对、再带单）
+    var triple = g.find(function (x) { return x.count === 3; });
+    if (triple) {
+      var used = {};
+      used[triple.power] = true;
+      var w2 = pickPairs(g, used, 1);
+      if (w2) return triple.cards.slice(0, 3).concat(w2);
+      var w1 = pickSingles(g, used, 1);
+      if (w1) return triple.cards.slice(0, 3).concat(w1);
+      return triple.cards.slice(0, 3);
+    }
+
+    // 最小的对子（不拆三张/炸弹）
+    var pair = g.find(function (x) { return x.count === 2; });
     if (pair) return pair.cards.slice(0, 2);
 
+    // 最小的"散牌"单张（不成对的，先不用 2 和王）
+    var single = g.find(function (x) { return x.count === 1 && x.power <= 14; });
+    if (single) return [single.cards[0]];
+
+    // 只剩炸弹/2/王时，先出最小的炸弹
+    var quad = g.find(function (x) { return x.count === 4 && x.power <= 14; });
+    if (quad) return quad.cards.slice(0, 4);
+
+    // 兜底：最小的单张（包括 2 和王）
     var any = g.find(function (x) { return x.count >= 1; });
     if (any) return [any.cards[0]];
     return hand.slice(0, 1);

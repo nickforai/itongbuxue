@@ -67,6 +67,15 @@ ok(DDZ.findBeat(mk('3♠', '4♥', '5♣'), DDZ.analyze(mk('S', 'B'))) === null,
 ok(beatCards(mk('4♠', '4♥', '4♣', '5♦', '5♠', '9♥'), ['3♠', '3♥', '3♣', '8♦']) === 4, '三带一压三带一');
 const lead = DDZ.chooseLead(mk('3♠', '3♥', '4♣', '4♦', '5♠', '5♥', '6♣', '6♦', '7♠', '7♥', '8♣', '8♦', '9♠', '9♥', '10♣', '10♦', 'J♠'));
 ok(lead.length === 5, '先手优先出顺子');
+const loose = DDZ.chooseLead(mk('3♠', '3♥', '9♦'));
+ok(loose.length === 2 && DDZ.analyze(loose).main === 3, '有对子时先出对子');
+const onlyPairs = DDZ.chooseLead(mk('3♠', '3♥', '4♣', '4♦'));
+ok(onlyPairs.length === 2 && DDZ.analyze(onlyPairs).main === 3, '只有对子时出最小的对子');
+ok(DDZ.chooseLead(mk('3♠', '3♥', '3♣', '4♦')).length === 4, '三带一先出');
+ok(DDZ.chooseLead(mk('3♠', '3♥', '3♣', '4♦', '4♠')).length === 5, '三带二先出');
+ok(DDZ.chooseLead(mk('3♠', '3♥', '3♣', '5♦', '6♠')).length === 4, '三带一（带最小单牌）');
+ok(DDZ.chooseLead(mk('3♠', '3♥', '4♣', '4♦', '5♠', '5♥')).length === 6, '连对先出');
+ok(DDZ.chooseLead(mk('3♠', '4♥', '5♣', '6♦', '7♠', '8♥')).length === 6, '顺子先出（整手）');
 
 console.log('\n[4] 整局模拟（机器人互打 300 局）');
 let done = 0, turnsMax = 0, errors = 0;
