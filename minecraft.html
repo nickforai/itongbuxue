@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="我的世界">
+  <meta name="format-detection" content="telephone=no">
+  <title>我的世界 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=4">
+</head>
+<body>
+  <!-- 大厅：积分兑换 -->
+  <div class="page" id="mcLobby">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>⛏️ 我的世界</h1>
+      <div class="star-pill" id="mcChancePill">⛏️ 0</div>
+      <div class="star-pill" id="mcJifenPill">💰 0</div>
+    </div>
+
+    <div class="panel">
+      <h2>🏗️ 方块乐园</h2>
+      <p style="color:var(--muted);font-size:.92rem;line-height:1.7;margin-bottom:14px">
+        像我的世界一样自由建造：飞着走、放方块、拆方块，造你的小房子！
+        <b>10 积分 = 1 次游戏机会</b>，每局不限时。
+      </p>
+      <div class="stat-grid" style="margin-bottom:16px">
+        <div class="stat-cell"><div class="sv" id="mcLobbyJifen">0</div><div class="sl">💰 积分</div></div>
+        <div class="stat-cell"><div class="sv" id="mcLobbyChances">0</div><div class="sl">⛏️ 游戏机会</div></div>
+      </div>
+      <button class="btn btn-green" id="mcRedeemBtn">🔄 兑换 1 次机会（-10 积分）</button>
+      <div style="height:12px"></div>
+      <button class="btn btn-gold" id="mcStartBtn">🚀 开始建造</button>
+    </div>
+
+    <div class="panel" style="color:var(--muted);font-size:.85rem;line-height:1.8">
+      <b style="color:var(--ink)">🕹️ 怎么玩（iPad 触屏）：</b><br>
+      🕹️ 左边摇杆：前后左右飞<br>
+      👆 右边屏幕：拖动看方向<br>
+      ▲▼ 上升/下降 · ⛏️ 拆方块 · 🧱 放方块<br>
+      🟩 下方选方块：草、土、石、木、树叶、沙、砖、玻璃
+    </div>
+  </div>
+
+  <!-- 游戏界面 -->
+  <div id="mcGame" class="hidden">
+    <div class="mc-crosshair"></div>
+    <div class="mc-label" id="mcLabel">⛏️ 拆方块</div>
+    <button class="mc-exit mc-ui" id="mcExit">🏠 退出</button>
+
+    <div class="mc-joy mc-ui" id="mcJoy">
+      <div class="mc-joy-knob" id="mcJoyKnob"></div>
+    </div>
+
+    <div class="mc-btns">
+      <div class="mc-alt-row">
+        <button class="mc-alt mc-ui" id="mcUp">▲</button>
+        <button class="mc-alt mc-ui" id="mcDown">▼</button>
+      </div>
+      <div class="mc-act-row">
+        <button class="mc-act break mc-ui" id="mcBreak">⛏️</button>
+        <button class="mc-act place mc-ui" id="mcPlace">🧱</button>
+      </div>
+    </div>
+
+    <div class="mc-hotbar mc-ui" id="mcHotbar"></div>
+  </div>
+
+  <script src="js/common.js?v=4"></script>
+  <script src="js/vendor/three.min.js?v=4"></script>
+  <script src="js/minecraft.js?v=4"></script>
+</body>
+</html>

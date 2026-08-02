@@ -703,6 +703,10 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 
 .game-card:active { transform: scale(0.97); }
+.gc-mc {
+  background: linear-gradient(135deg, #3D8BFD, #2E5FB0);
+  box-shadow: 0 10px 24px rgba(46, 95, 176, 0.35);
+}
 .gc-left { display: flex; align-items: center; gap: 14px; }
 .gc-emoji { font-size: 2.6rem; }
 .gc-name { font-size: 1.35rem; font-weight: 800; }
@@ -871,7 +875,159 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .hist-card.black { color: #2C2C3C; }
 .hist-pass { color: var(--muted); font-weight: 700; }
 
+/* ---------- 我的世界 · 方块乐园 ---------- */
+#mcGame {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: #87CEEB;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#mcGame canvas { display: block; }
+
+.mc-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.mc-crosshair::before,
+.mc-crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.mc-crosshair::before { left: 10px; top: 0; width: 2px; height: 22px; }
+.mc-crosshair::after { left: 0; top: 10px; width: 22px; height: 2px; }
+
+.mc-label {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 35, 0.75);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.mc-exit {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: 14px;
+  background: rgba(20, 20, 35, 0.75);
+  color: #fff;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.mc-joy {
+  position: absolute;
+  left: 28px;
+  bottom: 150px;
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 3px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.mc-joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.03s;
+}
+
+.mc-btns {
+  position: absolute;
+  right: 20px;
+  bottom: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.mc-alt-row { display: flex; gap: 10px; }
+.mc-alt {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 900;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.mc-act-row { display: flex; gap: 12px; }
+.mc-act {
+  width: 82px;
+  height: 82px;
+  border-radius: 24px;
+  font-size: 1.8rem;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+}
+
+.mc-act.break { background: rgba(232, 85, 109, 0.85); }
+.mc-act.place { background: rgba(47, 181, 110, 0.85); }
+
+.mc-hotbar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: rgba(20, 20, 35, 0.6);
+  padding: 8px;
+  border-radius: 18px;
+}
+
+.mc-block {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.mc-block.sel {
+  border-color: #fff;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
 @media (max-width: 480px) {
   .ddz-hand .ddz-card { width: 44px; height: 70px; font-size: 1.1rem; }
   .ddz-bots { gap: 8px; }
+  .mc-block { width: 38px; height: 38px; }
+  .mc-joy { width: 100px; height: 100px; bottom: 130px; }
+  .mc-btns { bottom: 130px; }
 }

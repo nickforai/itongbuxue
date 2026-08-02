@@ -22,6 +22,8 @@
     App.el('stJifen').textContent = data.jifen || 0;
     App.el('stChances').textContent = data.chances || 0;
     App.el('stGames').textContent = (data.games.won || 0) + ' / ' + (data.games.played || 0);
+    App.el('stMcChances').textContent = data.mcChances || 0;
+    App.el('stMcPlayed').textContent = data.games.mcPlayed || 0;
 
     /* 最近 7 天柱状图 */
     var days = [];

@@ -16,6 +16,7 @@
       stars: { yuwen: 0, shuxue: 0, yingyu: 0, kexue: 0, game: 0 },
       jifen: 0,
       chances: 0,
+      mcChances: 0,
       games: { played: 0, won: 0 },
       checkins: [],
       wrong: { shuxue: [], yingyu: [], kexue: [] },
@@ -96,6 +97,22 @@
     if ((data.chances || 0) < 1) return false;
     data.chances -= 1;
     data.games.played = (data.games.played || 0) + 1;
+    store.save(data);
+    return true;
+  }
+
+  function redeemMcChance(data) {
+    if ((data.jifen || 0) < 10) return false;
+    data.jifen -= 10;
+    data.mcChances = (data.mcChances || 0) + 1;
+    store.save(data);
+    return true;
+  }
+
+  function useMcChance(data) {
+    if ((data.mcChances || 0) < 1) return false;
+    data.mcChances -= 1;
+    data.games.mcPlayed = (data.games.mcPlayed || 0) + 1;
     store.save(data);
     return true;
   }
@@ -198,6 +215,8 @@
     addJifen: addJifen,
     redeemChance: redeemChance,
     useChance: useChance,
+    redeemMcChance: redeemMcChance,
+    useMcChance: useMcChance,
     totalStars: totalStars,
     logActivity: logActivity,
     toast: toast,

@@ -191,6 +191,30 @@ async function main() {
   await shot(page, 'doudizhu');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
+  /* ---------- 我的世界 ---------- */
+  console.log('\n[8] 我的世界');
+  fresh();
+  await page.goto(BASE + 'minecraft.html', { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    d.jifen = 12;
+    d.mcChances = 0;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert((await page.textContent('#mcLobbyJifen')) === '12', '积分显示 12');
+  await page.click('#mcRedeemBtn');
+  await sleep(200);
+  assert((await page.textContent('#mcLobbyChances')) === '1', '10 积分兑换后机会 = 1');
+  assert((await page.textContent('#mcLobbyJifen')) === '2', '兑换后积分 = 2');
+  await page.click('#mcStartBtn');
+  await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
+  await sleep(1500);
+  assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
+  assert((await page.locator('.mc-block').count()) === 8, '8 种方块可切换');
+  await shot(page, 'minecraft');
+  assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
+
   await browser.close();
   console.log('\n===== 结果 =====');
   if (fails.length) {

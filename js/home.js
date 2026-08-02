@@ -15,6 +15,9 @@
   document.querySelectorAll('[data-chances-key]').forEach(function (node) {
     node.textContent = '🎮 机会 ' + data.chances;
   });
+  document.querySelectorAll('[data-mc-chances-key]').forEach(function (node) {
+    node.textContent = '⛏️ 机会 ' + (data.mcChances || 0);
+  });
 
   var btn = App.el('checkinBtn');
   var today = App.todayStr();
@@ -43,6 +46,9 @@
     App.addJifen(data, 1);
     document.querySelectorAll('[data-jifen-key]').forEach(function (node) {
       node.textContent = '💰 ' + data.jifen + ' 积分';
+    });
+    document.querySelectorAll('[data-mc-chances-key]').forEach(function (node) {
+      node.textContent = '⛏️ 机会 ' + (data.mcChances || 0);
     });
     App.toast('打卡成功，+4⭐ +1积分！');
   });
