@@ -354,6 +354,8 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.villagers())) >= 1, '村庄有村民');
   assert((await page.evaluate(() => window.__mc.oreCount('gold_ore'))) > 0, '地下有金矿');
   assert((await page.evaluate(() => window.__mc.oreCount('diamond_ore'))) > 0, '地下有钻石矿');
+  const chestDia = await page.evaluate(() => window.__mc.chestDiamonds());
+  assert(chestDia >= 10 && chestDia <= 20, '村庄箱子共有 10-20 颗钻石（' + chestDia + '）');
   // 打开箱子拿东西
   const chestTake = await page.evaluate(() => {
     const key = window.__mc.findChest();
@@ -366,6 +368,27 @@ async function main() {
     return { ok: after === before + 1 };
   });
   assert(chestTake.ok, '打开箱子能拿到物品');
+  // 箱子每日刷新：模拟"第二天"后重进游戏，箱子重新装满
+  const chestKey0 = await page.evaluate(() => window.__mc.findChest());
+  await page.evaluate((k) => {
+    while (window.__mc.chestAt(k).length > 0) window.__mc.takeChest(k, 0);
+  }, chestKey0);
+  await sleep(900); // 等防抖保存完成
+  const lenBefore = await page.evaluate((k) => window.__mc.chestAt(k).length, chestKey0);
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('xx3_mc_world_v1'));
+    raw.chestDate = '2000-01-01';
+    localStorage.setItem('xx3_mc_world_v1', JSON.stringify(raw));
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1'));
+    d.mcChances = 1;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.click('#mcStartBtn');
+  await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
+  await sleep(1200);
+  const lenAfter = await page.evaluate((k) => window.__mc.chestAt(k).length, chestKey0);
+  assert(lenBefore === 0 && lenAfter >= 3, '新的一天箱子重新装满（' + lenBefore + ' → ' + lenAfter + '）');
   // 盔甲
   await page.evaluate(() => {
     window.__mc.addItem('raw_iron', 4);

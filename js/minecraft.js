@@ -76,6 +76,7 @@
   var equipped = null;
   var armor = null;
   var chestContents = {};
+  var freshChests = false;
   var meshes = {};
   var meshList = [];
   var currentType = 'grass';
@@ -133,13 +134,24 @@
     if (!world[k]) world[k] = type;
   }
 
-  var CHEST_POOL = ['apple', 'raw_meat', 'cooked_meat', 'water', 'coal', 'raw_iron', 'iron_ingot', 'gold', 'diamond', 'stick', 'wool', 'plank'];
+  var CHEST_POOL = ['apple', 'raw_meat', 'cooked_meat', 'water', 'coal', 'raw_iron', 'iron_ingot', 'gold', 'stick', 'wool', 'plank'];
 
-  function genChestItems(rng) {
-    var n = 3 + Math.floor(rng() * 4);
+  function genChestItems() {
+    var n = 3 + Math.floor(Math.random() * 4);
     var items = [];
-    for (var i = 0; i < n; i++) items.push(CHEST_POOL[Math.floor(rng() * CHEST_POOL.length)]);
+    for (var i = 0; i < n; i++) items.push(CHEST_POOL[Math.floor(Math.random() * CHEST_POOL.length)]);
     return items;
+  }
+
+  /* 全村箱子刷新：随机物品 + 总共保证 10-20 颗钻石 */
+  function genVillageLoot() {
+    var keys = Object.keys(world).filter(function (k) { return world[k] === 'chest'; });
+    keys.forEach(function (k) { chestContents[k] = genChestItems(); });
+    var diamonds = 10 + Math.floor(Math.random() * 11); // 10-20
+    for (var i = 0; i < diamonds; i++) {
+      var k = keys[Math.floor(Math.random() * keys.length)];
+      chestContents[k].push('diamond');
+    }
   }
 
   function buildHouse(x0, z0, gy, rng) {
@@ -162,7 +174,6 @@
       var chestKey = vkey(x0 + spots[s][0], gy + 1, z0 + spots[s][1]);
       if (!world[chestKey]) {
         world[chestKey] = 'chest';
-        chestContents[chestKey] = genChestItems(rng);
         break;
       }
     }
@@ -252,6 +263,7 @@
       }
     });
     generateVillage(rng);
+    genVillageLoot();
   }
 
   function applyChanges() {
@@ -262,6 +274,7 @@
   }
 
   function loadWorld() {
+    freshChests = false;
     try {
       var raw = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
       seed = raw.seed || (Date.now() % 100000 + 1);
@@ -280,11 +293,15 @@
     }
     generateWorld(seed);
     applyChanges();
-    // 箱子内容：用存档覆盖默认生成
+    // 箱子每日刷新：同一天保留拿取进度，新的一天重新装满
     try {
       var st = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
-      if (st.chestState) {
-        Object.keys(st.chestState).forEach(function (k) { chestContents[k] = st.chestState[k]; });
+      if (st.chestDate === App.todayStr()) {
+        if (st.chestState) {
+          Object.keys(st.chestState).forEach(function (k) { chestContents[k] = st.chestState[k]; });
+        }
+      } else {
+        freshChests = true;
       }
     } catch (e) { /* ignore */ }
   }
@@ -296,7 +313,7 @@
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify({
           seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
-          chestState: chestContents, mode: mode
+          chestState: chestContents, chestDate: App.todayStr(), mode: mode
         }));
       } catch (e) { /* 空间满就忽略 */ }
     }, 600);
@@ -445,6 +462,7 @@
   function init3D(chosenMode) {
     loadWorld();
     mode = chosenMode || mode;
+    if (freshChests) App.toast('🌅 新的一天，村庄的箱子刷新了！');
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -519,6 +537,13 @@
         return Object.keys(world).find(function (k) { return world[k] === 'chest'; }) || null;
       },
       chestAt: function (key) { return (chestContents[key] || []).slice(); },
+      chestDiamonds: function () {
+        var total = 0;
+        Object.keys(chestContents).forEach(function (k) {
+          (chestContents[k] || []).forEach(function (id) { if (id === 'diamond') total++; });
+        });
+        return total;
+      },
       takeChest: function (key, idx) { currentChestKey = key; takeChestItem(idx); },
       armor: function () { return armor; },
       isNight: function () { return isNight(); },
