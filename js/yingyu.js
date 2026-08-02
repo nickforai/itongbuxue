@@ -159,13 +159,11 @@
 
   function showQuizResult() {
     var score = qz.score;
-    var stars = score >= 10 ? 3 : score >= 8 ? 2 : score >= 6 ? 1 : 0;
+    var reward = score === 10 ? 3 : 2; // 全对 3 星，完成 2 星
     var emoji = score === 10 ? '🏆' : score >= 8 ? '🎉' : score >= 6 ? '👍' : '💪';
 
     data = App.store.load();
-    App.addStars(data, 'yingyu', stars);
-    var jifen = score === 10 ? 3 : 2;
-    App.addJifen(data, jifen);
+    App.addStars(data, 'yingyu', reward);
     App.logActivity(data, '单词测验 ' + score + '/10');
 
     qz.wrong.forEach(function (w) {
@@ -178,7 +176,7 @@
     App.el('quizScreen').classList.add('hidden');
     App.el('qzResultEmoji').textContent = emoji;
     App.el('qzResultScore').textContent = score + ' / 10';
-    App.el('qzResultLine').textContent = '获得 ' + stars + ' ⭐ · 积分 +' + jifen;
+    App.el('qzResultLine').textContent = '星星 +' + reward;
 
     var wl = App.el('qzWrongList');
     wl.innerHTML = '';

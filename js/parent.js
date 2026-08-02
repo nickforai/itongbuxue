@@ -19,7 +19,7 @@
     App.el('stYingyu').textContent = data.stars.yingyu || 0;
     App.el('stKexue').textContent = data.stars.kexue || 0;
     App.el('stGame').textContent = data.stars.game || 0;
-    App.el('stJifen').textContent = data.jifen || 0;
+    App.el('stJifen').textContent = data.balance || 0;
     App.el('stChances').textContent = data.chances || 0;
     App.el('stGames').textContent = (data.games.won || 0) + ' / ' + (data.games.played || 0);
     App.el('stMcChances').textContent = data.mcChances || 0;

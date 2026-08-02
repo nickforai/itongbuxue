@@ -50,19 +50,19 @@
   function renderLobby() {
     data = App.store.load();
     App.el('chancePill').textContent = '🎮 ' + data.chances;
-    App.el('jifenPill').textContent = '💰 ' + data.jifen;
-    App.el('lobbyJifen').textContent = data.jifen;
+    App.el('jifenPill').textContent = '⭐ ' + (data.balance || 0);
+    App.el('lobbyJifen').textContent = data.balance || 0;
     App.el('lobbyChances').textContent = data.chances;
     var redeem = App.el('redeemBtn');
-    redeem.disabled = data.jifen < 5;
-    redeem.textContent = data.jifen >= 5
-      ? '🔄 兑换 1 次机会（-5 积分，现有 ' + data.jifen + '）'
-      : '🔄 兑换 1 次机会（还差 ' + (5 - data.jifen) + ' 积分）';
+    redeem.disabled = (data.balance || 0) < 5;
+    redeem.textContent = (data.balance || 0) >= 5
+      ? '🔄 兑换 1 次机会（-5 星星，现有 ' + data.balance + '）'
+      : '🔄 兑换 1 次机会（还差 ' + (5 - (data.balance || 0)) + ' 颗星星）';
     var start = App.el('startBtn');
     start.disabled = data.chances < 1;
     start.textContent = data.chances >= 1
       ? '🎮 开始游戏（还有 ' + data.chances + ' 次机会）'
-      : '🎮 积分不够，先做作业赚积分吧';
+      : '🎮 星星不够，先做作业赚星星吧';
   }
 
   App.el('redeemBtn').addEventListener('click', function () {
@@ -72,7 +72,7 @@
       App.toast('兑换成功，+1 次机会！');
       renderLobby();
     } else {
-      App.toast('积分还不够 5 分哦');
+      App.toast('星星还不够 5 颗哦');
     }
   });
 
@@ -285,7 +285,6 @@
     var myWon = (G.landlord === 0 && landlordWon) || (G.landlord !== 0 && !landlordWon);
     data = App.store.load();
     if (myWon) {
-      data.stars.game = (data.stars.game || 0) + 1;
       data.games.won = (data.games.won || 0) + 1;
       App.store.save(data);
     }
@@ -296,14 +295,14 @@
     App.el('overTitle').textContent = myWon ? '你赢了！' : '差一点，再试试！';
     App.el('overLine').textContent =
       (G.landlord === 0 ? '你是地主' : '你是农民') +
-      (myWon ? ' · 奖励 1⭐' : ' · 下次加油');
+      (myWon ? ' · 太棒了！' : ' · 下次加油');
     var again = App.el('overAgain');
     if (data.chances > 0) {
       again.disabled = false;
       again.textContent = '🔄 再来一局（还剩 ' + data.chances + ' 次机会）';
     } else {
       again.disabled = true;
-      again.textContent = '🎮 机会用完啦，做作业赚积分吧';
+      again.textContent = '🎮 机会用完啦，做作业赚星星吧';
     }
     App.el('overlay').classList.remove('hidden');
     renderLobby();

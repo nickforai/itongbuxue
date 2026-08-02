@@ -188,17 +188,17 @@
     if (!text) {
       App.el('recResult').classList.remove('hidden');
       App.el('recResult').innerHTML = '<div class="rr-score">没有识别到内容</div><div>请靠近麦克风大声朗读</div>';
-      updateJifenPill();
+      updateStarPill();
       return;
     }
     var score = App.reciteScore(targetText(p), text);
     showReciteResult(p, score);
   }
 
-  function updateJifenPill() {
+  function updateStarPill() {
     data = App.store.load();
-    var pill = App.el('jifenPill');
-    if (pill) pill.textContent = '💰 ' + (data.jifen || 0);
+    var pill = App.el('starPill');
+    if (pill) pill.textContent = '⭐ ' + (data.balance || 0);
   }
 
   function showReciteResult(p, score) {
@@ -206,7 +206,7 @@
     box.classList.remove('hidden');
     var pass = score.points > 0;
     var html = '<div class="rr-score">准确率 ' + score.accuracy + '%' + (pass ? ' ✅' : ' ❌') + '</div>';
-    html += '<div>' + (pass ? '通过啦！' : '没有通过，要 ≥60% 才能得积分哦') + '</div>';
+    html += '<div>' + (pass ? '通过啦！' : '没有通过，要 ≥60% 才能得星星哦') + '</div>';
 
     data = App.store.load();
     if (!data.awarded.recite) data.awarded.recite = {};
@@ -218,19 +218,19 @@
       var diff = score.points - rec2.points;
       if (diff > 0) {
         rec2.points = score.points;
-        App.addJifen(data, diff);
+        App.addStars(data, 'yuwen', diff);
         App.logActivity(data, '背诵《' + p.title + '》准确率' + score.accuracy + '%');
-        html += '<div class="rr-gain">🎉 积分 +' + diff + '，现在一共 ' + (data.jifen || 0) + ' 分</div>';
+        html += '<div class="rr-gain">🎉 星星 +' + diff + '，现在一共 ' + (data.balance || 0) + ' 颗</div>';
       } else {
-        html += '<div class="rr-gain dim">刷新了今天的最好成绩（积分档位不变）</div>';
+        html += '<div class="rr-gain dim">刷新了今天的最好成绩（星星档位不变）</div>';
       }
       data.awarded.recite[key] = rec2;
       App.store.save(data);
     } else {
-      html += '<div class="rr-gain dim">今天这首诗的最好成绩是 ' + rec2.best + '%，再练练能拿更多积分</div>';
+      html += '<div class="rr-gain dim">今天这首诗的最好成绩是 ' + rec2.best + '%，再练练能拿更多星星</div>';
     }
     box.innerHTML = html;
-    updateJifenPill();
+    updateStarPill();
   }
 
   App.el('recBtn').addEventListener('click', function () {
@@ -240,5 +240,5 @@
 
   renderList();
   App.setStarsUI();
-  updateJifenPill();
+  updateStarPill();
 })();

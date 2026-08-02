@@ -181,21 +181,19 @@
 
   function showResult() {
     var score = state.score;
-    var stars = score >= 10 ? 3 : score >= 8 ? 2 : score >= 5 ? 1 : 0;
+    var reward = score === 10 ? 3 : 2; // 全对 3 星，完成 2 星
     var emoji = score === 10 ? '🏆' : score >= 8 ? '🎉' : score >= 5 ? '👍' : '💪';
     var elapsed = Math.round((Date.now() - state.start) / 1000);
     var min = Math.floor(elapsed / 60), sec = elapsed % 60;
 
-    App.addStars(data, 'shuxue', stars);
-    var jifen = score === 10 ? 3 : 2;
-    App.addJifen(data, jifen);
+    App.addStars(data, 'shuxue', reward);
     App.logActivity(data, '口算 ' + state.level.name + ' ' + score + '/10');
     App.setStarsUI();
 
     App.el('gameScreen').classList.add('hidden');
     App.el('resultEmoji').textContent = emoji;
     App.el('resultScore').textContent = score + ' / 10';
-    App.el('resultLine').textContent = '用时 ' + min + ' 分 ' + sec + ' 秒 · ' + stars + ' ⭐ · 积分 +' + jifen;
+    App.el('resultLine').textContent = '用时 ' + min + ' 分 ' + sec + ' 秒 · 星星 +' + reward;
 
     var wl = App.el('wrongList');
     wl.innerHTML = '';

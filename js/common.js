@@ -14,7 +14,7 @@
   function defaultData() {
     return {
       stars: { yuwen: 0, shuxue: 0, yingyu: 0, kexue: 0, game: 0 },
-      jifen: 0,
+      balance: 0,
       chances: 0,
       mcChances: 0,
       games: { played: 0, won: 0 },
@@ -34,6 +34,13 @@
           var parsed = JSON.parse(raw);
           for (var k in base) {
             if (parsed[k] === undefined) parsed[k] = base[k];
+          }
+          // 旧数据迁移：积分并入星星余额（累计星星 + 原积分）
+          if ('jifen' in parsed) {
+            var sum = 0;
+            for (var s in parsed.stars) sum += parsed.stars[s] || 0;
+            parsed.balance = sum + (parsed.jifen || 0);
+            delete parsed.jifen;
           }
           return parsed;
         }
@@ -71,6 +78,7 @@
 
   function addStars(data, subject, n) {
     data.stars[subject] = (data.stars[subject] || 0) + n;
+    data.balance = (data.balance || 0) + n;
     store.save(data);
   }
 
@@ -80,14 +88,9 @@
     return sum;
   }
 
-  function addJifen(data, n) {
-    data.jifen = (data.jifen || 0) + n;
-    store.save(data);
-  }
-
   function redeemChance(data) {
-    if ((data.jifen || 0) < 5) return false;
-    data.jifen -= 5;
+    if ((data.balance || 0) < 5) return false;
+    data.balance -= 5;
     data.chances = (data.chances || 0) + 1;
     store.save(data);
     return true;
@@ -102,8 +105,8 @@
   }
 
   function redeemMcChance(data) {
-    if ((data.jifen || 0) < 10) return false;
-    data.jifen -= 10;
+    if ((data.balance || 0) < 10) return false;
+    data.balance -= 10;
     data.mcChances = (data.mcChances || 0) + 1;
     store.save(data);
     return true;
@@ -183,13 +186,17 @@
 
   function setStarsUI() {
     var data = store.load();
+    var balance = data.balance || 0;
     document.querySelectorAll('[data-star-key]').forEach(function (node) {
       var k = node.getAttribute('data-star-key');
       if (k === 'total') {
-        node.textContent = '⭐ ' + totalStars(data);
+        node.textContent = '⭐ ' + balance;
       } else {
         node.textContent = '⭐ ' + (data.stars[k] || 0);
       }
+    });
+    document.querySelectorAll('[data-balance-key]').forEach(function (node) {
+      node.textContent = '⭐ ' + balance + ' 星星';
     });
   }
 
@@ -243,7 +250,6 @@
     todayStr: todayStr,
     streakDays: streakDays,
     addStars: addStars,
-    addJifen: addJifen,
     redeemChance: redeemChance,
     useChance: useChance,
     redeemMcChance: redeemMcChance,

@@ -360,7 +360,7 @@
     playSound('eat');
   }
 
-  /* ---------- 大厅（模式选择 + 积分兑换） ---------- */
+  /* ---------- 大厅（模式选择 + 星星兑换） ---------- */
   function getSavedMode() {
     try {
       var raw = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
@@ -371,19 +371,19 @@
   function renderLobby() {
     data = App.store.load();
     App.el('mcChancePill').textContent = '⛏️ ' + (data.mcChances || 0);
-    App.el('mcJifenPill').textContent = '💰 ' + (data.jifen || 0);
-    App.el('mcLobbyJifen').textContent = data.jifen || 0;
+    App.el('mcJifenPill').textContent = '⭐ ' + (data.balance || 0);
+    App.el('mcLobbyJifen').textContent = data.balance || 0;
     App.el('mcLobbyChances').textContent = data.mcChances || 0;
     var redeem = App.el('mcRedeemBtn');
-    redeem.disabled = (data.jifen || 0) < 10;
-    redeem.textContent = (data.jifen || 0) >= 10
-      ? '🔄 兑换 1 次机会（-10 积分，现有 ' + data.jifen + '）'
-      : '🔄 兑换 1 次机会（还差 ' + (10 - (data.jifen || 0)) + ' 积分）';
+    redeem.disabled = (data.balance || 0) < 10;
+    redeem.textContent = (data.balance || 0) >= 10
+      ? '🔄 兑换 1 次机会（-10 星星，现有 ' + data.balance + '）'
+      : '🔄 兑换 1 次机会（还差 ' + (10 - (data.balance || 0)) + ' 颗星星）';
     var start = App.el('mcStartBtn');
     start.disabled = (data.mcChances || 0) < 1;
     start.textContent = (data.mcChances || 0) >= 1
       ? '🚀 开始游戏（还有 ' + data.mcChances + ' 次机会）'
-      : '🚀 积分不够 10 分，先做作业吧';
+      : '🚀 星星不够 10 颗，先做作业吧';
 
     mode = getSavedMode();
     renderModeButtons();
@@ -406,7 +406,7 @@
       App.toast('兑换成功，+1 次机会！');
       renderLobby();
     } else {
-      App.toast('积分还不够 10 分哦');
+      App.toast('星星还不够 10 颗哦');
     }
   });
 

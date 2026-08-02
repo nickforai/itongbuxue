@@ -14,20 +14,20 @@
   <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
-  <!-- 大厅：积分兑换 -->
+  <!-- 大厅：星星兑换 -->
   <div class="page" id="mcLobby">
     <div class="topbar">
       <a class="back" href="index.html" aria-label="返回首页">←</a>
       <h1>⛏️ 我的世界</h1>
       <div class="star-pill" id="mcChancePill">⛏️ 0</div>
-      <div class="star-pill" id="mcJifenPill">💰 0</div>
+      <div class="star-pill" id="mcJifenPill">⭐ 0</div>
     </div>
 
     <div class="panel">
       <h2>🏗️ 方块乐园</h2>
       <p style="color:var(--muted);font-size:.92rem;line-height:1.7;margin-bottom:14px">
         像我的世界一样生存与建造：砍树、收集、合成、天黑前搭好小房子！
-        <b>10 积分 = 1 次游戏机会</b>，每局不限时。
+        <b>10 颗星星 = 1 次游戏机会</b>，每局不限时。
       </p>
       <div class="mc-mode-row">
         <button class="mc-mode-btn" id="mcModeCreative">🕊️ 创造模式<br><small>自由飞行建造</small></button>
@@ -35,10 +35,10 @@
       </div>
       <div style="height:14px"></div>
       <div class="stat-grid" style="margin-bottom:16px">
-        <div class="stat-cell"><div class="sv" id="mcLobbyJifen">0</div><div class="sl">💰 积分</div></div>
+        <div class="stat-cell"><div class="sv" id="mcLobbyJifen">0</div><div class="sl">⭐ 星星</div></div>
         <div class="stat-cell"><div class="sv" id="mcLobbyChances">0</div><div class="sl">⛏️ 游戏机会</div></div>
       </div>
-      <button class="btn btn-green" id="mcRedeemBtn">🔄 兑换 1 次机会（-10 积分）</button>
+      <button class="btn btn-green" id="mcRedeemBtn">🔄 兑换 1 次机会（-10 星星）</button>
       <div style="height:12px"></div>
       <button class="btn btn-gold" id="mcStartBtn">🚀 开始建造</button>
     </div>

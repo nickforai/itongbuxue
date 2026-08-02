@@ -41,7 +41,7 @@ async function main() {
   await sleep(300);
   assert((await page.textContent('#checkinBtn')).includes('已打卡'), '打卡后按钮状态变化');
   assert((await page.textContent('[data-star-key="total"]')).includes('4'), '打卡 +4 星');
-  assert((await page.textContent('[data-jifen-key]')).includes('1'), '打卡 +1 积分');
+  assert((await page.textContent('[data-balance-key]')).includes('4'), '打卡 +4 星星');
   await shot(page, 'home');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
@@ -126,8 +126,8 @@ async function main() {
   await page.click('#recBtn');
   await sleep(600);
   const recText = await page.textContent('#recResult');
-  assert(recText.includes('准确率 100%') && recText.includes('积分 +3'), '录音满分得 3 分并显示结果');
-  assert((await page.textContent('#jifenPill')).includes('💰'), '积分总数已更新');
+  assert(recText.includes('准确率 100%') && recText.includes('星星 +3'), '录音满分得 3 颗星并显示结果');
+  assert((await page.textContent('#starPill')).includes('⭐'), '星星总数已更新');
   // 场景2：手动停止 → 显示"计算中" → 空识别给出提示
   await page.evaluate(() => {
     window.SilentSR = class {
@@ -213,7 +213,7 @@ async function main() {
   await page.goto(BASE + 'doudizhu.html', { waitUntil: 'networkidle' });
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
-    d.jifen = 12;
+    d.balance = 12;
     d.chances = 0;
     localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
   });
@@ -262,7 +262,7 @@ async function main() {
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('xx3_learning_v1'));
     d.chances = 0;
-    d.jifen = 3;
+    d.balance = 3;
     localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
   });
   await page.reload({ waitUntil: 'networkidle' });
@@ -277,7 +277,7 @@ async function main() {
   await page.goto(BASE + 'minecraft.html', { waitUntil: 'networkidle' });
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
-    d.jifen = 12;
+    d.balance = 12;
     d.mcChances = 0;
     localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
   });
@@ -395,7 +395,7 @@ async function main() {
   await page.goto(BASE + 'minecraft.html', { waitUntil: 'networkidle' });
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
-    d.jifen = 12;
+    d.balance = 12;
     d.mcChances = 1;
     localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
   });
