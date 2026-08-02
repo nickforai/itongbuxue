@@ -33,6 +33,8 @@
     iron_ingot: { name: '铁锭', color: 0xD9D9E3, emoji: '🔩', kind: 'material' },
     gold: { name: '金', color: 0xF2C94C, emoji: '🪙', kind: 'material' },
     diamond: { name: '钻石', color: 0x66E0E8, emoji: '💎', kind: 'material' },
+    arrow: { name: '箭', color: 0x8B5A2B, emoji: '➶', kind: 'material' },
+    bow: { name: '弓', color: 0xA9743F, emoji: '🏹', kind: 'material' },
     apple: { name: '苹果', emoji: '🍎', kind: 'food', value: 3 },
     raw_meat: { name: '生肉', emoji: '🍖', kind: 'food', value: 4 },
     cooked_meat: { name: '烤肉', emoji: '🥩', kind: 'food', value: 6 },
@@ -66,6 +68,15 @@
   var SMELT_RECIPES = [
     { id: 'smelt_iron', name: '炼铁锭', input: 'raw_iron', fuel: 'coal', result: 'iron_ingot', count: 1 },
     { id: 'smelt_meat', name: '烤肉', input: 'raw_meat', fuel: 'coal', result: 'cooked_meat', count: 1 }
+  ];
+
+  var TRADES = [
+    { id: 't_diamond_ingot', name: '钻石换铁锭', give: { diamond: 1 }, get: { iron_ingot: 9 } },
+    { id: 't_plank_arrow', name: '木板换箭', give: { plank: 3 }, get: { arrow: 64 } },
+    { id: 't_plank_bow', name: '木板换弓', give: { plank: 3 }, get: { bow: 1 } },
+    { id: 't_plank_meat', name: '木板换肉', give: { plank: 10 }, get: { raw_meat: 2 } },
+    { id: 't_meat_bow', name: '肉换弓', give: { raw_meat: 1 }, get: { bow: 2 } },
+    { id: 't_meat_plank', name: '肉换木板', give: { raw_meat: 1 }, get: { plank: 6 } }
   ];
 
   var SAVE_KEY = 'xx3_mc_world_v1';
@@ -362,6 +373,30 @@
     return true;
   }
 
+  function canAfford(give) {
+    return Object.keys(give).every(function (id) {
+      return (backpack[id] || 0) >= give[id];
+    });
+  }
+
+  function trade(t) {
+    if (!canAfford(t.give)) { App.toast('材料不够哦'); return false; }
+    Object.keys(t.give).forEach(function (id) {
+      backpack[id] -= t.give[id];
+      if (backpack[id] <= 0) delete backpack[id];
+    });
+    Object.keys(t.get).forEach(function (id) {
+      backpack[id] = (backpack[id] || 0) + t.get[id];
+    });
+    scheduleSave();
+    renderBackpack();
+    renderTrade();
+    App.toast('交换成功：' + Object.keys(t.get).map(function (id) {
+      return ITEMS[id].name + '×' + t.get[id];
+    }).join('、') + '！');
+    return true;
+  }
+
   function eatItem(id) {
     var it = ITEMS[id];
     if (!it || it.kind !== 'food') return;
@@ -517,6 +552,11 @@
         var r = SMELT_RECIPES.find(function (x) { return x.id === id; });
         return r ? smelt(r) : false;
       },
+      trade: function (id) {
+        var t = TRADES.find(function (x) { return x.id === id; });
+        return t ? trade(t) : false;
+      },
+      openTrade: openTrade,
       backpack: backpack,
       mode: function () { return mode; },
       mobs: function () { return mobs.length; },
@@ -658,6 +698,18 @@
     return { point: hit.point, normal: n };
   }
 
+  function hitMobAt(cx, cy) {
+    var ndcX = (cx / window.innerWidth) * 2 - 1;
+    var ndcY = -(cy / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+    var hits = raycaster.intersectObjects(mobGroups, true);
+    for (var i = 0; i < hits.length; i++) {
+      var mob = hits[i].object.userData.mob;
+      if (mob && mob.type === 'villager') return mob;
+    }
+    return null;
+  }
+
   function removeVoxel(k, type) {
     delete world[k];
     changes[k] = null;
@@ -724,6 +776,7 @@
 
   /* 手指点到哪，放到哪 */
   function tapPlace(cx, cy) {
+    if (hitMobAt(cx, cy)) { openTrade(); return; }
     var t = getTargetAt(cx, cy);
     if (!t) return;
     currentAction = 'place';
@@ -777,6 +830,10 @@
   }
 
   function doUse() {
+    if (hitMobAt(window.innerWidth / 2, window.innerHeight / 2)) {
+      openTrade();
+      return;
+    }
     var t = getTarget();
     if (!t) return;
     var vx = Math.floor(t.point.x - t.normal.x * 0.05);
@@ -1370,6 +1427,7 @@
     App.el('mcCraftPanel').classList.add('hidden');
     App.el('mcSmeltPanel').classList.add('hidden');
     App.el('mcChestPanel').classList.add('hidden');
+    App.el('mcTradePanel').classList.add('hidden');
   }
 
   function renderCrafting() {
@@ -1476,6 +1534,43 @@
   }
 
   App.el('mcChestClose').addEventListener('click', function () { App.el('mcChestPanel').classList.add('hidden'); });
+
+  /* ---------- 村民交换 ---------- */
+  function openTrade() {
+    closeOverlays();
+    App.el('mcTradePanel').classList.remove('hidden');
+    renderTrade();
+  }
+
+  function renderTrade() {
+    var box = App.el('mcTradeList');
+    box.innerHTML = '';
+    TRADES.forEach(function (t) {
+      var row = document.createElement('div');
+      row.className = 'mc-recipe';
+      var giveHtml = Object.keys(t.give).map(function (id) {
+        return itemIcon(id) + '<span>' + ITEMS[id].name + '×' + t.give[id] + '</span>';
+      }).join('<span class="mc-recipe-plus">+</span>');
+      var getHtml = Object.keys(t.get).map(function (id) {
+        return itemIcon(id) + '<span>' + ITEMS[id].name + '×' + t.get[id] + '</span>';
+      }).join('<span class="mc-recipe-plus">+</span>');
+      var ok = canAfford(t.give);
+      row.innerHTML =
+        '<div class="mc-recipe-left">' + giveHtml + '</div>' +
+        '<div class="mc-recipe-arrow">→</div>' +
+        '<div class="mc-recipe-result">' + getHtml + '</div>' +
+        '<button class="mc-recipe-btn' + (ok ? '' : ' off') + '" data-trade="' + t.id + '"' + (ok ? '' : ' disabled') + '>交换</button>';
+      box.appendChild(row);
+    });
+    box.querySelectorAll('[data-trade]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var t = TRADES.find(function (x) { return x.id === btn.getAttribute('data-trade'); });
+        if (t) trade(t);
+      });
+    });
+  }
+
+  App.el('mcTradeClose').addEventListener('click', function () { App.el('mcTradePanel').classList.add('hidden'); });
 
   /* ---------- 主循环 ---------- */
   function updateDayNight(dt) {

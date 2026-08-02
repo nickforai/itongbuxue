@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=20">
+  <link rel="stylesheet" href="css/style.css?v=21">
 </head>
 <body>
   <!-- 大厅：星星兑换 -->
@@ -52,6 +52,7 @@
       🐑 打羊得羊毛（3羊毛+3木板=床）· 吃食物补饥饿 🍗<br>
       ⛏️ 地下有煤/铁/金/钻石（要稿子挖）→ 熔炉炼铁锭 → 铁剑/铁镐/铁甲<br>
       🏘️ 地图很大：有湖泊、山丘、洞穴，还有个村庄！村民家里有箱子，点开能拿食物/水/矿石
+      🤝 点一下村民，可以和他交换物品（钻石换铁锭、木板换箭/弓、肉换木板等）
     </div>
   </div>
 
@@ -118,6 +119,14 @@
       </div>
     </div>
 
+    <div class="mc-overlay mc-ui hidden" id="mcTradePanel">
+      <div class="mc-overlay-inner">
+        <h3>🤝 村民交换</h3>
+        <div class="mc-overlay-list" id="mcTradeList"></div>
+        <button class="btn btn-ghost" id="mcTradeClose">关闭</button>
+      </div>
+    </div>
+
     <div class="mc-death mc-ui hidden" id="mcDeath">
       <div class="mc-death-box">
         <div style="font-size:3.4rem">😵</div>
@@ -128,8 +137,8 @@
     <div class="mc-flash" id="mcFlash"></div>
   </div>
 
-  <script src="js/common.js?v=20"></script>
-  <script src="js/vendor/three.min.js?v=20"></script>
-  <script src="js/minecraft.js?v=20"></script>
+  <script src="js/common.js?v=21"></script>
+  <script src="js/vendor/three.min.js?v=21"></script>
+  <script src="js/minecraft.js?v=21"></script>
 </body>
 </html>

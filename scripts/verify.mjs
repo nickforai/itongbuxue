@@ -389,6 +389,20 @@ async function main() {
   await sleep(1200);
   const lenAfter = await page.evaluate((k) => window.__mc.chestAt(k).length, chestKey0);
   assert(lenBefore === 0 && lenAfter >= 3, '新的一天箱子重新装满（' + lenBefore + ' → ' + lenAfter + '）');
+  // 村民交换
+  assert(
+    await page.evaluate(() => { window.__mc.addItem('diamond', 1); return window.__mc.trade('t_diamond_ingot'); }),
+    '1 颗钻石换 9 个铁锭'
+  );
+  assert((await page.evaluate(() => window.__mc.backpack.iron_ingot || 0)) >= 9, '铁锭到账');
+  await page.evaluate(() => { window.__mc.addItem('plank', 3); window.__mc.trade('t_plank_arrow'); });
+  assert((await page.evaluate(() => window.__mc.backpack.arrow || 0)) >= 64, '3 个木板换 64 支箭');
+  await page.evaluate(() => { window.__mc.addItem('raw_meat', 1); window.__mc.trade('t_meat_bow'); });
+  assert((await page.evaluate(() => window.__mc.backpack.bow || 0)) >= 2, '1 个肉换 2 把弓');
+  assert((await page.evaluate(() => window.__mc.trade('t_plank_meat'))) === false, '材料不够时交换失败');
+  await page.evaluate(() => window.__mc.openTrade());
+  assert((await page.locator('#mcTradePanel:not(.hidden)').count()) === 1, '村民交换面板可打开');
+  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 6, '6 条交换规则');
   // 盔甲
   await page.evaluate(() => {
     window.__mc.addItem('raw_iron', 4);
