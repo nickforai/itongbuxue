@@ -441,6 +441,36 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 
 .poem-nav .btn { padding: 14px; font-size: 1rem; }
 
+.recite-live {
+  background: #F6F6FB;
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 52px;
+  margin-top: 12px;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.recite-result {
+  margin-top: 12px;
+  text-align: center;
+  background: #EFFBF4;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.rr-score { font-size: 1.35rem; font-weight: 800; }
+.rr-gain { color: var(--ok); font-weight: 800; margin-top: 6px; }
+.rr-gain.dim { color: var(--muted); font-weight: 600; }
+
+#recBtn.recording {
+  background: linear-gradient(135deg, #F2849A, #E8556D);
+  box-shadow: 0 8px 18px rgba(232, 85, 109, 0.35);
+}
+
 /* ---------- 英语单词卡 ---------- */
 .tab-bar {
   display: flex;

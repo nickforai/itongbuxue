@@ -193,6 +193,37 @@
     });
   }
 
+  /* ---------- 背诵评分：识别文本 vs 原文 ---------- */
+  function lcsLen(a, b) {
+    var m = a.length, n = b.length;
+    if (!m || !n) return 0;
+    var prev = new Array(n + 1).fill(0);
+    var cur = new Array(n + 1).fill(0);
+    for (var i = 1; i <= m; i++) {
+      for (var j = 1; j <= n; j++) {
+        cur[j] = a[i - 1] === b[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], cur[j - 1]);
+      }
+      var tmp = prev; prev = cur; cur = tmp;
+      cur[0] = 0;
+    }
+    return prev[n];
+  }
+
+  function normalizeHan(s) {
+    return (s || '').replace(/[^\u4e00-\u9fff]/g, '');
+  }
+
+  /* 返回 { accuracy: 百分比(保留1位), match, total, points } */
+  function reciteScore(expected, recognized) {
+    var e = normalizeHan(expected);
+    var r = normalizeHan(recognized);
+    if (!e.length) return { accuracy: 0, match: 0, total: 0, points: 0 };
+    var match = lcsLen(e, r);
+    var accuracy = Math.round(match / e.length * 1000) / 10;
+    var points = accuracy >= 90 ? 3 : accuracy >= 80 ? 2 : accuracy >= 60 ? 1 : 0;
+    return { accuracy: accuracy, match: match, total: e.length, points: points };
+  }
+
   // 预热语音列表（Safari 首次可能为空）
   if ('speechSynthesis' in window) {
     window.speechSynthesis.getVoices();
@@ -224,6 +255,7 @@
     stopSpeak: stopSpeak,
     shuffle: shuffle,
     el: el,
-    setStarsUI: setStarsUI
+    setStarsUI: setStarsUI,
+    reciteScore: reciteScore
   };
 })();

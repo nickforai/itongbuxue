@@ -77,6 +77,31 @@ async function main() {
   await sleep(300);
   assert((await page.textContent('[data-star-key="yuwen"]')).includes('2'), '背诗后语文星 = 1(打卡)+1 = 2');
   assert(await page.locator('#reciteBtn').isDisabled(), '当天重复背诵被禁用');
+  // 录音评分函数（纯逻辑）
+  const sc = await page.evaluate(() => {
+    const E = '牧童骑黄牛歌声振林樾意欲捕鸣蝉忽然闭口立';
+    return {
+      exact: App.reciteScore(E, E),
+      p90: App.reciteScore(E, E.slice(0, 18)),
+      p80: App.reciteScore(E, E.slice(0, 16)),
+      p60: App.reciteScore(E, E.slice(0, 13)),
+      low: App.reciteScore(E, E.slice(0, 11)),
+      noise: App.reciteScore(E, '今天天气不错哈哈哈')
+    };
+  });
+  assert(sc.exact.points === 3 && sc.exact.accuracy === 100, '完全背诵：100% 得 3 分');
+  assert(sc.p90.points === 3 && sc.p90.accuracy >= 90, '90%+ 得 3 分');
+  assert(sc.p80.points === 2 && sc.p80.accuracy >= 80, '80-90% 得 2 分');
+  assert(sc.p60.points === 1 && sc.p60.accuracy >= 60, '60-80% 得 1 分');
+  assert(sc.low.points === 0 && sc.low.accuracy < 60, '低于 60% 不得分');
+  assert(sc.noise.points === 0, '乱读不得分');
+  // 录音按钮存在且点击不崩溃（无麦克风环境走错误提示）
+  assert((await page.locator('#recBtn').count()) === 1, '录音按钮存在');
+  const pageErrorsBefore = errors.filter((e) => e.startsWith('pageerror')).length;
+  await page.click('#recBtn');
+  await sleep(600);
+  const pageErrorsAfter = errors.filter((e) => e.startsWith('pageerror')).length;
+  assert(pageErrorsAfter === pageErrorsBefore, '点击录音无页面崩溃');
   await shot(page, 'yuwen');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
@@ -277,11 +302,12 @@ async function main() {
   // 打开箱子拿东西
   const chestTake = await page.evaluate(() => {
     const key = window.__mc.findChest();
-    const before = (window.__mc.backpack.apple || 0) + (window.__mc.backpack.raw_meat || 0) + (window.__mc.backpack.water || 0) + (window.__mc.backpack.coal || 0) + (window.__mc.backpack.raw_iron || 0) + (window.__mc.backpack.iron_ingot || 0) + (window.__mc.backpack.gold || 0) + (window.__mc.backpack.diamond || 0) + (window.__mc.backpack.stick || 0) + (window.__mc.backpack.wool || 0) + (window.__mc.backpack.plank || 0);
+    const sum = () => Object.values(window.__mc.backpack).reduce((a, b) => a + b, 0);
+    const before = sum();
     const contents = window.__mc.chestAt(key);
     if (!contents.length) return { ok: false };
     window.__mc.takeChest(key, 0);
-    const after = (window.__mc.backpack.apple || 0) + (window.__mc.backpack.raw_meat || 0) + (window.__mc.backpack.water || 0) + (window.__mc.backpack.coal || 0) + (window.__mc.backpack.raw_iron || 0) + (window.__mc.backpack.iron_ingot || 0) + (window.__mc.backpack.gold || 0) + (window.__mc.backpack.diamond || 0) + (window.__mc.backpack.stick || 0) + (window.__mc.backpack.wool || 0) + (window.__mc.backpack.plank || 0);
+    const after = sum();
     return { ok: after === before + 1 };
   });
   assert(chestTake.ok, '打开箱子能拿到物品');
