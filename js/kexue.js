@@ -113,6 +113,8 @@
 
     data = App.store.load();
     App.addStars(data, 'kexue', stars);
+    var jifen = current.score === total ? 3 : 2;
+    App.addJifen(data, jifen);
     App.logActivity(data, '科学《' + current.topic.title + '》 ' + current.score + '/' + total);
     if (current.score === total) {
       data.awarded.quizzes[current.topic.id] = true;
@@ -126,7 +128,7 @@
     App.el('quizScreen').classList.add('hidden');
     App.el('qzResultEmoji').textContent = emoji;
     App.el('qzResultScore').textContent = current.score + ' / ' + total;
-    App.el('qzResultLine').textContent = '获得 ' + stars + ' ⭐';
+    App.el('qzResultLine').textContent = '获得 ' + stars + ' ⭐ · 积分 +' + jifen;
 
     var wl = App.el('qzWrongList');
     wl.innerHTML = '';

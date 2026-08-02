@@ -164,6 +164,8 @@
 
     data = App.store.load();
     App.addStars(data, 'yingyu', stars);
+    var jifen = score === 10 ? 3 : 2;
+    App.addJifen(data, jifen);
     App.logActivity(data, '单词测验 ' + score + '/10');
 
     qz.wrong.forEach(function (w) {
@@ -176,7 +178,7 @@
     App.el('quizScreen').classList.add('hidden');
     App.el('qzResultEmoji').textContent = emoji;
     App.el('qzResultScore').textContent = score + ' / 10';
-    App.el('qzResultLine').textContent = '获得 ' + stars + ' ⭐';
+    App.el('qzResultLine').textContent = '获得 ' + stars + ' ⭐ · 积分 +' + jifen;
 
     var wl = App.el('qzWrongList');
     wl.innerHTML = '';

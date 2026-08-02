@@ -187,13 +187,15 @@
     var min = Math.floor(elapsed / 60), sec = elapsed % 60;
 
     App.addStars(data, 'shuxue', stars);
+    var jifen = score === 10 ? 3 : 2;
+    App.addJifen(data, jifen);
     App.logActivity(data, '口算 ' + state.level.name + ' ' + score + '/10');
     App.setStarsUI();
 
     App.el('gameScreen').classList.add('hidden');
     App.el('resultEmoji').textContent = emoji;
     App.el('resultScore').textContent = score + ' / 10';
-    App.el('resultLine').textContent = '用时 ' + min + ' 分 ' + sec + ' 秒 · 获得 ' + stars + ' ⭐';
+    App.el('resultLine').textContent = '用时 ' + min + ' 分 ' + sec + ' 秒 · ' + stars + ' ⭐ · 积分 +' + jifen;
 
     var wl = App.el('wrongList');
     wl.innerHTML = '';

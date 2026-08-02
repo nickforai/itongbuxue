@@ -13,7 +13,10 @@
 
   function defaultData() {
     return {
-      stars: { yuwen: 0, shuxue: 0, yingyu: 0, kexue: 0 },
+      stars: { yuwen: 0, shuxue: 0, yingyu: 0, kexue: 0, game: 0 },
+      jifen: 0,
+      chances: 0,
+      games: { played: 0, won: 0 },
       checkins: [],
       wrong: { shuxue: [], yingyu: [], kexue: [] },
       awarded: { poems: {}, quizzes: {} },
@@ -71,7 +74,30 @@
   }
 
   function totalStars(data) {
-    return (data.stars.yuwen || 0) + (data.stars.shuxue || 0) + (data.stars.yingyu || 0) + (data.stars.kexue || 0);
+    var sum = 0;
+    for (var k in data.stars) sum += data.stars[k] || 0;
+    return sum;
+  }
+
+  function addJifen(data, n) {
+    data.jifen = (data.jifen || 0) + n;
+    store.save(data);
+  }
+
+  function redeemChance(data) {
+    if ((data.jifen || 0) < 5) return false;
+    data.jifen -= 5;
+    data.chances = (data.chances || 0) + 1;
+    store.save(data);
+    return true;
+  }
+
+  function useChance(data) {
+    if ((data.chances || 0) < 1) return false;
+    data.chances -= 1;
+    data.games.played = (data.games.played || 0) + 1;
+    store.save(data);
+    return true;
   }
 
   function logActivity(data, activity) {
@@ -169,6 +195,9 @@
     todayStr: todayStr,
     streakDays: streakDays,
     addStars: addStars,
+    addJifen: addJifen,
+    redeemChance: redeemChance,
+    useChance: useChance,
     totalStars: totalStars,
     logActivity: logActivity,
     toast: toast,

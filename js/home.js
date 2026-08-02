@@ -9,6 +9,12 @@
   App.el('todayLabel').textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日 · 星期' + week[d.getDay()];
   App.el('streakBadge').textContent = '🔥 连续 ' + App.streakDays(data.checkins) + ' 天';
   App.setStarsUI();
+  document.querySelectorAll('[data-jifen-key]').forEach(function (node) {
+    node.textContent = '💰 ' + data.jifen + ' 积分';
+  });
+  document.querySelectorAll('[data-chances-key]').forEach(function (node) {
+    node.textContent = '🎮 机会 ' + data.chances;
+  });
 
   var btn = App.el('checkinBtn');
   var today = App.todayStr();
@@ -34,6 +40,10 @@
     btn.disabled = true;
     App.el('streakBadge').textContent = '🔥 连续 ' + App.streakDays(data.checkins) + ' 天';
     App.setStarsUI();
-    App.toast('打卡成功，+4⭐ 真棒！');
+    App.addJifen(data, 1);
+    document.querySelectorAll('[data-jifen-key]').forEach(function (node) {
+      node.textContent = '💰 ' + data.jifen + ' 积分';
+    });
+    App.toast('打卡成功，+4⭐ +1积分！');
   });
 })();

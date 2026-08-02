@@ -62,11 +62,12 @@
     if (doneToday(p.id)) return;
     data.awarded.poems[p.id] = today;
     App.addStars(data, 'yuwen', 1);
+    App.addJifen(data, 2);
     App.logActivity(data, '背诗《' + p.title + '》');
     App.setStarsUI();
     renderDetail();
     renderList();
-    App.toast('《' + p.title + '》背得真棒，+1⭐！');
+    App.toast('《' + p.title + '》背得真棒，+1⭐ +2积分！');
   });
 
   App.el('prevBtn').addEventListener('click', function () {

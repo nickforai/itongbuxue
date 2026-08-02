@@ -23,6 +23,8 @@ async function main() {
   });
   const ctx = await browser.newContext({ viewport: { width: 820, height: 1180 } });
   const page = await ctx.newPage();
+  page.setDefaultTimeout(12000);
+  page.setDefaultNavigationTimeout(15000);
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
@@ -39,6 +41,7 @@ async function main() {
   await sleep(300);
   assert((await page.textContent('#checkinBtn')).includes('已打卡'), '打卡后按钮状态变化');
   assert((await page.textContent('[data-star-key="total"]')).includes('4'), '打卡 +4 星');
+  assert((await page.textContent('[data-jifen-key]')).includes('1'), '打卡 +1 积分');
   await shot(page, 'home');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
@@ -119,8 +122,73 @@ async function main() {
   await page.goto(BASE + 'parent.html', { waitUntil: 'networkidle' });
   assert((await page.locator('.week-bars .bar-col').count()) === 7, '7 天统计柱');
   assert(parseInt(await page.textContent('#stTotal'), 10) >= 5, '总星星统计正常');
+  assert(parseInt(await page.textContent('#stJifen'), 10) >= 5, '家长页积分统计正常');
   assert((await page.textContent('#wrongShuxue')).length > 0, '错题本区域渲染');
   await shot(page, 'parent');
+  assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
+
+  /* ---------- 斗地主 ---------- */
+  console.log('\n[7] 斗地主');
+  fresh();
+  await page.goto(BASE + 'doudizhu.html', { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    d.jifen = 12;
+    d.chances = 0;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert((await page.textContent('#lobbyJifen')) === '12', '积分显示 12');
+  await page.click('#redeemBtn');
+  await sleep(200);
+  assert((await page.textContent('#lobbyChances')) === '1', '5 积分兑换后机会 = 1');
+  assert((await page.textContent('#lobbyJifen')) === '7', '兑换后积分 = 7');
+  await page.click('#redeemBtn');
+  await sleep(200);
+  assert((await page.textContent('#lobbyChances')) === '2', '再兑换机会 = 2');
+  await page.click('#startBtn');
+  await page.waitForSelector('#game:not(.hidden)', { timeout: 3000 });
+  await sleep(1500);
+  const handCount = await page.locator('#myHand .ddz-card').count();
+  assert(handCount >= 17 && handCount <= 20, '发牌正常（' + handCount + ' 张）');
+  // 处理叫地主（如果轮到我）并等到我的回合
+  let myTurn = false;
+  for (let i = 0; i < 40 && !myTurn; i++) {
+    if (await page.locator('#bidRow:not(.hidden)').count()) {
+      await page.click('#bidYes', { timeout: 3000 });
+      await sleep(300);
+      continue;
+    }
+    if (await page.locator('#actionRow:not(.hidden)').count()) myTurn = true;
+    else await sleep(400);
+  }
+  assert(myTurn, '等到我的回合（含叫地主处理）');
+  // 点提示：能出则选中牌并出牌；要不起则自动不出
+  await page.click('#btnHint');
+  await sleep(250);
+  const picked = await page.locator('#myHand .ddz-card.sel').count();
+  if (picked >= 1) {
+    const before = await page.locator('#myHand .ddz-card').count();
+    await page.click('#btnPlay');
+    await sleep(300);
+    const after = await page.locator('#myHand .ddz-card').count();
+    assert(after === before - picked, '提示选中 ' + picked + ' 张并成功出牌');
+  } else {
+    const actionHidden = await page.locator('#actionRow.hidden').count();
+    const passLogged = await page.locator('#historyBox .hist-pass').count();
+    assert(actionHidden === 1 && passLogged >= 1, '要不起时提示自动不出并记录');
+  }
+  assert((await page.locator('#historyBox .hist-row').count()) >= 1, '出牌记录已生成');
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1'));
+    d.chances = 0;
+    d.jifen = 3;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert(await page.locator('#redeemBtn').isDisabled(), '积分不足时兑换按钮禁用');
+  assert(await page.locator('#startBtn').isDisabled(), '没有机会时开始按钮禁用');
+  await shot(page, 'doudizhu');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
   await browser.close();

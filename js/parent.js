@@ -18,6 +18,10 @@
     App.el('stShuxue').textContent = data.stars.shuxue || 0;
     App.el('stYingyu').textContent = data.stars.yingyu || 0;
     App.el('stKexue').textContent = data.stars.kexue || 0;
+    App.el('stGame').textContent = data.stars.game || 0;
+    App.el('stJifen').textContent = data.jifen || 0;
+    App.el('stChances').textContent = data.chances || 0;
+    App.el('stGames').textContent = (data.games.won || 0) + ' / ' + (data.games.played || 0);
 
     /* 最近 7 天柱状图 */
     var days = [];

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="斗地主">
+  <meta name="format-detection" content="telephone=no">
+  <title>斗地主 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🃏 斗地主</h1>
+      <div class="star-pill" id="chancePill">🎮 0</div>
+      <div class="star-pill" id="jifenPill">💰 0</div>
+    </div>
+
+    <!-- 大厅：积分与兑换 -->
+    <section id="lobby">
+      <div class="panel">
+        <h2>🎮 游戏大厅</h2>
+        <p style="color:var(--muted);font-size:.92rem;line-height:1.7;margin-bottom:14px">
+          你和两个机器人打斗地主：完成作业赚积分，<b>5 积分 = 1 次游戏机会</b>。
+          每赢一局奖励 1 颗星，输掉不扣积分。
+        </p>
+        <div class="stat-grid" style="margin-bottom:16px">
+          <div class="stat-cell"><div class="sv" id="lobbyJifen">0</div><div class="sl">💰 积分</div></div>
+          <div class="stat-cell"><div class="sv" id="lobbyChances">0</div><div class="sl">🎮 游戏机会</div></div>
+        </div>
+        <button class="btn btn-green" id="redeemBtn">🔄 兑换 1 次机会（-5 积分）</button>
+        <div style="height:12px"></div>
+        <button class="btn btn-gold" id="startBtn">🎮 开始游戏</button>
+      </div>
+      <div class="panel" style="color:var(--muted);font-size:.85rem;line-height:1.7">
+        <b style="color:var(--ink)">怎么赚积分？</b><br>
+        📅 每天打卡 +1 · 🔢 口算一轮 +2（全对 +3）· 📖 背一首诗 +2 · 🔤 单词测验 +2（全对 +3）· 🔬 科学问答 +2（全对 +3）
+      </div>
+    </section>
+
+    <!-- 对局 -->
+    <section id="game" class="hidden">
+      <div class="ddz-table">
+        <div class="ddz-bots">
+          <div class="ddz-bot" id="bot1">
+            <div class="bot-head">🤖 小蓝<span class="landlord-tag hidden" id="landlordTag1">地主</span></div>
+            <div class="bot-cards" id="bot1Back"></div>
+            <div class="bot-play" id="bot1Play"></div>
+          </div>
+          <div class="ddz-bot" id="bot2">
+            <div class="bot-head">🤖 小红<span class="landlord-tag hidden" id="landlordTag2">地主</span></div>
+            <div class="bot-cards" id="bot2Back"></div>
+            <div class="bot-play" id="bot2Play"></div>
+          </div>
+        </div>
+
+        <div class="ddz-center">
+          <div class="ddz-bottom" id="bottomCards"></div>
+          <div class="ddz-status" id="ddzStatus">准备开始…</div>
+          <div class="ddz-turn" id="ddzTurn"></div>
+          <div class="bid-row hidden" id="bidRow">
+            <button class="btn btn-gold" id="bidYes">🙋 叫地主</button>
+            <button class="btn btn-ghost" id="bidNo">不叫</button>
+          </div>
+        </div>
+
+        <div class="ddz-mine">
+          <div class="ddz-my-play" id="myPlay"></div>
+          <div class="ddz-hand" id="myHand"></div>
+          <div class="ddz-actions" id="actionRow">
+            <button class="btn btn-gold" id="btnPlay">出牌</button>
+            <button class="btn btn-ghost" id="btnPass">不出</button>
+            <button class="btn btn-blue" id="btnHint">💡 提示</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel ddz-history">
+        <div class="hist-title">📜 出牌记录</div>
+        <div class="hist-scroll" id="historyBox"></div>
+      </div>
+    </section>
+
+    <!-- 结算 -->
+    <section id="overlay" class="hidden">
+      <div class="panel result-box">
+        <div class="result-emoji" id="overEmoji"></div>
+        <div class="result-score" id="overTitle"></div>
+        <div class="result-line" id="overLine"></div>
+        <button class="btn btn-gold" id="overAgain">🔄 再来一局</button>
+        <div style="height:12px"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="overHome">🏠 回首页</button>
+          <button class="btn btn-ghost" id="overLobby">🎮 游戏大厅</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/doudizhu-core.js"></script>
+  <script src="js/doudizhu.js"></script>
+</body>
+</html>

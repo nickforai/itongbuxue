@@ -11,6 +11,7 @@ var ASSETS = [
   './yingyu.html',
   './kexue.html',
   './parent.html',
+  './doudizhu.html',
   './manifest.json',
   './css/style.css',
   './js/common.js',
@@ -21,6 +22,8 @@ var ASSETS = [
   './js/yingyu.js',
   './js/kexue.js',
   './js/parent.js',
+  './js/doudizhu-core.js',
+  './js/doudizhu.js',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png'
