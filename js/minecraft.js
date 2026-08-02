@@ -535,6 +535,9 @@
       },
       sheepLying: function () {
         return mobs.filter(function (m) { return m.type === 'sheep'; }).every(function (m) { return !!m.lying; });
+      },
+      pos: function () {
+        return { x: camera.position.x, y: camera.position.y, z: camera.position.z };
       }
     };
   }

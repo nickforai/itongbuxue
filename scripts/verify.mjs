@@ -147,12 +147,14 @@ async function main() {
   });
   await page.click('#recBtn');
   await sleep(150);
-  assert((await page.textContent('#recBtn')).includes('停止录音'), '开始录音后按钮变为停止');
+  assert((await page.textContent('#recBtn')).includes('停止背诵'), '开始背诵后按钮变为停止背诵');
+  assert((await page.locator('#poemLines.hidden').count()) === 1, '背诵时原文被遮住');
   await page.click('#recBtn');
   assert((await page.textContent('#recBtn')).includes('正在计算得分'), '停止后显示计算中状态');
   await sleep(900);
   assert((await page.textContent('#recResult')).includes('没有识别到内容'), '空识别给出重试提示');
-  assert((await page.textContent('#recBtn')).includes('开始录音'), '按钮恢复为开始录音');
+  assert((await page.textContent('#recBtn')).includes('开始背诵'), '按钮恢复为开始背诵');
+  assert((await page.locator('#poemLines.hidden').count()) === 0, '结束后原文恢复显示');
   const pageErrorsAfter = errors.filter((e) => e.startsWith('pageerror')).length;
   assert(pageErrorsAfter === pageErrorsBefore, '录音评分无页面崩溃');
   await shot(page, 'yuwen');
@@ -407,7 +409,7 @@ async function main() {
   assert((await page.textContent('#mcHunger')).includes('🍗'), '饥饿值 HUD 显示');
   assert((await page.locator('#mcAttack').count()) === 1, '攻击按钮存在');
   assert((await page.locator('#mcDown.hidden').count()) === 1, '生存模式下降按钮隐藏');
-  await page.evaluate(() => { window.__mc.setTime(0.75); });
+  await page.evaluate(() => { window.__mc.setTime(0.9); });
   let hostileCount = 0;
   for (let i = 0; i < 16 && hostileCount < 1; i++) {
     await sleep(500);

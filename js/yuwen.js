@@ -45,6 +45,7 @@
     var p = window.Poems[idx];
     App.el('poemTitle').textContent = '《' + p.title + '》';
     App.el('poemAuthor').textContent = p.author;
+    App.el('poemLines').classList.remove('hidden');
     App.el('poemLines').innerHTML = p.lines.map(function (l) {
       return '<div>' + l + '</div>';
     }).join('');
@@ -99,7 +100,7 @@
 
   function resetRecBtn() {
     var btn = App.el('recBtn');
-    btn.textContent = '🎤 开始录音';
+    btn.textContent = '🎤 开始背诵';
     btn.classList.remove('recording');
     btn.disabled = false;
   }
@@ -110,6 +111,7 @@
       try { rec.onend = null; rec.stop(); } catch (e) { /* ignore */ }
       rec = null;
     }
+    App.el('poemLines').classList.remove('hidden');
     resetRecBtn();
   }
 
@@ -129,9 +131,10 @@
       rec.interimResults = true;
       recFinal = '';
       recording = true;
-      App.el('recBtn').textContent = '⏹ 停止录音';
+      App.el('recBtn').textContent = '⏹ 停止背诵';
       App.el('recBtn').classList.add('recording');
-      App.el('recLive').textContent = '🎙️ 正在听…请大声朗读这首诗';
+      App.el('poemLines').classList.add('hidden');
+      App.el('recLive').textContent = '🙈 原文已遮住，凭记忆大声背诵吧！';
       App.el('recResult').classList.add('hidden');
 
       rec.onresult = function (e) {
@@ -160,6 +163,7 @@
         }
         recording = false;
         if (!computing) resetRecBtn();
+        App.el('poemLines').classList.remove('hidden');
       };
       rec.onend = function () {
         if (recording) finishRec();
@@ -190,6 +194,7 @@
   function finishRec() {
     recording = false;
     resetRecBtn();
+    App.el('poemLines').classList.remove('hidden');
     var p = window.Poems[idx];
     var text = recFinal;
     App.el('recLive').textContent = text || '（没有识别到内容，再试一次）';
