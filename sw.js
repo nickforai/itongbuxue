@@ -1,7 +1,7 @@
 /* 学习乐园 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v17';
+var CACHE = 'xx3-v18';
 
 var ASSETS = [
   './',
@@ -63,6 +63,21 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') return;
+  // 页面（导航）优先走网络，确保永远拿到最新版，避免和新 JS 不匹配
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then(function (res) {
+        var copy = res.clone();
+        caches.open(CACHE).then(function (cache) { cache.put(event.request, copy); });
+        return res;
+      }).catch(function () {
+        return caches.match(event.request).then(function (hit) {
+          return hit || caches.match('./index.html');
+        });
+      })
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then(function (hit) {
       if (hit) return hit;

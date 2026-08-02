@@ -119,11 +119,14 @@
     openChar((idx + 1) % window.CHARS[grade].length);
   });
 
-  App.el('strokeReplay').addEventListener('click', function () {
-    if (writer) {
-      try { writer.animateCharacter(); } catch (e) { App.toast('重写失败，请重试'); }
-    }
-  });
+  var replayBtn = App.el('strokeReplay');
+  if (replayBtn) {
+    replayBtn.addEventListener('click', function () {
+      if (writer) {
+        try { writer.animateCharacter(); } catch (e) { App.toast('重写失败，请重试'); }
+      }
+    });
+  }
 
   loadGrade();
   renderGrades();
