@@ -9,6 +9,7 @@
   var rec = null;
   var recording = false;
   var recFinal = '';
+  var computing = false;
 
   function doneToday(poemId) {
     return data.awarded.poems[poemId] === today;
@@ -115,8 +116,13 @@
   function startRec() {
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { App.toast('此设备不支持录音识别'); return; }
+    if (!window.isSecureContext) {
+      App.toast('语音识别需要安全连接：请用 https 网址打开学习乐园');
+      return;
+    }
     App.stopSpeak();
     try {
+      computing = false;
       rec = new SR();
       rec.lang = 'zh-CN';
       rec.continuous = true;
@@ -138,15 +144,22 @@
         App.el('recLive').textContent = (recFinal + interim) || '🎙️ 正在听…';
       };
       rec.onerror = function (e) {
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-          App.toast('请允许使用麦克风才能录音');
-        } else if (e.error === 'no-speech') {
-          App.toast('没有听清，再试一次');
+        var err = e.error || 'unknown';
+        if (err === 'aborted') return; // 正常停止触发，忽略
+        if (computing) return; // 已经在算分中，忽略
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          App.toast('麦克风权限被拒绝：在 Safari 地址栏左侧点「权限」允许麦克风');
+        } else if (err === 'no-speech') {
+          App.toast('没有听清，请靠近麦克风大声读');
+        } else if (err === 'network') {
+          App.toast('语音识别需要网络，请检查网络后重试');
+        } else if (err === 'audio-capture') {
+          App.toast('麦克风没有声音，检查是否被其他应用占用');
         } else {
-          App.toast('识别出错：' + e.error);
+          App.toast('识别出错：' + err + '，请重试');
         }
         recording = false;
-        resetRecBtn();
+        if (!computing) resetRecBtn();
       };
       rec.onend = function () {
         if (recording) finishRec();
@@ -160,12 +173,18 @@
   }
 
   function stopAndFinish() {
-    if (!rec) return;
-    // 中间状态：告诉孩子正在算分
+    if (!rec || computing) return;
+    computing = true;
+    recording = false;
+    // 中间状态：至少停留一小段时间，让孩子看到"正在计算"
     var btn = App.el('recBtn');
     btn.textContent = '⏳ 正在计算得分中…';
     btn.disabled = true;
-    try { rec.stop(); } catch (e) { finishRec(); }
+    try { rec.stop(); } catch (e) { /* ignore */ }
+    setTimeout(function () {
+      computing = false;
+      finishRec();
+    }, 700);
   }
 
   function finishRec() {

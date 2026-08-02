@@ -95,9 +95,10 @@ async function main() {
   assert(sc.p60.points === 1 && sc.p60.accuracy >= 60, '60-80% 得 1 分');
   assert(sc.low.points === 0 && sc.low.accuracy < 60, '低于 60% 不得分');
   assert(sc.noise.points === 0, '乱读不得分');
-  // 录音评分完整链路：注入模拟语音识别 → 满分 → +3 分 → 总数更新
+  // 录音评分完整链路：注入模拟语音识别
   assert((await page.locator('#recBtn').count()) === 1, '录音按钮存在');
   const pageErrorsBefore = errors.filter((e) => e.startsWith('pageerror')).length;
+  // 场景1：识别自动完成 → 满分 → +3 分 → 总数更新
   await page.evaluate(() => {
     window.FakeSR = class {
       constructor() {
@@ -130,6 +131,28 @@ async function main() {
   const recText = await page.textContent('#recResult');
   assert(recText.includes('准确率 100%') && recText.includes('积分 +3'), '录音满分得 3 分并显示结果');
   assert((await page.textContent('#jifenPill')).includes('💰'), '积分总数已更新');
+  // 场景2：手动停止 → 显示"计算中" → 空识别给出提示
+  await page.evaluate(() => {
+    window.SilentSR = class {
+      constructor() {
+        this.onresult = null;
+        this.onend = null;
+        this.onerror = null;
+      }
+      start() {}
+      stop() {}
+    };
+    window.SpeechRecognition = window.SilentSR;
+    window.webkitSpeechRecognition = window.SilentSR;
+  });
+  await page.click('#recBtn');
+  await sleep(150);
+  assert((await page.textContent('#recBtn')).includes('停止录音'), '开始录音后按钮变为停止');
+  await page.click('#recBtn');
+  assert((await page.textContent('#recBtn')).includes('正在计算得分'), '停止后显示计算中状态');
+  await sleep(900);
+  assert((await page.textContent('#recResult')).includes('没有识别到内容'), '空识别给出重试提示');
+  assert((await page.textContent('#recBtn')).includes('开始录音'), '按钮恢复为开始录音');
   const pageErrorsAfter = errors.filter((e) => e.startsWith('pageerror')).length;
   assert(pageErrorsAfter === pageErrorsBefore, '录音评分无页面崩溃');
   await shot(page, 'yuwen');
