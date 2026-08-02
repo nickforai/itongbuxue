@@ -338,6 +338,10 @@ async function main() {
   await page.evaluate(() => { window.__mc.selectItem('brick'); });
   assert((await page.evaluate(() => window.__mc.currentType())) === 'brick', '拖到快捷栏可选中方块');
   assert((await page.evaluate(() => window.__mc.sheepLying())) === true, '羊是趴着的');
+  assert((await page.evaluate(() => window.__mc.animalCount('pig'))) >= 1, '有粉色的猪');
+  assert((await page.evaluate(() => window.__mc.animalCount('cow'))) >= 1, '有棕色的牛');
+  assert((await page.evaluate(() => window.__mc.dropMeat('pig'))) === 2, '猪掉 2 肉');
+  assert((await page.evaluate(() => window.__mc.dropMeat('cow'))) === 5, '牛掉 5 肉');
   // 触摸手势冒烟测试：点按放置、长按挖方块（无报错即可）
   await page.mouse.move(650, 520);
   await page.mouse.down();

@@ -534,6 +534,8 @@
     bedPoint = null;
     spawnSheep(3);
     spawnVillagers(5);
+    spawnPigs(2);
+    spawnCows(1);
 
     bindControls();
     renderHotbar();
@@ -600,6 +602,14 @@
       },
       sheepLying: function () {
         return mobs.filter(function (m) { return m.type === 'sheep'; }).every(function (m) { return !!m.lying; });
+      },
+      animalCount: function (type) {
+        return mobs.filter(function (m) { return m.type === type; }).length;
+      },
+      dropMeat: function (type) {
+        var before = backpack.raw_meat || 0;
+        mobDrops({ type: type });
+        return (backpack.raw_meat || 0) - before;
       },
       pos: function () {
         return { x: camera.position.x, y: camera.position.y, z: camera.position.z };
@@ -897,20 +907,36 @@
     }
   }
 
+  function spawnPigs(n) {
+    for (var i = 0; i < n; i++) {
+      var x = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+      var z = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+      addMob('pig', x, groundY(x, z), z);
+    }
+  }
+
+  function spawnCows(n) {
+    for (var i = 0; i < n; i++) {
+      var x = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+      var z = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+      addMob('cow', x, groundY(x, z), z);
+    }
+  }
+
   function addMob(type, x, y, z) {
     var mob = {
       type: type,
       pos: { x: x, y: y, z: z },
-      hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : 3,
-      speed: type === 'sheep' || type === 'villager' ? 1.4 : 2.4,
+      hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : type === 'cow' ? 6 : type === 'pig' ? 4 : 3,
+      speed: type === 'sheep' || type === 'villager' || type === 'pig' || type === 'cow' ? 1.4 : 2.4,
       lying: type === 'sheep',
       dir: null,
       wanderUntil: 0,
       nextAtk: 0,
       flashUntil: 0
     };
-    var bodyColor = type === 'zombie' ? 0x4CAF50 : type === 'skeleton' ? 0xE8E8E8 : type === 'villager' ? 0x6B8E4E : 0xFFFFFF;
-    var headColor = type === 'zombie' ? 0x2E7D32 : type === 'skeleton' ? 0xD5D5D5 : type === 'villager' ? 0xF0C8A0 : 0xFFF3D0;
+    var bodyColor = type === 'zombie' ? 0x4CAF50 : type === 'skeleton' ? 0xE8E8E8 : type === 'villager' ? 0x6B8E4E : type === 'pig' ? 0xF4A7B9 : type === 'cow' ? 0x8B5A2B : 0xFFFFFF;
+    var headColor = type === 'zombie' ? 0x2E7D32 : type === 'skeleton' ? 0xD5D5D5 : type === 'villager' ? 0xF0C8A0 : type === 'pig' ? 0xE98CA6 : type === 'cow' ? 0x6E4520 : 0xFFF3D0;
     var group = new THREE.Group();
     var body, head;
     if (type === 'sheep') {
@@ -924,6 +950,25 @@
         leg.position.set(p[0], 0.16, p[1]);
         group.add(leg);
       });
+    } else if (type === 'pig' || type === 'cow') {
+      // 四脚站立的猪/牛
+      var scale = type === 'cow' ? 1.2 : 1;
+      body = new THREE.Mesh(new THREE.BoxGeometry(0.55 * scale, 0.5 * scale, 0.95 * scale), new THREE.MeshLambertMaterial({ color: bodyColor }));
+      body.position.y = 0.62 * scale;
+      head = new THREE.Mesh(new THREE.BoxGeometry(0.38 * scale, 0.38 * scale, 0.38 * scale), new THREE.MeshLambertMaterial({ color: headColor }));
+      head.position.set(0, 0.75 * scale, 0.62 * scale);
+      [[-0.18, -0.32], [0.18, -0.32], [-0.18, 0.32], [0.18, 0.32]].forEach(function (p) {
+        var leg = new THREE.Mesh(new THREE.BoxGeometry(0.12 * scale, 0.4 * scale, 0.12 * scale), new THREE.MeshLambertMaterial({ color: 0xE0D8D0 }));
+        leg.position.set(p[0] * scale, 0.2 * scale, p[1] * scale);
+        group.add(leg);
+      });
+      if (type === 'cow') {
+        [[-0.2, 0], [0.2, 0]].forEach(function (p) {
+          var horn = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.13), new THREE.MeshLambertMaterial({ color: 0xF5F0E6 }));
+          horn.position.set(p[0], 0.94, 0.62);
+          group.add(horn);
+        });
+      }
     } else {
       body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.4), new THREE.MeshLambertMaterial({ color: bodyColor }));
       body.position.y = 0.7;
@@ -971,6 +1016,10 @@
       if (Math.random() < 0.25) drops.push(['apple', 1]);
     } else if (mob.type === 'skeleton') {
       if (Math.random() < 0.4) drops.push(['stick', 1]);
+    } else if (mob.type === 'pig') {
+      drops.push(['raw_meat', 2]); // 猪掉 2 肉
+    } else if (mob.type === 'cow') {
+      drops.push(['raw_meat', 5]); // 牛掉 5 肉
     } else {
       drops.push(['wool', 1 + (Math.random() < 0.5 ? 1 : 0)]);
       drops.push(['raw_meat', 1]); // 羊掉肉
@@ -1613,17 +1662,21 @@
         var gy = groundY(mx, mz);
         if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
       }
-    } else if (mobs.filter(function (m) { return m.type === 'sheep'; }).length < 2) {
-      if (Math.random() < dt * 0.1) {
-        var sx = Math.floor(rnd(-BOUND + 3, BOUND - 3));
-        var sz = Math.floor(rnd(-BOUND + 3, BOUND - 3));
-        addMob('sheep', sx, groundY(sx, sz), sz);
-      }
+    } else {
+      // 白天补充动物（羊/猪/牛保持一定数量）
+      [['sheep', 2], ['pig', 2], ['cow', 1]].forEach(function (spec) {
+        var t = spec[0], min = spec[1];
+        if (mobs.filter(function (m) { return m.type === t; }).length < min && Math.random() < dt * 0.08) {
+          var sx = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+          var sz = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+          addMob(t, sx, groundY(sx, sz), sz);
+        }
+      });
     }
 
     for (var i = mobs.length - 1; i >= 0; i--) {
       var m = mobs[i];
-      if (m.type === 'sheep' || m.type === 'villager') {
+      if (m.type === 'sheep' || m.type === 'villager' || m.type === 'pig' || m.type === 'cow') {
         if (!m.wanderUntil || now > m.wanderUntil) {
           m.wanderUntil = now + rnd(1500, 3500);
           if (Math.random() < 0.7) {
