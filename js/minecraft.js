@@ -19,16 +19,25 @@
     door_open: { name: '门（开）', color: 0x7A5230, kind: 'block' },
     workbench: { name: '工作台', color: 0xC98A3D, kind: 'block' },
     bed: { name: '床', color: 0xE8508A, kind: 'block' },
+    coal_ore: { name: '煤矿石', color: 0x3A3A3A, kind: 'block' },
+    iron_ore: { name: '铁矿石', color: 0xB87333, kind: 'block' },
+    furnace: { name: '熔炉', color: 0x777777, kind: 'block' },
     stick: { name: '木棒', color: 0xC49A5C, emoji: '🥢', kind: 'material' },
     wool: { name: '羊毛', color: 0xF5F5F5, emoji: '🐑', kind: 'material' },
+    coal: { name: '煤', color: 0x2C2C2C, emoji: '⬛', kind: 'material' },
+    raw_iron: { name: '粗铁', color: 0xB87333, kind: 'material' },
+    iron_ingot: { name: '铁锭', color: 0xD9D9E3, kind: 'material' },
     apple: { name: '苹果', emoji: '🍎', kind: 'food', value: 3 },
     raw_meat: { name: '生肉', emoji: '🍖', kind: 'food', value: 4 },
+    cooked_meat: { name: '烤肉', emoji: '🥩', kind: 'food', value: 6 },
     sword: { name: '宝剑', emoji: '⚔️', kind: 'tool' },
     pickaxe: { name: '稿子', emoji: '⛏️', kind: 'tool' },
-    axe: { name: '斧头', emoji: '🪓', kind: 'tool' }
+    axe: { name: '斧头', emoji: '🪓', kind: 'tool' },
+    iron_sword: { name: '铁剑', emoji: '⚔️', kind: 'tool' },
+    iron_pickaxe: { name: '铁镐', emoji: '⛏️', kind: 'tool' }
   };
 
-  var HOTBAR = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand', 'brick', 'glass', 'plank', 'door', 'workbench', 'bed'];
+  var HOTBAR = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand', 'brick', 'glass', 'plank', 'door', 'workbench', 'bed', 'furnace'];
 
   var RECIPES = [
     { id: 'planks', name: '木板', result: 'plank', count: 4, need: { wood: 1 } },
@@ -38,7 +47,15 @@
     { id: 'axe', name: '斧头', result: 'axe', count: 1, need: { plank: 3, stick: 2 } },
     { id: 'door', name: '门', result: 'door', count: 1, need: { plank: 4 } },
     { id: 'workbench', name: '工作台', result: 'workbench', count: 1, need: { plank: 4 } },
-    { id: 'bed', name: '床', result: 'bed', count: 1, need: { wool: 3, plank: 3 } }
+    { id: 'bed', name: '床', result: 'bed', count: 1, need: { wool: 3, plank: 3 } },
+    { id: 'furnace', name: '熔炉', result: 'furnace', count: 1, need: { stone: 8 } },
+    { id: 'iron_sword', name: '铁剑', result: 'iron_sword', count: 1, need: { iron_ingot: 2, stick: 1 } },
+    { id: 'iron_pickaxe', name: '铁镐', result: 'iron_pickaxe', count: 1, need: { iron_ingot: 3, stick: 2 } }
+  ];
+
+  var SMELT_RECIPES = [
+    { id: 'smelt_iron', name: '炼铁锭', input: 'raw_iron', fuel: 'coal', result: 'iron_ingot', count: 1 },
+    { id: 'smelt_meat', name: '烤肉', input: 'raw_meat', fuel: 'coal', result: 'cooked_meat', count: 1 }
   ];
 
   var SAVE_KEY = 'xx3_mc_world_v1';
@@ -112,6 +129,21 @@
         }
       }
     }
+    // 矿脉：地下生成煤和铁
+    for (var v = 0; v < 26; v++) {
+      var ox = Math.floor(rng() * 28) - 14;
+      var oz = Math.floor(rng() * 28) - 14;
+      var oy = -1 - Math.floor(rng() * 5);
+      var oreType = 'coal_ore';
+      if (v >= 13) { oreType = 'iron_ore'; oy = -3 - Math.floor(rng() * 3); }
+      var vein = 2 + Math.floor(rng() * 3);
+      var vdx = Math.floor(rng() * 3) - 1;
+      var vdz = Math.floor(rng() * 3) - 1;
+      for (var b = 0; b < vein; b++) {
+        var k = vkey(ox + vdx * b, oy, oz + vdz * b);
+        if (world[k] === 'stone' || world[k] === 'dirt') world[k] = oreType;
+      }
+    }
   }
 
   function applyChanges() {
@@ -175,6 +207,23 @@
     renderBackpack();
     renderCrafting();
     App.toast('合成成功：' + ITEMS[recipe.result].name + ' ×' + recipe.count + '！');
+    return true;
+  }
+
+  function smelt(recipe) {
+    if ((backpack[recipe.input] || 0) < 1 || (backpack[recipe.fuel] || 0) < 1) {
+      App.toast('需要 ' + ITEMS[recipe.input].name + ' 和 ' + ITEMS[recipe.fuel].name);
+      return false;
+    }
+    backpack[recipe.input] -= 1;
+    backpack[recipe.fuel] -= 1;
+    if (backpack[recipe.input] <= 0) delete backpack[recipe.input];
+    if (backpack[recipe.fuel] <= 0) delete backpack[recipe.fuel];
+    backpack[recipe.result] = (backpack[recipe.result] || 0) + recipe.count;
+    scheduleSave();
+    renderBackpack();
+    renderSmelt();
+    App.toast('烧炼成功：' + ITEMS[recipe.result].name + ' ×' + recipe.count + '！');
     return true;
   }
 
@@ -327,11 +376,23 @@
         var r = RECIPES.find(function (x) { return x.id === id; });
         return r ? craft(r) : false;
       },
+      smelt: function (id) {
+        var r = SMELT_RECIPES.find(function (x) { return x.id === id; });
+        return r ? smelt(r) : false;
+      },
       backpack: backpack,
       mode: function () { return mode; },
       mobs: function () { return mobs.length; },
       hostiles: function () { return mobs.filter(function (m) { return m.type !== 'sheep'; }).length; },
-      setTime: function (t) { time = t; }
+      setTime: function (t) { time = t; },
+      selectItem: selectItem,
+      dropItem: dropItem,
+      currentType: function () { return currentType; },
+      ores: function () {
+        return Object.keys(world).filter(function (k) { return world[k] === 'coal_ore' || world[k] === 'iron_ore'; }).length;
+      },
+      placeAt: placeItemAt,
+      blockAt: function (x, y, z) { return world[vkey(x, y, z)] || null; }
     };
   }
 
@@ -420,10 +481,18 @@
       if (world[above] === type) removeVoxel(above, type);
     }
     var drop = type === 'door' || type === 'door_open' ? 'door' : type;
-    var n = 1;
-    if (drop === 'wood' && equipped === 'axe') n += 1;
-    if (drop === 'stone' && equipped === 'pickaxe') n += 1;
-    addItem(drop, n);
+    var needPick = type === 'stone' || type === 'coal_ore' || type === 'iron_ore';
+    if (needPick && equipped !== 'pickaxe' && equipped !== 'iron_pickaxe') {
+      App.toast('没有稿子，挖不出石头/矿石');
+    } else {
+      if (type === 'coal_ore') drop = 'coal';
+      else if (type === 'iron_ore') drop = 'raw_iron';
+      var n = 1;
+      if (drop === 'raw_iron' && equipped === 'iron_pickaxe') n += 1;
+      if (drop === 'stone' && (equipped === 'pickaxe' || equipped === 'iron_pickaxe')) n += 1;
+      if (drop === 'wood' && equipped === 'axe') n += 1;
+      addItem(drop, n);
+    }
     renderBackpack();
     playSound('break');
     scheduleSave();
@@ -446,21 +515,52 @@
     if (world[k]) return;
     if (vx < -16 || vx > 16 || vz < -16 || vz > 16 || vy > 40 || vy < -8) return;
     if (insidePlayer(vx, vy, vz)) return;
-    if (currentType === 'door') {
+    putBlock(currentType, vx, vy, vz);
+  }
+
+  function putBlock(type, vx, vy, vz) {
+    var k = vkey(vx, vy, vz);
+    if (world[k]) return false;
+    if (type === 'door') {
       var top = vkey(vx, vy + 1, vz);
-      if (world[top] || vy + 1 > 40 || insidePlayer(vx, vy + 1, vz)) return;
+      if (world[top] || vy + 1 > 40 || insidePlayer(vx, vy + 1, vz)) return false;
       world[k] = 'door';
       changes[k] = 'door';
       world[top] = 'door';
       changes[top] = 'door';
       rebuildType('door');
     } else {
-      world[k] = currentType;
-      changes[k] = currentType;
-      rebuildType(currentType);
+      world[k] = type;
+      changes[k] = type;
+      rebuildType(type);
     }
     scheduleSave();
     playSound('place');
+    return true;
+  }
+
+  /* 从背包拿出物品放到指定位置（消耗 1 个） */
+  function placeItemAt(id, x, y, z) {
+    if ((backpack[id] || 0) < 1) { App.toast('背包里没有这个'); return false; }
+    if (!ITEMS[id] || ITEMS[id].kind !== 'block') { App.toast('这个不能放出来'); return false; }
+    if (world[vkey(x, y, z)]) return false;
+    if (x < -16 || x > 16 || z < -16 || z > 16 || y > 40 || y < -8) return false;
+    if (insidePlayer(x, y, z)) return false;
+    if (!putBlock(id, x, y, z)) return false;
+    backpack[id] -= 1;
+    if (backpack[id] <= 0) delete backpack[id];
+    scheduleSave();
+    renderBackpack();
+    return true;
+  }
+
+  function placeFromBackpack(id) {
+    var t = getTarget();
+    if (!t) return false;
+    var vx = Math.floor(t.point.x + t.normal.x * 0.05);
+    var vy = Math.floor(t.point.y + t.normal.y * 0.05);
+    var vz = Math.floor(t.point.z + t.normal.z * 0.05);
+    return placeItemAt(id, vx, vy, vz);
   }
 
   function doUse() {
@@ -472,6 +572,7 @@
     var k = vkey(vx, vy, vz);
     var type = world[k];
     if (type === 'workbench') { openCrafting(); return; }
+    if (type === 'furnace') { openSmelt(); return; }
     if (type === 'bed') {
       if (mode !== 'survival') { App.toast('创造模式不用睡觉哦'); return; }
       if (!isNight()) { App.toast('现在睡不着，天黑再睡吧'); return; }
@@ -594,7 +695,7 @@
     if (!mob) return;
     var d = Math.hypot(mob.pos.x - camera.position.x, mob.pos.z - camera.position.z);
     if (d > 8) return;
-    var dmg = equipped === 'sword' ? 4 : 2;
+    var dmg = equipped === 'iron_sword' ? 6 : equipped === 'sword' ? 4 : 2;
     mob.hp -= dmg;
     flashMob(mob);
     var dx = mob.pos.x - camera.position.x;
@@ -749,8 +850,6 @@
       doAttack();
     });
 
-    App.el('mcPackBtn').addEventListener('click', toggleBackpack);
-
     window.addEventListener('keydown', function (e) {
       keys[e.key.toLowerCase()] = true;
       if (e.key >= '1' && e.key <= '9') { currentType = HOTBAR[+e.key - 1] || currentType; renderHotbar(); updateLabel(); }
@@ -775,6 +874,13 @@
   function renderHotbar() {
     var bar = App.el('mcHotbar');
     bar.innerHTML = '';
+    var pack = document.createElement('button');
+    pack.className = 'mc-pack-btn mc-ui';
+    pack.id = 'mcPackBtn';
+    pack.title = '背包';
+    pack.textContent = '🎒';
+    pack.addEventListener('click', toggleBackpack);
+    bar.appendChild(pack);
     HOTBAR.forEach(function (id) {
       var b = ITEMS[id];
       var btn = document.createElement('button');
@@ -788,6 +894,33 @@
       });
       bar.appendChild(btn);
     });
+  }
+
+  function selectItem(id) {
+    if (!ITEMS[id] || ITEMS[id].kind !== 'block') { App.toast('这个不是方块'); return; }
+    currentType = id;
+    renderHotbar();
+    updateLabel();
+    App.toast('已选中：' + ITEMS[id].name);
+  }
+
+  function dropItem(id) {
+    var it = ITEMS[id];
+    if (!it) return;
+    if (it.kind === 'tool') {
+      equipped = equipped === id ? null : id;
+      scheduleSave();
+      renderBackpack();
+      updateLabel();
+      App.toast(equipped ? '已装备 ' + ITEMS[equipped].name : '已收起工具');
+    } else if (it.kind === 'food') {
+      eatItem(id);
+    } else if (it.kind === 'block') {
+      if (placeFromBackpack(id)) App.toast('已把 ' + it.name + ' 放出来了');
+      else App.toast('这里放不下，换个位置试试');
+    } else {
+      App.toast('这个物品不能拿出来');
+    }
   }
 
   function updateLabel() {
@@ -821,7 +954,8 @@
     ids.sort().forEach(function (id) {
       var it = ITEMS[id];
       var row = document.createElement('div');
-      row.className = 'mc-pack-row';
+      row.className = 'mc-pack-row' + (it.kind === 'block' ? ' draggable' : '');
+      row.setAttribute('data-drag', id);
       var action = '';
       if (it.kind === 'tool') {
         action = equipped === id
@@ -850,6 +984,65 @@
         eatItem(btn.getAttribute('data-eat'));
       });
     });
+    box.querySelectorAll('[data-drag]').forEach(bindDragRow);
+  }
+
+  function bindDragRow(row) {
+    var id = row.getAttribute('data-drag');
+    var timer = null, dragging = false, moved = false, sx = 0, sy = 0;
+    var ghost = null;
+    function startDrag(e) {
+      dragging = true;
+      row.classList.add('dragging');
+      ghost = document.createElement('div');
+      ghost.className = 'mc-drag-ghost';
+      ghost.innerHTML = itemIcon(id);
+      ghost.style.left = e.clientX + 'px';
+      ghost.style.top = e.clientY + 'px';
+      document.body.appendChild(ghost);
+    }
+    function endDrag(e) {
+      clearTimeout(timer);
+      if (dragging) {
+        if (ghost) ghost.remove();
+        row.classList.remove('dragging');
+        var bar = App.el('mcHotbar');
+        var r = bar.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          selectItem(id);
+        } else {
+          dropItem(id);
+        }
+        dragging = false;
+      }
+    }
+    function cancelDrag() {
+      clearTimeout(timer);
+      if (dragging && ghost) ghost.remove();
+      row.classList.remove('dragging');
+      dragging = false;
+    }
+    row.addEventListener('pointerdown', function (e) {
+      sx = e.clientX; sy = e.clientY; moved = false;
+      timer = setTimeout(function () {
+        if (!moved) {
+          row.setPointerCapture(e.pointerId);
+          startDrag(e);
+        }
+      }, 320);
+    });
+    row.addEventListener('pointermove', function (e) {
+      if (Math.hypot(e.clientX - sx, e.clientY - sy) > 12) moved = true;
+      if (dragging && ghost) {
+        ghost.style.left = e.clientX + 'px';
+        ghost.style.top = e.clientY + 'px';
+      }
+    });
+    row.addEventListener('pointerup', function (e) {
+      if (dragging) endDrag(e);
+      else clearTimeout(timer);
+    });
+    row.addEventListener('pointercancel', cancelDrag);
   }
 
   function toggleBackpack() {
@@ -867,6 +1060,7 @@
   function closeOverlays() {
     App.el('mcBackpack').classList.add('hidden');
     App.el('mcCraftPanel').classList.add('hidden');
+    App.el('mcSmeltPanel').classList.add('hidden');
   }
 
   function renderCrafting() {
@@ -896,6 +1090,36 @@
 
   App.el('mcPackClose').addEventListener('click', function () { App.el('mcBackpack').classList.add('hidden'); });
   App.el('mcCraftClose').addEventListener('click', function () { App.el('mcCraftPanel').classList.add('hidden'); });
+  App.el('mcSmeltClose').addEventListener('click', function () { App.el('mcSmeltPanel').classList.add('hidden'); });
+
+  function openSmelt() {
+    closeOverlays();
+    App.el('mcSmeltPanel').classList.remove('hidden');
+    renderSmelt();
+  }
+
+  function renderSmelt() {
+    var box = App.el('mcSmeltList');
+    box.innerHTML = '';
+    SMELT_RECIPES.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'mc-recipe';
+      var ok = (backpack[r.input] || 0) >= 1 && (backpack[r.fuel] || 0) >= 1;
+      row.innerHTML =
+        '<div class="mc-recipe-left">' + itemIcon(r.input) + '<span>' + ITEMS[r.input].name + '×1</span>' +
+        '<span class="mc-recipe-plus">+</span>' + itemIcon(r.fuel) + '<span>煤×1</span></div>' +
+        '<div class="mc-recipe-arrow">→</div>' +
+        '<div class="mc-recipe-result">' + itemIcon(r.result) + '<span>' + ITEMS[r.result].name + '×' + r.count + '</span></div>' +
+        '<button class="mc-recipe-btn' + (ok ? '' : ' off') + '" data-smelt="' + r.id + '"' + (ok ? '' : ' disabled') + '>烧炼</button>';
+      box.appendChild(row);
+    });
+    box.querySelectorAll('[data-smelt]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var r = SMELT_RECIPES.find(function (x) { return x.id === btn.getAttribute('data-smelt'); });
+        if (r) smelt(r);
+      });
+    });
+  }
 
   /* ---------- 主循环 ---------- */
   function updateDayNight(dt) {

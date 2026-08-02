@@ -1029,14 +1029,14 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 
 .mc-pack-btn {
-  position: absolute;
-  top: calc(16px + env(safe-area-inset-top));
-  left: 14px;
-  background: rgba(20, 20, 35, 0.75);
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
-  border-radius: 16px;
-  padding: 12px 14px;
   font-size: 1.2rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
 }
 
 .mc-overlay {
@@ -1121,6 +1121,20 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   font-weight: 800;
 }
 .mc-recipe-btn.off { background: #E2E2EC; color: var(--muted); }
+
+.mc-pack-row.draggable { cursor: grab; }
+.mc-pack-row.dragging { opacity: 0.45; }
+.mc-drag-ghost {
+  position: fixed;
+  z-index: 95;
+  pointer-events: none;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  font-size: 1.6rem;
+}
 
 .mc-mode-row { display: flex; gap: 12px; }
 .mc-mode-btn {

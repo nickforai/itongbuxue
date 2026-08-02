@@ -211,7 +211,8 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 12, '12 种方块可切换（含门/工作台/木板/床）');
+  assert((await page.locator('.mc-block').count()) === 13, '13 种方块可切换（含门/工作台/木板/床/熔炉）');
+  assert((await page.locator('#mcHotbar .mc-pack-btn').count()) === 1, '背包按钮在快捷栏左边');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
   await sleep(200);
@@ -234,6 +235,28 @@ async function main() {
   });
   await sleep(300);
   assert((await page.textContent('#mcBackpackList')).includes('门'), '合成门成功');
+  const oreCount = await page.evaluate(() => window.__mc.ores());
+  assert(oreCount >= 1, '地下生成矿石（' + oreCount + ' 处）');
+  await page.evaluate(() => {
+    window.__mc.addItem('raw_iron', 3);
+    window.__mc.addItem('coal', 3);
+    window.__mc.smelt('smelt_iron');
+    window.__mc.smelt('smelt_iron');
+    window.__mc.smelt('smelt_iron');
+    window.__mc.addItem('stick', 1);
+    window.__mc.craft('iron_sword');
+  });
+  await sleep(300);
+  const packText2 = await page.textContent('#mcBackpackList');
+  assert(packText2.includes('铁锭') && packText2.includes('铁剑'), '熔炉炼铁锭并合成铁剑');
+  const placed = await page.evaluate(() => {
+    window.__mc.addItem('stone', 1);
+    const ok = window.__mc.placeAt('stone', 10, 20, 10);
+    return { ok: ok, stone: (window.__mc.backpack.stone || 0), block: window.__mc.blockAt(10, 20, 10) };
+  });
+  assert(placed.ok && placed.stone === 0 && placed.block === 'stone', '从背包拿出放置：消耗 1 个并生成方块');
+  await page.evaluate(() => { window.__mc.selectItem('brick'); });
+  assert((await page.evaluate(() => window.__mc.currentType())) === 'brick', '拖到快捷栏可选中方块');
   await shot(page, 'minecraft');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 

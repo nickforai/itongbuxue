@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
   <!-- 大厅：积分兑换 -->
@@ -48,7 +48,8 @@
       🕹️ 左边摇杆移动 · 👆 右边拖动看方向 · ▲ 跳跃/上升<br>
       ⛏️ 拆 · 🧱 放 · 👆 使用（工作台/门/床）· ⚔️ 攻击<br>
       🪓 生存：砍树掉木头，天黑前合成床和武器，夜晚有方块怪<br>
-      🐑 打羊得羊毛（3羊毛+3木板=床）· 吃食物补饥饿 🍗
+      🐑 打羊得羊毛（3羊毛+3木板=床）· 吃食物补饥饿 🍗<br>
+      ⛏️ 地下有煤和铁矿石（要稿子挖）→ 熔炉炼铁锭 → 铁剑/铁镐
     </div>
   </div>
 
@@ -62,7 +63,6 @@
       <div class="mc-hud-day" id="mcDayNight">🌞 白天</div>
     </div>
     <button class="mc-exit mc-ui" id="mcExit">🏠 退出</button>
-    <button class="mc-pack-btn mc-ui" id="mcPackBtn">🎒</button>
 
     <div class="mc-joy mc-ui" id="mcJoy">
       <div class="mc-joy-knob" id="mcJoyKnob"></div>
@@ -86,6 +86,7 @@
     <div class="mc-overlay mc-ui hidden" id="mcBackpack">
       <div class="mc-overlay-inner">
         <h3>🎒 背包</h3>
+        <div style="color:var(--muted);font-size:.8rem;text-align:center">长按物品拖出来：拖到快捷栏选中，拖到世界放出来</div>
         <div class="mc-overlay-list" id="mcBackpackList"></div>
         <button class="btn btn-ghost" id="mcPackClose">关闭</button>
       </div>
@@ -99,6 +100,14 @@
       </div>
     </div>
 
+    <div class="mc-overlay mc-ui hidden" id="mcSmeltPanel">
+      <div class="mc-overlay-inner">
+        <h3>🔥 熔炉烧炼</h3>
+        <div class="mc-overlay-list" id="mcSmeltList"></div>
+        <button class="btn btn-ghost" id="mcSmeltClose">关闭</button>
+      </div>
+    </div>
+
     <div class="mc-death mc-ui hidden" id="mcDeath">
       <div class="mc-death-box">
         <div style="font-size:3.4rem">😵</div>
@@ -109,8 +118,8 @@
     <div class="mc-flash" id="mcFlash"></div>
   </div>
 
-  <script src="js/common.js?v=5"></script>
-  <script src="js/vendor/three.min.js?v=5"></script>
-  <script src="js/minecraft.js?v=5"></script>
+  <script src="js/common.js?v=6"></script>
+  <script src="js/vendor/three.min.js?v=6"></script>
+  <script src="js/minecraft.js?v=6"></script>
 </body>
 </html>
