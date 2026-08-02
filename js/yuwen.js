@@ -46,7 +46,7 @@
     var p = window.Poems[idx];
     App.el('poemTitle').textContent = '《' + p.title + '》';
     App.el('poemAuthor').textContent = p.author;
-    App.el('poemLines').classList.remove('hidden');
+    setPoemHidden(false);
     App.el('poemLines').innerHTML = p.lines.map(function (l) {
       return '<div>' + l + '</div>';
     }).join('');
@@ -86,13 +86,19 @@
     btn.disabled = false;
   }
 
+  function setPoemHidden(hidden) {
+    ['poemTitle', 'poemAuthor', 'poemLines'].forEach(function (id) {
+      App.el(id).classList.toggle('hidden', hidden);
+    });
+  }
+
   function stopRec() {
     recording = false;
     if (rec) {
       try { rec.onend = null; rec.stop(); } catch (e) { /* ignore */ }
       rec = null;
     }
-    App.el('poemLines').classList.remove('hidden');
+    setPoemHidden(false);
     resetRecBtn();
   }
 
@@ -114,7 +120,7 @@
       recording = true;
       App.el('recBtn').textContent = '⏹ 停止背诵';
       App.el('recBtn').classList.add('recording');
-      App.el('poemLines').classList.add('hidden');
+      setPoemHidden(true);
       App.el('recLive').textContent = '🙈 原文已遮住，凭记忆大声背诵吧！';
       App.el('recResult').classList.add('hidden');
 
@@ -144,7 +150,7 @@
         }
         recording = false;
         if (!computing) resetRecBtn();
-        App.el('poemLines').classList.remove('hidden');
+        setPoemHidden(false);
       };
       rec.onend = function () {
         if (recording) finishRec();
@@ -175,7 +181,7 @@
   function finishRec() {
     recording = false;
     resetRecBtn();
-    App.el('poemLines').classList.remove('hidden');
+    setPoemHidden(false);
     var p = window.Poems[idx];
     var text = recFinal;
     App.el('recLive').textContent = text || '（没有识别到内容，再试一次）';

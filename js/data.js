@@ -11,13 +11,17 @@
     { id: 'wangtianmenshan', title: '望天门山', author: '唐·李白', lines: ['天门中断楚江开', '碧水东流至此回', '两岸青山相对出', '孤帆一片日边来'] },
     { id: 'yinhuhushangchuqinghouyu', title: '饮湖上初晴后雨', author: '宋·苏轼', lines: ['水光潋滟晴方好', '山色空蒙雨亦奇', '欲把西湖比西子', '淡妆浓抹总相宜'] },
     { id: 'wangdongting', title: '望洞庭', author: '唐·刘禹锡', lines: ['湖光秋月两相和', '潭面无风镜未磨', '遥望洞庭山水翠', '白银盘里一青螺'] },
+    { id: 'zaofabaidicheng', title: '早发白帝城', author: '唐·李白', lines: ['朝辞白帝彩云间', '千里江陵一日还', '两岸猿声啼不住', '轻舟已过万重山'] },
+    { id: 'cailianqu', title: '采莲曲', author: '唐·王昌龄', lines: ['荷叶罗裙一色裁', '芙蓉向脸两边开', '乱入池中看不见', '闻歌始觉有人来'] },
     { id: 'jueju', title: '绝句', author: '唐·杜甫', lines: ['迟日江山丽', '春风花草香', '泥融飞燕子', '沙暖睡鸳鸯'] },
     { id: 'huichongchunjiangwanjing', title: '惠崇春江晚景', author: '宋·苏轼', lines: ['竹外桃花三两枝', '春江水暖鸭先知', '蒌蒿满地芦芽短', '正是河豚欲上时'] },
     { id: 'sanqudaozhong', title: '三衢道中', author: '宋·曾几', lines: ['梅子黄时日日晴', '小溪泛尽却山行', '绿阴不减来时路', '添得黄鹂四五声'] },
     { id: 'yuanri', title: '元日', author: '宋·王安石', lines: ['爆竹声中一岁除', '春风送暖入屠苏', '千门万户曈曈日', '总把新桃换旧符'] },
     { id: 'qingming', title: '清明', author: '唐·杜牧', lines: ['清明时节雨纷纷', '路上行人欲断魂', '借问酒家何处有', '牧童遥指杏花村'] },
     { id: 'jiuyuejiuyiriyishandongxiongdi', title: '九月九日忆山东兄弟', author: '唐·王维', lines: ['独在异乡为异客', '每逢佳节倍思亲', '遥知兄弟登高处', '遍插茱萸少一人'] },
-    { id: 'yijiangnan', title: '忆江南', author: '唐·白居易', lines: ['江南好', '风景旧曾谙', '日出江花红胜火', '春来江水绿如蓝', '能不忆江南'] }
+    { id: 'yijiangnan', title: '忆江南', author: '唐·白居易', lines: ['江南好', '风景旧曾谙', '日出江花红胜火', '春来江水绿如蓝', '能不忆江南'] },
+    { id: 'chuzhouxijian', title: '滁州西涧', author: '唐·韦应物', lines: ['独怜幽草涧边生', '上有黄鹂深树鸣', '春潮带雨晚来急', '野渡无人舟自横'] },
+    { id: 'dalinsitaohua', title: '大林寺桃花', author: '唐·白居易', lines: ['人间四月芳菲尽', '山寺桃花始盛开', '长恨春归无觅处', '不知转入此中来'] }
   ];
 
   function poemText(p) {

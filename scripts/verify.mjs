@@ -70,7 +70,7 @@ async function main() {
   console.log('\n[3] 语文古诗');
   fresh();
   await page.goto(BASE + 'yuwen.html', { waitUntil: 'networkidle' });
-  assert((await page.locator('.poem-list-item').count()) === 14, '14 首古诗');
+  assert((await page.locator('.poem-list-item').count()) === 18, '18 首古诗（三年级全册）');
   await page.locator('.poem-list-item').first().click();
   await page.waitForSelector('#detailScreen:not(.hidden)');
   assert((await page.locator('#recBtn').count()) === 1, '开始背诵按钮在主操作区');
@@ -146,12 +146,15 @@ async function main() {
   await sleep(150);
   assert((await page.textContent('#recBtn')).includes('停止背诵'), '开始背诵后按钮变为停止背诵');
   assert((await page.locator('#poemLines.hidden').count()) === 1, '背诵时原文被遮住');
+  assert((await page.locator('#poemTitle.hidden').count()) === 1, '背诵时标题被遮住');
+  assert((await page.locator('#poemAuthor.hidden').count()) === 1, '背诵时作者被遮住');
   await page.click('#recBtn');
   assert((await page.textContent('#recBtn')).includes('正在计算得分'), '停止后显示计算中状态');
   await sleep(900);
   assert((await page.textContent('#recResult')).includes('没有识别到内容'), '空识别给出重试提示');
   assert((await page.textContent('#recBtn')).includes('开始背诵'), '按钮恢复为开始背诵');
   assert((await page.locator('#poemLines.hidden').count()) === 0, '结束后原文恢复显示');
+  assert((await page.locator('#poemTitle.hidden').count()) === 0, '结束后标题恢复显示');
   const pageErrorsAfter = errors.filter((e) => e.startsWith('pageerror')).length;
   assert(pageErrorsAfter === pageErrorsBefore, '录音评分无页面崩溃');
   await shot(page, 'yuwen');
