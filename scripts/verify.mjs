@@ -429,6 +429,66 @@ async function main() {
   assert((await page.textContent('#mcBackpackList')).includes('床'), '合成床成功（3羊毛+3木板）');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
+  /* ---------- 生字 ---------- */
+  console.log('\n[9] 生字');
+  fresh();
+  await page.goto(BASE + 'shengzi.html', { waitUntil: 'networkidle' });
+  assert((await page.locator('#charGrades button').count()) === 6, '六个年级可选');
+  assert((await page.locator('.char-cell').count()) === 24, '默认一年级 24 个字');
+  await page.locator('#charGrades button', { hasText: '三年级' }).click();
+  await sleep(200);
+  assert((await page.locator('.char-cell').count()) === 24, '三年级 24 个字');
+  await page.locator('.char-cell').first().click();
+  await page.waitForSelector('#charDetail:not(.hidden)');
+  await sleep(800);
+  assert((await page.textContent('#charPinyin')).length > 0, '显示拼音');
+  assert((await page.locator('#charWords .char-word').count()) >= 2, '显示组词');
+  assert((await page.locator('#strokeBox svg').count()) === 1, '笔顺动画已渲染');
+  assert((await page.textContent('#strokeHint')).includes('画'), '显示笔画数');
+  await shot(page, 'shengzi');
+  assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
+
+  /* ---------- 阅读 ---------- */
+  console.log('\n[10] 阅读');
+  fresh();
+  await page.goto(BASE + 'yuedu.html', { waitUntil: 'networkidle' });
+  assert((await page.locator('#rdGrades button').count()) === 6, '六个年级可选');
+  await page.locator('#rdGrades button', { hasText: '三年级' }).click();
+  await sleep(200);
+  assert((await page.locator('.science-item').count()) === 2, '三年级 2 篇阅读');
+  await page.locator('.science-item').first().click();
+  await page.waitForSelector('#rdDetail:not(.hidden)');
+  assert((await page.locator('#rdPlay').count()) === 1, '播放按钮存在');
+  // 注入模拟语音识别：朗读文本但有 1 个字读错 → 标红 + 按规则得分
+  await page.evaluate(() => {
+    const p = window.READINGS['3'][0];
+    const wrong = p.text.replace('秋天', '秋田');
+    window.FakeSR = class {
+      constructor() { this.onresult = null; this.onend = null; this.onerror = null; }
+      start() {
+        const self = this;
+        setTimeout(() => {
+          if (self.onresult) {
+            self.onresult({ resultIndex: 0, results: [{ 0: { transcript: wrong }, isFinal: true }] });
+          }
+          if (self.onend) self.onend();
+        }, 60);
+      }
+      stop() {}
+    };
+    window.SpeechRecognition = window.FakeSR;
+    window.webkitSpeechRecognition = window.FakeSR;
+  });
+  await page.click('#rdRec');
+  await sleep(900);
+  const rdResult = await page.textContent('#rdResult');
+  assert(rdResult.includes('准确率'), '阅读评分结果出现');
+  assert((await page.locator('#rdText .rd-err').count()) >= 1, '读错的字标红');
+  assert((await page.locator('#rdText .rd-ok').count()) >= 1, '读对的字标绿');
+  assert((await page.textContent('#rdRec')).includes('开始阅读'), '按钮恢复');
+  await shot(page, 'yuedu');
+  assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
+
   await browser.close();
   console.log('\n===== 结果 =====');
   if (fails.length) {

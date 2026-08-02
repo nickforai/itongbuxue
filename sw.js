@@ -1,13 +1,15 @@
 /* 学习乐园 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v15';
+var CACHE = 'xx3-v16';
 
 var ASSETS = [
   './',
   './index.html',
   './kousuan.html',
   './yuwen.html',
+  './shengzi.html',
+  './yuedu.html',
   './yingyu.html',
   './kexue.html',
   './parent.html',
@@ -20,6 +22,11 @@ var ASSETS = [
   './js/home.js',
   './js/kousuan.js',
   './js/yuwen.js',
+  './js/shengzi.js',
+  './js/yuedu.js',
+  './js/data-char.js',
+  './js/data-reading.js',
+  './js/vendor/hanzi-writer.min.js',
   './js/yingyu.js',
   './js/kexue.js',
   './js/parent.js',

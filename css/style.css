@@ -489,7 +489,23 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   color: var(--muted);
 }
 
+.tab-bar a {
+  flex: 1;
+  padding: 13px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-align: center;
+}
+
 .tab-bar button.on {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 3px 10px rgba(58, 58, 74, 0.12);
+}
+
+.tab-bar a.on {
   background: var(--card);
   color: var(--ink);
   box-shadow: 0 3px 10px rgba(58, 58, 74, 0.12);
@@ -1248,3 +1264,82 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   .mc-joy { width: 100px; height: 100px; bottom: 130px; }
   .mc-btns { bottom: 130px; }
 }
+
+/* ---------- 生字 ---------- */
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.char-cell {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--ink);
+  transition: transform 0.08s;
+}
+
+.char-cell:active { transform: scale(0.92); }
+
+.char-big {
+  font-size: 6rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.char-pinyin {
+  font-size: 1.6rem;
+  color: var(--muted);
+  margin: 4px 0 14px;
+}
+
+.char-words {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+
+.char-word {
+  background: #F0F0F6;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.stroke-box {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.stroke-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+/* ---------- 阅读 ---------- */
+.rd-text {
+  font-size: 1.35rem;
+  line-height: 2.1;
+  letter-spacing: 0.04em;
+  padding: 10px 2px;
+}
+
+.rd-text .rd-ok { color: var(--ok); }
+.rd-text .rd-err {
+  color: var(--bad);
+  background: rgba(232, 85, 109, 0.12);
+  border-radius: 4px;
+  text-decoration: underline;
+}
+.rd-text .rd-pending { color: #B9B9C6; }
+.rd-text .rd-punct { color: var(--muted); }

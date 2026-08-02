@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="生字">
+  <meta name="format-detection" content="telephone=no">
+  <title>生字 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=16">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🖊️ 生字</h1>
+      <div class="star-pill" data-star-key="total">⭐ 0</div>
+    </div>
+
+    <div class="tab-bar">
+      <a href="yuwen.html">📜 古诗</a>
+      <a class="on" href="shengzi.html">🖊️ 生字</a>
+      <a href="yuedu.html">📖 阅读</a>
+    </div>
+
+    <div class="topic-chips" id="charGrades"></div>
+
+    <section id="charList">
+      <div class="panel" style="padding:14px 18px;color:var(--muted);font-size:.9rem">
+        点一个字，学习它的读音、组词和书写笔顺（有动画演示）。
+      </div>
+      <div class="char-grid" id="charGrid"></div>
+    </section>
+
+    <section id="charDetail" class="hidden">
+      <div class="panel" style="text-align:center">
+        <div class="char-big" id="charBig"></div>
+        <div class="char-pinyin" id="charPinyin"></div>
+        <button class="btn btn-green" id="charSpeak">🔊 听读音</button>
+        <div class="char-words" id="charWords"></div>
+        <div class="stroke-box" id="strokeBox"></div>
+        <div class="stroke-hint" id="strokeHint"></div>
+        <div class="poem-nav">
+          <button class="btn btn-ghost" id="charPrev">◀ 上一个</button>
+          <button class="btn btn-ghost" id="charNext">下一个 ▶</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js?v=16"></script>
+  <script src="js/data-char.js?v=16"></script>
+  <script src="js/vendor/hanzi-writer.min.js?v=16"></script>
+  <script src="js/shengzi.js?v=16"></script>
+</body>
+</html>
