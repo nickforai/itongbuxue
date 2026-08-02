@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
   <!-- 大厅：积分兑换 -->
@@ -26,9 +26,14 @@
     <div class="panel">
       <h2>🏗️ 方块乐园</h2>
       <p style="color:var(--muted);font-size:.92rem;line-height:1.7;margin-bottom:14px">
-        像我的世界一样自由建造：飞着走、放方块、拆方块，造你的小房子！
+        像我的世界一样生存与建造：砍树、收集、合成、天黑前搭好小房子！
         <b>10 积分 = 1 次游戏机会</b>，每局不限时。
       </p>
+      <div class="mc-mode-row">
+        <button class="mc-mode-btn" id="mcModeCreative">🕊️ 创造模式<br><small>自由飞行建造</small></button>
+        <button class="mc-mode-btn" id="mcModeSurvival">🧟 生存模式<br><small>收集合成，天黑有怪物</small></button>
+      </div>
+      <div style="height:14px"></div>
       <div class="stat-grid" style="margin-bottom:16px">
         <div class="stat-cell"><div class="sv" id="mcLobbyJifen">0</div><div class="sl">💰 积分</div></div>
         <div class="stat-cell"><div class="sv" id="mcLobbyChances">0</div><div class="sl">⛏️ 游戏机会</div></div>
@@ -40,11 +45,10 @@
 
     <div class="panel" style="color:var(--muted);font-size:.85rem;line-height:1.8">
       <b style="color:var(--ink)">🕹️ 怎么玩（iPad 触屏）：</b><br>
-      🕹️ 左边摇杆：前后左右飞<br>
-      👆 右边屏幕：拖动看方向<br>
-      ▲▼ 上升/下降 · ⛏️ 拆 · 🧱 放 · 👆 使用<br>
-      🪓 砍树掉木头 → 工作台合成木板/木棒/工具<br>
-      🎒 背包放收集的东西 · 门和工作台要对着点「使用」
+      🕹️ 左边摇杆移动 · 👆 右边拖动看方向 · ▲ 跳跃/上升<br>
+      ⛏️ 拆 · 🧱 放 · 👆 使用（工作台/门/床）· ⚔️ 攻击<br>
+      🪓 生存：砍树掉木头，天黑前合成床和武器，夜晚有方块怪<br>
+      🐑 打羊得羊毛（3羊毛+3木板=床）· 吃食物补饥饿 🍗
     </div>
   </div>
 
@@ -52,6 +56,11 @@
   <div id="mcGame" class="hidden">
     <div class="mc-crosshair"></div>
     <div class="mc-label" id="mcLabel">⛏️ 拆方块</div>
+    <div class="mc-hud">
+      <div class="mc-hud-line" id="mcHearts"></div>
+      <div class="mc-hud-line" id="mcHunger"></div>
+      <div class="mc-hud-day" id="mcDayNight">🌞 白天</div>
+    </div>
     <button class="mc-exit mc-ui" id="mcExit">🏠 退出</button>
     <button class="mc-pack-btn mc-ui" id="mcPackBtn">🎒</button>
 
@@ -68,6 +77,7 @@
         <button class="mc-act break mc-ui" id="mcBreak">⛏️</button>
         <button class="mc-act place mc-ui" id="mcPlace">🧱</button>
         <button class="mc-act use mc-ui" id="mcUse">👆</button>
+        <button class="mc-act atk mc-ui" id="mcAttack">⚔️</button>
       </div>
     </div>
 
@@ -88,10 +98,19 @@
         <button class="btn btn-ghost" id="mcCraftClose">关闭</button>
       </div>
     </div>
+
+    <div class="mc-death mc-ui hidden" id="mcDeath">
+      <div class="mc-death-box">
+        <div style="font-size:3.4rem">😵</div>
+        <div style="font-size:1.5rem;font-weight:800">你死了…</div>
+        <div style="color:var(--muted);margin-top:6px">正在回到重生点…</div>
+      </div>
+    </div>
+    <div class="mc-flash" id="mcFlash"></div>
   </div>
 
-  <script src="js/common.js?v=4"></script>
-  <script src="js/vendor/three.min.js?v=4"></script>
-  <script src="js/minecraft.js?v=4"></script>
+  <script src="js/common.js?v=5"></script>
+  <script src="js/vendor/three.min.js?v=5"></script>
+  <script src="js/minecraft.js?v=5"></script>
 </body>
 </html>

@@ -211,7 +211,7 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 11, '11 种方块可切换（含门/工作台/木板）');
+  assert((await page.locator('.mc-block').count()) === 12, '12 种方块可切换（含门/工作台/木板/床）');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
   await sleep(200);
@@ -235,6 +235,42 @@ async function main() {
   await sleep(300);
   assert((await page.textContent('#mcBackpackList')).includes('门'), '合成门成功');
   await shot(page, 'minecraft');
+  assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
+
+  /* ---------- 我的世界 · 生存模式 ---------- */
+  console.log('\n[8b] 我的世界·生存模式');
+  fresh();
+  await page.goto(BASE + 'minecraft.html', { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    d.jifen = 12;
+    d.mcChances = 1;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.click('#mcModeSurvival');
+  await page.click('#mcStartBtn');
+  await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
+  await sleep(1500);
+  assert((await page.evaluate(() => window.__mc.mode())) === 'survival', '模式为生存');
+  assert((await page.textContent('#mcHearts')).includes('❤️'), '生命值 HUD 显示');
+  assert((await page.textContent('#mcHunger')).includes('🍗'), '饥饿值 HUD 显示');
+  assert((await page.locator('#mcAttack').count()) === 1, '攻击按钮存在');
+  assert((await page.locator('#mcDown.hidden').count()) === 1, '生存模式下降按钮隐藏');
+  await page.evaluate(() => { window.__mc.setTime(0.75); });
+  let hostileCount = 0;
+  for (let i = 0; i < 16 && hostileCount < 1; i++) {
+    await sleep(500);
+    hostileCount = await page.evaluate(() => window.__mc.hostiles());
+  }
+  assert(hostileCount >= 1, '夜晚生成怪物（' + hostileCount + ' 只）');
+  await page.evaluate(() => {
+    window.__mc.addItem('wool', 3);
+    window.__mc.addItem('plank', 3);
+    window.__mc.craft('bed');
+  });
+  await sleep(300);
+  assert((await page.textContent('#mcBackpackList')).includes('床'), '合成床成功（3羊毛+3木板）');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
   await browser.close();

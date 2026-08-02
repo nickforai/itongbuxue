@@ -1,4 +1,4 @@
-/* 我的世界 · 方块乐园（原创体素建造 + 收集合成，Three.js） */
+/* 我的世界 · 方块乐园（生存模式 v1：生命/饥饿/昼夜/怪物/战斗/床，Three.js） */
 (function () {
   'use strict';
 
@@ -18,13 +18,17 @@
     door: { name: '门', color: 0x9C6B30, kind: 'block' },
     door_open: { name: '门（开）', color: 0x7A5230, kind: 'block' },
     workbench: { name: '工作台', color: 0xC98A3D, kind: 'block' },
+    bed: { name: '床', color: 0xE8508A, kind: 'block' },
     stick: { name: '木棒', color: 0xC49A5C, emoji: '🥢', kind: 'material' },
+    wool: { name: '羊毛', color: 0xF5F5F5, emoji: '🐑', kind: 'material' },
+    apple: { name: '苹果', emoji: '🍎', kind: 'food', value: 3 },
+    raw_meat: { name: '生肉', emoji: '🍖', kind: 'food', value: 4 },
     sword: { name: '宝剑', emoji: '⚔️', kind: 'tool' },
     pickaxe: { name: '稿子', emoji: '⛏️', kind: 'tool' },
     axe: { name: '斧头', emoji: '🪓', kind: 'tool' }
   };
 
-  var HOTBAR = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand', 'brick', 'glass', 'plank', 'door', 'workbench'];
+  var HOTBAR = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand', 'brick', 'glass', 'plank', 'door', 'workbench', 'bed'];
 
   var RECIPES = [
     { id: 'planks', name: '木板', result: 'plank', count: 4, need: { wood: 1 } },
@@ -33,7 +37,8 @@
     { id: 'pickaxe', name: '稿子', result: 'pickaxe', count: 1, need: { plank: 3, stick: 2 } },
     { id: 'axe', name: '斧头', result: 'axe', count: 1, need: { plank: 3, stick: 2 } },
     { id: 'door', name: '门', result: 'door', count: 1, need: { plank: 4 } },
-    { id: 'workbench', name: '工作台', result: 'workbench', count: 1, need: { plank: 4 } }
+    { id: 'workbench', name: '工作台', result: 'workbench', count: 1, need: { plank: 4 } },
+    { id: 'bed', name: '床', result: 'bed', count: 1, need: { wool: 3, plank: 3 } }
   ];
 
   var SAVE_KEY = 'xx3_mc_world_v1';
@@ -47,7 +52,21 @@
   var currentType = 'grass';
   var currentAction = 'break';
 
+  /* ---------- 生存状态 ---------- */
+  var mode = 'creative'; // creative | survival
+  var hp = 10, hunger = 10;
+  var time = 0.15;
+  var DAY_LEN = 180;
+  var nightAmt = 0;
+  var onGround = false, vy = 0, fallStart = null;
+  var invulnUntil = 0;
+  var spawnPoint = null, bedPoint = null;
+  var mobs = [];
+  var mobGroups = [];
+
   function vkey(x, y, z) { return x + ',' + y + ',' + z; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
 
   function mulberry32(a) {
     return function () {
@@ -56,6 +75,15 @@
       t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
+  }
+
+  function isSolid(x, y, z) { return !!world[vkey(x, y, z)]; }
+
+  function groundY(x, z) {
+    for (var y = 40; y >= -8; y--) {
+      if (isSolid(Math.floor(x), y, Math.floor(z))) return y + 1;
+    }
+    return 1;
   }
 
   function generateWorld(s) {
@@ -100,11 +128,13 @@
       changes = raw.changes || {};
       backpack = raw.backpack || {};
       equipped = raw.equipped || null;
+      mode = raw.mode || 'creative';
     } catch (e) {
       seed = Date.now() % 100000 + 1;
       changes = {};
       backpack = {};
       equipped = null;
+      mode = 'creative';
     }
     generateWorld(seed);
     applyChanges();
@@ -115,7 +145,9 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: seed, changes: changes, backpack: backpack, equipped: equipped }));
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+          seed: seed, changes: changes, backpack: backpack, equipped: equipped, mode: mode
+        }));
       } catch (e) { /* 空间满就忽略 */ }
     }, 600);
   }
@@ -146,7 +178,29 @@
     return true;
   }
 
-  /* ---------- 大厅 ---------- */
+  function eatItem(id) {
+    var it = ITEMS[id];
+    if (!it || it.kind !== 'food') return;
+    if (hunger >= 10) { App.toast('肚子饱饱的，吃不下啦'); return; }
+    if ((backpack[id] || 0) < 1) return;
+    backpack[id] -= 1;
+    if (backpack[id] <= 0) delete backpack[id];
+    hunger = Math.min(10, hunger + it.value);
+    scheduleSave();
+    updateHud();
+    renderBackpack();
+    App.toast('吃了' + it.name + '，🍗+' + it.value + '！');
+    playSound('eat');
+  }
+
+  /* ---------- 大厅（模式选择 + 积分兑换） ---------- */
+  function getSavedMode() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+      return raw.mode || 'creative';
+    } catch (e) { return 'creative'; }
+  }
+
   function renderLobby() {
     data = App.store.load();
     App.el('mcChancePill').textContent = '⛏️ ' + (data.mcChances || 0);
@@ -161,9 +215,22 @@
     var start = App.el('mcStartBtn');
     start.disabled = (data.mcChances || 0) < 1;
     start.textContent = (data.mcChances || 0) >= 1
-      ? '🚀 开始建造（还有 ' + data.mcChances + ' 次机会）'
+      ? '🚀 开始游戏（还有 ' + data.mcChances + ' 次机会）'
       : '🚀 积分不够 10 分，先做作业吧';
+
+    mode = getSavedMode();
+    renderModeButtons();
   }
+
+  function renderModeButtons() {
+    var c = App.el('mcModeCreative');
+    var s = App.el('mcModeSurvival');
+    c.classList.toggle('on', mode === 'creative');
+    s.classList.toggle('on', mode === 'survival');
+  }
+
+  App.el('mcModeCreative').addEventListener('click', function () { mode = 'creative'; renderModeButtons(); App.toast('创造模式：无限方块、自由飞行'); });
+  App.el('mcModeSurvival').addEventListener('click', function () { mode = 'survival'; renderModeButtons(); App.toast('生存模式：砍树挖矿、天黑小心怪物'); });
 
   App.el('mcRedeemBtn').addEventListener('click', function () {
     data = App.store.load();
@@ -179,8 +246,7 @@
   App.el('mcStartBtn').addEventListener('click', function () {
     data = App.store.load();
     if (!App.useMcChance(data)) { App.toast('没有机会啦'); return; }
-    renderLobby();
-    App.logActivity(data, '玩我的世界');
+    App.logActivity(data, '玩我的世界（' + (mode === 'survival' ? '生存' : '创造') + '）');
     startGame();
   });
 
@@ -194,10 +260,13 @@
   var cameraEuler = null;
 
   function startGame() {
+    var chosenMode = mode;
     App.el('mcLobby').classList.add('hidden');
     App.el('mcGame').classList.remove('hidden');
+    App.el('mcUp').textContent = chosenMode === 'survival' ? '⤒' : '▲';
+    App.el('mcDown').classList.toggle('hidden', chosenMode === 'survival');
     try {
-      init3D();
+      init3D(chosenMode);
     } catch (e) {
       App.toast('此设备不支持 3D 游戏');
       console.error('3D init failed:', e);
@@ -206,8 +275,9 @@
     }
   }
 
-  function init3D() {
+  function init3D(chosenMode) {
     loadWorld();
+    mode = chosenMode || mode;
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -218,7 +288,9 @@
     scene.fog = new THREE.Fog(0x87CEEB, 32, 70);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
-    camera.position.set(0, 9, 13);
+    var startY = mode === 'survival' ? groundY(0, 8) + 1.7 : 9;
+    camera.position.set(0, startY, 8);
+    spawnPoint = { x: 0, y: groundY(0, 8), z: 8 };
     cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.68));
@@ -237,13 +309,18 @@
 
     raycaster = new THREE.Raycaster();
     clock = new THREE.Clock();
+
+    hp = 10; hunger = 10; time = 0.15; vy = 0; onGround = false; fallStart = null;
+    bedPoint = null;
+    spawnSheep(3);
+
     bindControls();
     renderHotbar();
     updateLabel();
+    updateHud();
     window.addEventListener('resize', onResize);
     animate();
 
-    // 测试钩子
     window.__mc = {
       addItem: addItem,
       craft: function (id) {
@@ -251,7 +328,10 @@
         return r ? craft(r) : false;
       },
       backpack: backpack,
-      equipped: function () { return equipped; }
+      mode: function () { return mode; },
+      mobs: function () { return mobs.length; },
+      hostiles: function () { return mobs.filter(function (m) { return m.type !== 'sheep'; }).length; },
+      setTime: function (t) { time = t; }
     };
   }
 
@@ -349,6 +429,13 @@
     scheduleSave();
   }
 
+  function insidePlayer(x, y, z) {
+    var dx = camera.position.x - (x + 0.5);
+    var dz = camera.position.z - (z + 0.5);
+    var dy = camera.position.y - (y + 0.5);
+    return Math.abs(dx) < 0.9 && Math.abs(dz) < 0.9 && Math.abs(dy) < 1.8;
+  }
+
   function doPlace() {
     var t = getTarget();
     if (!t) return;
@@ -359,7 +446,6 @@
     if (world[k]) return;
     if (vx < -16 || vx > 16 || vz < -16 || vz > 16 || vy > 40 || vy < -8) return;
     if (insidePlayer(vx, vy, vz)) return;
-
     if (currentType === 'door') {
       var top = vkey(vx, vy + 1, vz);
       if (world[top] || vy + 1 > 40 || insidePlayer(vx, vy + 1, vz)) return;
@@ -377,13 +463,6 @@
     playSound('place');
   }
 
-  function insidePlayer(x, y, z) {
-    var dx = camera.position.x - (x + 0.5);
-    var dz = camera.position.z - (z + 0.5);
-    var dy = camera.position.y - (y + 0.5);
-    return Math.abs(dx) < 0.9 && Math.abs(dz) < 0.9 && Math.abs(dy) < 1.8;
-  }
-
   function doUse() {
     var t = getTarget();
     if (!t) return;
@@ -392,8 +471,11 @@
     var vz = Math.floor(t.point.z - t.normal.z * 0.05);
     var k = vkey(vx, vy, vz);
     var type = world[k];
-    if (type === 'workbench') {
-      openCrafting();
+    if (type === 'workbench') { openCrafting(); return; }
+    if (type === 'bed') {
+      if (mode !== 'survival') { App.toast('创造模式不用睡觉哦'); return; }
+      if (!isNight()) { App.toast('现在睡不着，天黑再睡吧'); return; }
+      sleepInBed(vx, vy, vz);
       return;
     }
     if (type === 'door' || type === 'door_open') {
@@ -416,14 +498,165 @@
     App.toast('这个方块不能用哦');
   }
 
+  function sleepInBed(x, y, z) {
+    bedPoint = { x: x, y: y, z: z };
+    time = 0.02; // 清晨
+    clearHostiles();
+    scheduleSave();
+    App.toast('🌅 睡了一觉，天亮了！重生点已设在这张床');
+  }
+
+  function isNight() { return nightAmt > 0.5; }
+
+  /* ---------- 怪物 ---------- */
+  function spawnSheep(n) {
+    for (var i = 0; i < n; i++) {
+      var x = Math.floor(rnd(-14, 14));
+      var z = Math.floor(rnd(-14, 14));
+      addMob('sheep', x, groundY(x, z), z);
+    }
+  }
+
+  function addMob(type, x, y, z) {
+    var mob = {
+      type: type,
+      pos: { x: x, y: y, z: z },
+      hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : 3,
+      speed: type === 'sheep' ? 1.5 : 2.4,
+      dir: null,
+      wanderUntil: 0,
+      nextAtk: 0,
+      flashUntil: 0
+    };
+    var bodyColor = type === 'zombie' ? 0x4CAF50 : type === 'skeleton' ? 0xE8E8E8 : 0xFFFFFF;
+    var headColor = type === 'zombie' ? 0x2E7D32 : type === 'skeleton' ? 0xD5D5D5 : 0xFFF3D0;
+    var group = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.4), new THREE.MeshLambertMaterial({ color: bodyColor }));
+    body.position.y = 0.7;
+    var head = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.55), new THREE.MeshLambertMaterial({ color: headColor }));
+    head.position.y = 1.55;
+    body.userData.mob = mob;
+    head.userData.mob = mob;
+    group.add(body);
+    group.add(head);
+    group.position.set(x, y, z);
+    group.userData.mob = mob;
+    scene.add(group);
+    mob.group = group;
+    mob.parts = [body, head];
+    mobs.push(mob);
+    mobGroups.push(group);
+  }
+
+  function removeMob(mob) {
+    scene.remove(mob.group);
+    var i = mobs.indexOf(mob);
+    if (i !== -1) mobs.splice(i, 1);
+    var j = mobGroups.indexOf(mob.group);
+    if (j !== -1) mobGroups.splice(j, 1);
+  }
+
+  function clearHostiles() {
+    mobs.slice().forEach(function (m) {
+      if (m.type !== 'sheep') removeMob(m);
+    });
+  }
+
+  function flashMob(mob) {
+    mob.parts.forEach(function (p) {
+      p.material.emissive = new THREE.Color(0xff3333);
+    });
+    mob.flashUntil = Date.now() + 180;
+  }
+
+  function mobDrops(mob) {
+    var drops = [];
+    if (mob.type === 'zombie') {
+      if (Math.random() < 0.4) drops.push(['raw_meat', 1]);
+      if (Math.random() < 0.25) drops.push(['apple', 1]);
+    } else if (mob.type === 'skeleton') {
+      if (Math.random() < 0.4) drops.push(['stick', 1]);
+    } else {
+      drops.push(['wool', 1 + (Math.random() < 0.5 ? 1 : 0)]);
+    }
+    drops.forEach(function (d) { addItem(d[0], d[1]); });
+    renderBackpack();
+    if (drops.length) {
+      App.toast('掉落：' + drops.map(function (d) { return ITEMS[d[0]].name + '×' + d[1]; }).join('、'));
+    }
+  }
+
+  function doAttack() {
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    var hits = raycaster.intersectObjects(mobGroups, true);
+    if (!hits.length) return;
+    var mob = hits[0].object.userData.mob;
+    if (!mob) return;
+    var d = Math.hypot(mob.pos.x - camera.position.x, mob.pos.z - camera.position.z);
+    if (d > 8) return;
+    var dmg = equipped === 'sword' ? 4 : 2;
+    mob.hp -= dmg;
+    flashMob(mob);
+    var dx = mob.pos.x - camera.position.x;
+    var dz = mob.pos.z - camera.position.z;
+    var len = Math.hypot(dx, dz) || 1;
+    mob.pos.x += dx / len * 0.9;
+    mob.pos.z += dz / len * 0.9;
+    playSound('hit');
+    if (mob.hp <= 0) {
+      mobDrops(mob);
+      removeMob(mob);
+      App.toast(mob.type === 'sheep' ? '小羊回家了 🐑' : '怪物消灭了！');
+    }
+  }
+
+  /* ---------- 生存数值 ---------- */
+  function damagePlayer(hearts) {
+    if (mode !== 'survival') return;
+    var now = Date.now();
+    if (now < invulnUntil) return;
+    hp -= hearts;
+    invulnUntil = now + 1000;
+    updateHud();
+    var flash = App.el('mcFlash');
+    flash.classList.remove('show');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+    setTimeout(function () { flash.classList.remove('show'); }, 300);
+    playSound('hurt');
+    if (hp <= 0) die();
+  }
+
+  function die() {
+    hp = 0;
+    updateHud();
+    App.el('mcDeath').classList.remove('hidden');
+    setTimeout(function () {
+      respawn();
+      App.el('mcDeath').classList.add('hidden');
+    }, 1800);
+  }
+
+  function respawn() {
+    var p = bedPoint || spawnPoint;
+    camera.position.set(p.x + 0.5, groundY(p.x + 0.5, p.z + 0.5) + 1.7, p.z + 0.5);
+    hp = 10;
+    hunger = 10;
+    vy = 0;
+    updateHud();
+    App.toast(bedPoint ? '你回到了床边' : '你回到了出生点');
+  }
+
+  /* ---------- 声音 ---------- */
   var actx = null;
   function playSound(kind) {
     try {
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       var o = actx.createOscillator();
       var g = actx.createGain();
+      var freq = kind === 'place' ? 260 : kind === 'break' ? 150 : kind === 'eat' ? 400 : kind === 'hit' ? 200 : 320;
       o.type = 'square';
-      o.frequency.value = kind === 'place' ? 260 : 150;
+      o.frequency.value = freq;
       g.gain.setValueAtTime(0.06, actx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.12);
       o.connect(g);
@@ -455,7 +688,7 @@
       lookLast = { x: e.clientX, y: e.clientY };
       yaw -= dx * 0.006;
       pitch -= dy * 0.006;
-      pitch = Math.max(-1.5, Math.min(1.5, pitch));
+      pitch = clamp(pitch, -1.5, 1.5);
     });
     function release(e) {
       if (e.pointerId === lookPointer) lookPointer = null;
@@ -510,12 +743,18 @@
       updateLabel();
       doUse();
     });
+    App.el('mcAttack').addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      doAttack();
+    });
 
     App.el('mcPackBtn').addEventListener('click', toggleBackpack);
 
     window.addEventListener('keydown', function (e) {
       keys[e.key.toLowerCase()] = true;
       if (e.key >= '1' && e.key <= '9') { currentType = HOTBAR[+e.key - 1] || currentType; renderHotbar(); updateLabel(); }
+      if (e.key === 'f' || e.key === 'F') doAttack();
     });
     window.addEventListener('keyup', function (e) { keys[e.key.toLowerCase()] = false; });
   }
@@ -553,9 +792,15 @@
 
   function updateLabel() {
     var label = App.el('mcLabel');
-    var act = currentAction === 'break' ? '⛏️ 拆方块' : currentAction === 'place' ? '🧱 放：' + ITEMS[currentType].name : '👆 使用';
+    var act = currentAction === 'break' ? '⛏️ 拆' : currentAction === 'place' ? '🧱 放：' + ITEMS[currentType].name : '👆 使用';
+    if (mode === 'survival') act += ' · 生存';
     if (equipped) act += ' · 手持 ' + ITEMS[equipped].name;
     label.textContent = act;
+  }
+
+  function updateHud() {
+    App.el('mcHearts').textContent = '❤️'.repeat(Math.max(0, Math.round(hp))) + '🖤'.repeat(10 - Math.max(0, Math.round(hp)));
+    App.el('mcHunger').textContent = '🍗'.repeat(Math.max(0, Math.round(hunger))) + '🤍'.repeat(10 - Math.max(0, Math.round(hunger)));
   }
 
   /* ---------- 背包与合成界面 ---------- */
@@ -577,16 +822,17 @@
       var it = ITEMS[id];
       var row = document.createElement('div');
       row.className = 'mc-pack-row';
-      var count = backpack[id];
       var action = '';
       if (it.kind === 'tool') {
         action = equipped === id
           ? '<button class="mc-pack-act on" data-equip="' + id + '">已装备</button>'
           : '<button class="mc-pack-act" data-equip="' + id + '">装备</button>';
+      } else if (it.kind === 'food') {
+        action = '<button class="mc-pack-act" data-eat="' + id + '">吃</button>';
       }
       row.innerHTML = itemIcon(id) +
         '<span class="mc-pack-name">' + it.name + '</span>' +
-        '<span class="mc-pack-count">×' + count + '</span>' + action;
+        '<span class="mc-pack-count">×' + backpack[id] + '</span>' + action;
       box.appendChild(row);
     });
     box.querySelectorAll('[data-equip]').forEach(function (btn) {
@@ -597,6 +843,11 @@
         renderBackpack();
         updateLabel();
         App.toast(equipped ? '已装备 ' + ITEMS[equipped].name : '已收起工具');
+      });
+    });
+    box.querySelectorAll('[data-eat]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        eatItem(btn.getAttribute('data-eat'));
       });
     });
   }
@@ -646,17 +897,107 @@
   App.el('mcPackClose').addEventListener('click', function () { App.el('mcBackpack').classList.add('hidden'); });
   App.el('mcCraftClose').addEventListener('click', function () { App.el('mcCraftPanel').classList.add('hidden'); });
 
-  function animate() {
-    requestAnimationFrame(animate);
-    var dt = Math.min(clock.getDelta(), 0.05);
-    var speed = 10, upSpeed = 7;
+  /* ---------- 主循环 ---------- */
+  function updateDayNight(dt) {
+    time += dt / DAY_LEN;
+    if (time >= 1) time -= 1;
+    var t = time;
+    var na = 1;
+    if (t >= 0.08 && t <= 0.58) na = 0;
+    else if (t > 0.58 && t < 0.68) na = (t - 0.58) / 0.10;
+    else if (t > 0 && t < 0.08) na = 1 - t / 0.08;
+    var wasNight = isNight();
+    nightAmt = clamp(na, 0, 1);
+    if (wasNight && !isNight()) {
+      clearHostiles();
+      App.toast('🌞 天亮了，怪物消失了');
+    }
+    var dayColor = new THREE.Color(0x87CEEB);
+    var nightColor = new THREE.Color(0x0B1026);
+    scene.background.copy(dayColor).lerp(nightColor, nightAmt);
+    scene.fog.color.copy(scene.background);
+    scene.children.forEach(function (c) {
+      if (c.isAmbientLight) c.intensity = 0.68 - nightAmt * 0.52;
+      if (c.isDirectionalLight) c.intensity = 0.72 - nightAmt * 0.62;
+    });
+    var icon = App.el('mcDayNight');
+    var isN = isNight();
+    icon.textContent = isN ? '🌙 夜晚' : '🌞 白天';
+  }
 
+  function updateMobs(dt) {
+    var now = Date.now();
+    // 夜晚生成怪物
+    if (isNight()) {
+      var hostile = mobs.filter(function (m) { return m.type !== 'sheep'; }).length;
+      if (hostile < 4 && Math.random() < dt * 0.6) {
+        var ang = rnd(0, Math.PI * 2);
+        var rad = rnd(16, 26);
+        var mx = clamp(Math.round(camera.position.x + Math.cos(ang) * rad), -15, 15);
+        var mz = clamp(Math.round(camera.position.z + Math.sin(ang) * rad), -15, 15);
+        var gy = groundY(mx, mz);
+        if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
+      }
+    } else if (mobs.filter(function (m) { return m.type === 'sheep'; }).length < 2) {
+      if (Math.random() < dt * 0.1) {
+        var sx = Math.floor(rnd(-14, 14));
+        var sz = Math.floor(rnd(-14, 14));
+        addMob('sheep', sx, groundY(sx, sz), sz);
+      }
+    }
+
+    for (var i = mobs.length - 1; i >= 0; i--) {
+      var m = mobs[i];
+      if (m.type === 'sheep') {
+        if (!m.wanderUntil || now > m.wanderUntil) {
+          m.wanderUntil = now + rnd(1500, 3500);
+          if (Math.random() < 0.7) {
+            var a = rnd(0, Math.PI * 2);
+            m.dir = { x: Math.cos(a), z: Math.sin(a) };
+          } else {
+            m.dir = null;
+          }
+        }
+      } else {
+        if (!isNight()) { removeMob(m); continue; }
+        var dx = camera.position.x - m.pos.x;
+        var dz = camera.position.z - m.pos.z;
+        var d = Math.hypot(dx, dz);
+        if (d > 0.5) {
+          m.dir = { x: dx / d, z: dz / d };
+          m.pos.x += m.dir.x * m.speed * dt;
+          m.pos.z += m.dir.z * m.speed * dt;
+          m.pos.x = clamp(m.pos.x, -16, 16);
+          m.pos.z = clamp(m.pos.z, -16, 16);
+        }
+        if (d < 1.5 && Math.abs(camera.position.y - (m.pos.y + 1.3)) < 2 && now > m.nextAtk) {
+          damagePlayer(1);
+          m.nextAtk = now + 1200;
+        }
+      }
+      if (m.dir) {
+        m.pos.y = groundY(m.pos.x, m.pos.z);
+        m.group.position.set(m.pos.x, m.pos.y, m.pos.z);
+        m.group.rotation.y = Math.atan2(m.dir.x, m.dir.z);
+      } else {
+        m.pos.y = groundY(m.pos.x, m.pos.z);
+        m.group.position.set(m.pos.x, m.pos.y, m.pos.z);
+      }
+      if (m.flashUntil && now > m.flashUntil) {
+        m.flashUntil = 0;
+        m.parts.forEach(function (p) { p.material.emissive = new THREE.Color(0x000000); });
+      }
+      if (Math.hypot(m.pos.x - camera.position.x, m.pos.z - camera.position.z) > 42) removeMob(m);
+    }
+  }
+
+  function updatePhysics(dt) {
+    var speed = mode === 'survival' ? 7 : 10;
     var forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
     forward.y = 0;
     forward.normalize();
     var right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0));
-
     var move = new THREE.Vector3();
     move.addScaledVector(forward, -joyVec.y);
     move.addScaledVector(right, joyVec.x);
@@ -665,13 +1006,75 @@
     if (keys['a'] || keys['arrowleft']) move.addScaledVector(right, -1);
     if (keys['d'] || keys['arrowright']) move.addScaledVector(right, 1);
     if (move.lengthSq() > 0) move.normalize().multiplyScalar(speed * dt);
-    camera.position.add(move);
 
-    var vy = (upPressed || keys[' '] ? upSpeed : 0) - (downPressed || keys['shift'] ? upSpeed : 0);
-    camera.position.y += vy * dt;
-    camera.position.y = Math.max(0.6, Math.min(60, camera.position.y));
-    camera.position.x = Math.max(-17, Math.min(17, camera.position.x));
-    camera.position.z = Math.max(-17, Math.min(17, camera.position.z));
+    if (mode === 'creative') {
+      camera.position.add(move);
+      var vy2 = (upPressed || keys[' '] ? 7 : 0) - (downPressed || keys['shift'] ? 7 : 0);
+      camera.position.y += vy2 * dt;
+      camera.position.y = clamp(camera.position.y, 0.6, 60);
+    } else {
+      // 水平碰撞
+      if (!collides(camera.position.x + move.x, camera.position.y, camera.position.z)) camera.position.x += move.x;
+      if (!collides(camera.position.x, camera.position.y, camera.position.z + move.z)) camera.position.z += move.z;
+      // 重力与落地
+      var feet = camera.position.y - 1.6;
+      var below = Math.floor(feet - 0.001);
+      var grounded = vy <= 0 && isSolid(Math.round(camera.position.x), below, Math.round(camera.position.z));
+      if (grounded) {
+        if (!onGround) {
+          onGround = true;
+          if (fallStart !== null) {
+            var dist = fallStart - feet;
+            if (dist > 4) damagePlayer(Math.max(1, Math.floor((dist - 4) / 2)));
+            fallStart = null;
+          }
+        }
+        camera.position.y = below + 1 + 1.6;
+        vy = 0;
+        var jump = upPressed || keys[' '];
+        if (jump) { vy = 8.2; onGround = false; fallStart = camera.position.y - 1.6; }
+      } else {
+        if (onGround) { fallStart = feet; onGround = false; }
+        vy -= 22 * dt;
+        if (vy < -34) vy = -34;
+        camera.position.y += vy * dt;
+        if (camera.position.y < 1.7) { camera.position.y = 1.7; vy = 0; }
+      }
+      // 生存数值
+      hunger -= dt / 45;
+      if (hunger <= 0) { hunger = 0; hp -= dt * 0.18; }
+      if (hunger >= 9 && hp < 10) hp += dt * 0.08;
+      hp = clamp(hp, 0, 10);
+      hunger = clamp(hunger, 0, 10);
+      if (hp <= 0) die();
+    }
+    camera.position.x = clamp(camera.position.x, -17, 17);
+    camera.position.z = clamp(camera.position.z, -17, 17);
+    updateHud();
+  }
+
+  function collides(x, eye, z) {
+    var half = 0.32;
+    var y0 = Math.floor(eye - 1.6);
+    var y1 = Math.floor(eye - 0.1);
+    var x0 = Math.floor(x - half), x1 = Math.floor(x + half);
+    var z0 = Math.floor(z - half), z1 = Math.floor(z + half);
+    for (var yy = y0; yy <= y1; yy++) {
+      for (var xx = x0; xx <= x1; xx++) {
+        for (var zz = z0; zz <= z1; zz++) {
+          if (isSolid(xx, yy, zz)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    var dt = Math.min(clock.getDelta(), 0.05);
+    updateDayNight(dt);
+    updatePhysics(dt);
+    updateMobs(dt);
 
     cameraEuler.set(pitch, yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(cameraEuler);
