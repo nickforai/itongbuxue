@@ -532,6 +532,9 @@
         var mz = clamp(Math.round(camera.position.z + Math.sin(ang) * rad), -BOUND, BOUND);
         var gy = groundY(mx, mz);
         if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
+      },
+      sheepLying: function () {
+        return mobs.filter(function (m) { return m.type === 'sheep'; }).every(function (m) { return !!m.lying; });
       }
     };
   }
@@ -589,7 +592,13 @@
   }
 
   function getTarget() {
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    return getTargetAt(window.innerWidth / 2, window.innerHeight / 2);
+  }
+
+  function getTargetAt(cx, cy) {
+    var ndcX = (cx / window.innerWidth) * 2 - 1;
+    var ndcY = -(cy / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
     var hits = raycaster.intersectObjects(meshList, false);
     if (!hits.length) return null;
     var hit = hits[0];
@@ -604,9 +613,9 @@
     rebuildType(type);
   }
 
-  function doBreak() {
-    var t = getTarget();
-    if (!t) return;
+  function doBreak() { var t = getTarget(); if (t) breakAt(t); }
+
+  function breakAt(t) {
     var vx = Math.floor(t.point.x - t.normal.x * 0.05);
     var vy = Math.floor(t.point.y - t.normal.y * 0.05);
     var vz = Math.floor(t.point.z - t.normal.z * 0.05);
@@ -649,9 +658,9 @@
     return Math.abs(dx) < 0.9 && Math.abs(dz) < 0.9 && Math.abs(dy) < 1.8;
   }
 
-  function doPlace() {
-    var t = getTarget();
-    if (!t) return;
+  function doPlace() { var t = getTarget(); if (t) placeAtTarget(t); }
+
+  function placeAtTarget(t) {
     var vx = Math.floor(t.point.x + t.normal.x * 0.05);
     var vy = Math.floor(t.point.y + t.normal.y * 0.05);
     var vz = Math.floor(t.point.z + t.normal.z * 0.05);
@@ -660,6 +669,15 @@
     if (vx < -BOUND - 1 || vx > BOUND + 1 || vz < -BOUND - 1 || vz > BOUND + 1 || vy > 40 || vy < -8) return;
     if (insidePlayer(vx, vy, vz)) return;
     putBlock(currentType, vx, vy, vz);
+  }
+
+  /* 手指点到哪，放到哪 */
+  function tapPlace(cx, cy) {
+    var t = getTargetAt(cx, cy);
+    if (!t) return;
+    currentAction = 'place';
+    updateLabel();
+    placeAtTarget(t);
   }
 
   function putBlock(type, vx, vy, vz) {
@@ -777,6 +795,7 @@
       pos: { x: x, y: y, z: z },
       hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : 3,
       speed: type === 'sheep' || type === 'villager' ? 1.4 : 2.4,
+      lying: type === 'sheep',
       dir: null,
       wanderUntil: 0,
       nextAtk: 0,
@@ -785,10 +804,24 @@
     var bodyColor = type === 'zombie' ? 0x4CAF50 : type === 'skeleton' ? 0xE8E8E8 : type === 'villager' ? 0x6B8E4E : 0xFFFFFF;
     var headColor = type === 'zombie' ? 0x2E7D32 : type === 'skeleton' ? 0xD5D5D5 : type === 'villager' ? 0xF0C8A0 : 0xFFF3D0;
     var group = new THREE.Group();
-    var body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.4), new THREE.MeshLambertMaterial({ color: bodyColor }));
-    body.position.y = 0.7;
-    var head = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.55), new THREE.MeshLambertMaterial({ color: headColor }));
-    head.position.y = 1.55;
+    var body, head;
+    if (type === 'sheep') {
+      // 趴着的羊：横躺的身体 + 四条腿 + 头
+      body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.9), new THREE.MeshLambertMaterial({ color: 0xFFFFFF }));
+      body.position.y = 0.4;
+      head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), new THREE.MeshLambertMaterial({ color: 0xFFF3D0 }));
+      head.position.set(0, 0.46, 0.62);
+      [[-0.18, -0.3], [0.18, -0.3], [-0.18, 0.3], [0.18, 0.3]].forEach(function (p) {
+        var leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.32, 0.12), new THREE.MeshLambertMaterial({ color: 0xE0E0E0 }));
+        leg.position.set(p[0], 0.16, p[1]);
+        group.add(leg);
+      });
+    } else {
+      body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.4), new THREE.MeshLambertMaterial({ color: bodyColor }));
+      body.position.y = 0.7;
+      head = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.55), new THREE.MeshLambertMaterial({ color: headColor }));
+      head.position.y = 1.55;
+    }
     body.userData.mob = mob;
     head.userData.mob = mob;
     group.add(body);
@@ -929,30 +962,59 @@
   var lookPointer = null, lookLast = { x: 0, y: 0 };
   var upPressed = false, downPressed = false;
   var keys = {};
+  var touches = {};
+  var mineTimers = {};
 
   function bindControls() {
     var game = App.el('mcGame');
     game.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.mc-ui')) return;
-      if (lookPointer === null) {
-        lookPointer = e.pointerId;
-        lookLast = { x: e.clientX, y: e.clientY };
-      }
+      var t = { x: e.clientX, y: e.clientY, t0: Date.now(), mode: 'pending', timer: null };
+      touches[e.pointerId] = t;
+      t.timer = setTimeout(function () {
+        var cur = touches[e.pointerId];
+        if (cur && cur.mode === 'pending') {
+          cur.mode = 'mine';
+          currentAction = 'break';
+          updateLabel();
+          startMining(e.pointerId, cur.x, cur.y);
+        }
+      }, 360);
     });
     game.addEventListener('pointermove', function (e) {
-      if (e.pointerId !== lookPointer) return;
-      var dx = e.clientX - lookLast.x;
-      var dy = e.clientY - lookLast.y;
-      lookLast = { x: e.clientX, y: e.clientY };
-      yaw -= dx * 0.006;
-      pitch -= dy * 0.006;
-      pitch = clamp(pitch, -1.5, 1.5);
+      var t = touches[e.pointerId];
+      if (!t) return;
+      if (t.mode === 'pending') {
+        if (Math.hypot(e.clientX - t.x, e.clientY - t.y) > 12) {
+          clearTimeout(t.timer);
+          t.mode = 'look';
+          lookPointer = e.pointerId;
+          lookLast = { x: e.clientX, y: e.clientY };
+        }
+      } else if (t.mode === 'look' && e.pointerId === lookPointer) {
+        var dx = e.clientX - lookLast.x;
+        var dy = e.clientY - lookLast.y;
+        lookLast = { x: e.clientX, y: e.clientY };
+        yaw -= dx * 0.006;
+        pitch -= dy * 0.006;
+        pitch = clamp(pitch, -1.5, 1.5);
+      }
     });
-    function release(e) {
-      if (e.pointerId === lookPointer) lookPointer = null;
+    function endTouch(e) {
+      var t = touches[e.pointerId];
+      if (!t) return;
+      clearTimeout(t.timer);
+      if (t.mode === 'pending') {
+        tapPlace(e.clientX, e.clientY); // 短按 = 放置
+      } else if (t.mode === 'mine') {
+        stopMining(e.pointerId);
+      } else if (t.mode === 'look' && e.pointerId === lookPointer) {
+        lookPointer = null;
+      }
+      delete touches[e.pointerId];
     }
-    game.addEventListener('pointerup', release);
-    game.addEventListener('pointercancel', release);
+    game.addEventListener('pointerup', endTouch);
+    game.addEventListener('pointercancel', endTouch);
 
     var joy = App.el('mcJoy');
     var knob = App.el('mcJoyKnob');
@@ -1013,6 +1075,22 @@
       if (e.key === 'f' || e.key === 'F') doAttack();
     });
     window.addEventListener('keyup', function (e) { keys[e.key.toLowerCase()] = false; });
+  }
+
+  function startMining(pointerId, cx, cy) {
+    var once = function () {
+      var t = getTargetAt(cx, cy);
+      if (t) breakAt(t);
+    };
+    once();
+    mineTimers[pointerId] = setInterval(once, 260);
+  }
+
+  function stopMining(pointerId) {
+    if (mineTimers[pointerId]) {
+      clearInterval(mineTimers[pointerId]);
+      delete mineTimers[pointerId];
+    }
   }
 
   function holdAction(btn, fn) {

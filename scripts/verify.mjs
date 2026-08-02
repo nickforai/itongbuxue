@@ -257,6 +257,17 @@ async function main() {
   assert(placed.ok && placed.stone === 0 && placed.block === 'stone', '从背包拿出放置：消耗 1 个并生成方块');
   await page.evaluate(() => { window.__mc.selectItem('brick'); });
   assert((await page.evaluate(() => window.__mc.currentType())) === 'brick', '拖到快捷栏可选中方块');
+  assert((await page.evaluate(() => window.__mc.sheepLying())) === true, '羊是趴着的');
+  // 触摸手势冒烟测试：点按放置、长按挖方块（无报错即可）
+  await page.mouse.move(650, 520);
+  await page.mouse.down();
+  await page.mouse.up();
+  await sleep(200);
+  await page.mouse.move(650, 520);
+  await page.mouse.down();
+  await sleep(650);
+  await page.mouse.up();
+  await sleep(200);
   // 大地图：水、村庄、村民、箱子
   assert((await page.evaluate(() => window.__mc.waterCount())) > 0, '开局有湖泊水域');
   assert((await page.evaluate(() => window.__mc.chestCount())) >= 5, '村庄房子里有箱子');
