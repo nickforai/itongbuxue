@@ -45,7 +45,7 @@
     diamond_armor: { name: '钻石甲', emoji: '🛡️', kind: 'armor', defense: 2 }
   };
 
-  var HOTBAR = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand', 'brick', 'glass', 'plank', 'door', 'workbench', 'bed', 'furnace', 'water'];
+  var HOTBAR = ['grass', 'dirt', 'stone', 'plank', 'wood', 'workbench', 'furnace', 'door', 'bed', 'water', 'leaves', 'sand', 'brick', 'glass'];
 
   var RECIPES = [
     { id: 'planks', name: '木板', result: 'plank', count: 4, need: { wood: 1 } },
@@ -423,7 +423,7 @@
 
   /* ---------- Three.js 场景 ---------- */
   var renderer = null, scene = null, camera = null, highlight = null, raycaster = null, clock = null;
-  var yaw = Math.PI, pitch = -0.25;
+  var yaw = Math.PI, pitch = -0.45;
   var cameraEuler = null;
 
   function startGame() {
@@ -538,6 +538,29 @@
       },
       pos: function () {
         return { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+      },
+      targetInfo: function () {
+        var t = getTarget();
+        return t ? { p: [t.point.x, t.point.y, t.point.z], n: [t.normal.x, t.normal.y, t.normal.z] } : null;
+      },
+      dir: function () {
+        var v = new THREE.Vector3();
+        camera.getWorldDirection(v);
+        return v.toArray();
+      },
+      rayHits: function () {
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        return raycaster.intersectObjects(meshList, false).length;
+      },
+      use: function () {
+        doUse();
+      },
+      lookAt: function (x, y, z) {
+        var dx = x - camera.position.x;
+        var dy = y - camera.position.y;
+        var dz = z - camera.position.z;
+        yaw = Math.atan2(-dx, -dz);
+        pitch = Math.atan2(dy, Math.hypot(dx, dz));
       }
     };
   }
