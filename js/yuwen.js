@@ -5,6 +5,8 @@
   var data = App.store.load();
   var idx = 0;
   var today = App.todayStr();
+  var GRADE_KEY = 'xx3_yw_grade';
+  var grade = '3';
 
   var rec = null;
   var recording = false;
@@ -16,10 +18,45 @@
     return !!(rec && rec.date === today && rec.points > 0);
   }
 
+  function loadGrade() {
+    try {
+      var g = localStorage.getItem(GRADE_KEY);
+      if (g && window.POEMS[g]) grade = g;
+    } catch (e) { /* ignore */ }
+  }
+
+  function saveGrade() {
+    try { localStorage.setItem(GRADE_KEY, grade); } catch (e) { /* ignore */ }
+  }
+
+  function currentPoems() {
+    return window.POEMS[grade] || [];
+  }
+
+  function renderGrades() {
+    var box = App.el('poemGrades');
+    box.innerHTML = '';
+    ['1', '2', '3', '4', '5', '6'].forEach(function (g) {
+      var b = document.createElement('button');
+      b.textContent = (g === '1' ? '一年级' : g === '2' ? '二年级' : g === '3' ? '三年级' : g === '4' ? '四年级' : g === '5' ? '五年级' : '六年级');
+      if (g === grade) b.classList.add('on');
+      b.addEventListener('click', function () {
+        grade = g;
+        saveGrade();
+        data = App.store.load();
+        renderGrades();
+        renderList();
+        App.el('detailScreen').classList.add('hidden');
+        App.el('listScreen').classList.remove('hidden');
+      });
+      box.appendChild(b);
+    });
+  }
+
   function renderList() {
     var list = App.el('poemList');
     list.innerHTML = '';
-    window.Poems.forEach(function (p, i) {
+    currentPoems().forEach(function (p, i) {
       var item = document.createElement('button');
       item.className = 'poem-list-item';
       item.innerHTML =
@@ -43,7 +80,7 @@
   }
 
   function renderDetail() {
-    var p = window.Poems[idx];
+    var p = currentPoems()[idx];
     App.el('poemTitle').textContent = '《' + p.title + '》';
     App.el('poemAuthor').textContent = p.author;
     setPoemHidden(false);
@@ -57,19 +94,20 @@
   }
 
   App.el('readBtn').addEventListener('click', function () {
-    App.speak(window.poemText(window.Poems[idx]), 'zh-CN', 0.85);
+    App.speak(window.poemText(currentPoems()[idx]), 'zh-CN', 0.85);
   });
 
   App.el('prevBtn').addEventListener('click', function () {
     stopRec();
-    idx = (idx - 1 + window.Poems.length) % window.Poems.length;
+    var n = currentPoems().length;
+    idx = (idx - 1 + n) % n;
     data = App.store.load();
     renderDetail();
   });
 
   App.el('nextBtn').addEventListener('click', function () {
     stopRec();
-    idx = (idx + 1) % window.Poems.length;
+    idx = (idx + 1) % currentPoems().length;
     data = App.store.load();
     renderDetail();
   });
@@ -182,7 +220,7 @@
     recording = false;
     resetRecBtn();
     setPoemHidden(false);
-    var p = window.Poems[idx];
+    var p = currentPoems()[idx];
     var text = recFinal;
     App.el('recLive').textContent = text || '（没有识别到内容，再试一次）';
     if (!text) {
@@ -238,6 +276,8 @@
     else startRec();
   });
 
+  loadGrade();
+  renderGrades();
   renderList();
   App.setStarsUI();
   updateStarPill();

@@ -70,7 +70,14 @@ async function main() {
   console.log('\n[3] 语文古诗');
   fresh();
   await page.goto(BASE + 'yuwen.html', { waitUntil: 'networkidle' });
-  assert((await page.locator('.poem-list-item').count()) === 18, '18 首古诗（三年级全册）');
+  assert((await page.locator('#poemGrades button').count()) === 6, '六个年级可选');
+  assert((await page.locator('.poem-list-item').count()) === 18, '三年级 18 首古诗');
+  await page.locator('#poemGrades button', { hasText: '一年级' }).click();
+  await sleep(200);
+  assert((await page.locator('.poem-list-item').count()) === 10, '一年级 10 首古诗');
+  await page.locator('#poemGrades button', { hasText: '三年级' }).click();
+  await sleep(200);
+  assert((await page.locator('.poem-list-item').count()) === 18, '切回三年级 18 首');
   await page.locator('.poem-list-item').first().click();
   await page.waitForSelector('#detailScreen:not(.hidden)');
   assert((await page.locator('#recBtn').count()) === 1, '开始背诵按钮在主操作区');
@@ -560,7 +567,7 @@ async function main() {
   assert((await page.locator('#rdGrades button').count()) === 6, '六个年级可选');
   await page.locator('#rdGrades button', { hasText: '三年级' }).click();
   await sleep(200);
-  assert((await page.locator('.science-item').count()) === 2, '三年级 2 篇阅读');
+  assert((await page.locator('.science-item').count()) === 6, '三年级 6 篇阅读');
   await page.locator('.science-item').first().click();
   await page.waitForSelector('#rdDetail:not(.hidden)');
   assert((await page.locator('#rdPlay').count()) === 1, '播放按钮存在');
