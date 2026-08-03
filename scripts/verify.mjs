@@ -135,7 +135,6 @@ async function main() {
   await sleep(600);
   const recText = await page.textContent('#recResult');
   assert(recText.includes('准确率 100%') && recText.includes('星星 +3'), '录音满分得 3 颗星并显示结果');
-  assert((await page.textContent('#starPill')).includes('⭐'), '星星总数已更新');
   // 场景2：手动停止 → 显示"计算中" → 空识别给出提示
   await page.evaluate(() => {
     window.SilentSR = class {

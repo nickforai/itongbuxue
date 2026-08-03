@@ -226,17 +226,10 @@
     if (!text) {
       App.el('recResult').classList.remove('hidden');
       App.el('recResult').innerHTML = '<div class="rr-score">没有识别到内容</div><div>请靠近麦克风大声朗读</div>';
-      updateStarPill();
       return;
     }
     var score = App.reciteScore(targetText(p), text);
     showReciteResult(p, score);
-  }
-
-  function updateStarPill() {
-    data = App.store.load();
-    var pill = App.el('starPill');
-    if (pill) pill.textContent = '⭐ ' + (data.balance || 0);
   }
 
   function showReciteResult(p, score) {
@@ -268,7 +261,6 @@
       html += '<div class="rr-gain dim">今天这首诗的最好成绩是 ' + rec2.best + '%，再练练能拿更多星星</div>';
     }
     box.innerHTML = html;
-    updateStarPill();
   }
 
   App.el('recBtn').addEventListener('click', function () {
@@ -280,5 +272,4 @@
   renderGrades();
   renderList();
   App.setStarsUI();
-  updateStarPill();
 })();
