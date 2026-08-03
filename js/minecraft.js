@@ -63,7 +63,9 @@
     net_sheep: { name: '网中的羊', color: 0xFFFFFF, emoji: '🐑', kind: 'tool' }
   };
 
-  var HOTBAR = ['grass', 'dirt', 'stone', 'plank', 'wood', 'workbench', 'furnace', 'door', 'fence', 'fence_gate', 'bed', 'water', 'lava', 'leaves', 'sand', 'brick', 'glass'];
+  var HOTBAR_FUNC = ['workbench', 'furnace', 'door', 'fence_gate', 'bed', 'water', 'lava'];
+  var HOTBAR_MAT = ['grass', 'dirt', 'stone', 'plank', 'wood', 'fence', 'leaves', 'sand', 'brick', 'glass'];
+  var HOTBAR = HOTBAR_FUNC.concat(HOTBAR_MAT);
 
   var RECIPES = [
     { id: 'planks', name: '木板', result: 'plank', count: 4, need: { wood: 1 } },
@@ -1632,16 +1634,11 @@
   }
 
   function renderHotbar() {
-    var bar = App.el('mcHotbar');
-    bar.innerHTML = '';
-    var pack = document.createElement('button');
-    pack.className = 'mc-pack-btn mc-ui';
-    pack.id = 'mcPackBtn';
-    pack.title = '背包';
-    pack.textContent = '🎒';
-    pack.addEventListener('click', toggleBackpack);
-    bar.appendChild(pack);
-    HOTBAR.forEach(function (id) {
+    var funcRow = App.el('mcHotbarFunc');
+    var matRow = App.el('mcHotbarMat');
+    funcRow.innerHTML = '';
+    matRow.innerHTML = '';
+    function blockBtn(id) {
       var b = ITEMS[id];
       var btn = document.createElement('button');
       btn.className = 'mc-block mc-ui' + (id === currentType ? ' sel' : '');
@@ -1653,8 +1650,25 @@
         renderHotbar();
         updateLabel();
       });
-      bar.appendChild(btn);
-    });
+      return btn;
+    }
+    var funcLabel = document.createElement('span');
+    funcLabel.className = 'mc-hotbar-label';
+    funcLabel.textContent = '⚙️ 功能';
+    funcRow.appendChild(funcLabel);
+    var pack = document.createElement('button');
+    pack.className = 'mc-pack-btn mc-ui';
+    pack.id = 'mcPackBtn';
+    pack.title = '背包';
+    pack.textContent = '🎒';
+    pack.addEventListener('click', toggleBackpack);
+    funcRow.appendChild(pack);
+    HOTBAR_FUNC.forEach(function (id) { funcRow.appendChild(blockBtn(id)); });
+    var matLabel = document.createElement('span');
+    matLabel.className = 'mc-hotbar-label';
+    matLabel.textContent = '🧱 方块';
+    matRow.appendChild(matLabel);
+    HOTBAR_MAT.forEach(function (id) { matRow.appendChild(blockBtn(id)); });
   }
 
   function selectItem(id) {
@@ -1790,7 +1804,7 @@
       if (dragging) {
         if (ghost) ghost.remove();
         row.classList.remove('dragging');
-        var bar = App.el('mcHotbar');
+        var bar = App.el('mcHotbarWrap');
         var r = bar.getBoundingClientRect();
         if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
           selectItem(id);

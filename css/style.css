@@ -958,7 +958,7 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   touch-action: manipulation;
 }
 
-#mcGame .mc-hotbar { touch-action: pan-x; }
+#mcGame .mc-hotbar-row { touch-action: pan-x; }
 
 #mcGame canvas { display: block; }
 
@@ -1072,22 +1072,36 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .mc-act.place { background: rgba(47, 181, 110, 0.85); }
 .mc-act.use { background: rgba(61, 123, 253, 0.85); }
 
-.mc-hotbar {
+.mc-hotbar-wrap {
   position: absolute;
   left: 50%;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(20px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  max-width: 96vw;
+}
+
+.mc-hotbar-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
   background: rgba(20, 20, 35, 0.6);
-  padding: 8px;
-  border-radius: 18px;
-  max-width: 640px;
-  overflow: visible;
+  padding: 6px;
+  border-radius: 14px;
+  max-width: 96vw;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 5px;
-  padding: 6px;
+}
+
+.mc-hotbar-label {
+  color: #FFE8B0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0 6px;
+  white-space: nowrap;
 }
 
 .mc-block {

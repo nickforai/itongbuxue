@@ -318,7 +318,9 @@ async function main() {
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
   assert((await page.locator('.mc-block').count()) === 17, '17 种方块可切换（含栅栏/栅栏门）');
-  assert((await page.locator('#mcHotbar .mc-pack-btn').count()) === 1, '背包按钮在快捷栏左边');
+  assert((await page.locator('#mcHotbarWrap .mc-pack-btn').count()) === 1, '背包按钮在功能栏');
+  assert((await page.locator('#mcHotbarFunc .mc-block').count()) === 7, '功能栏 7 个功能方块');
+  assert((await page.locator('#mcHotbarMat .mc-block').count()) === 10, '方块栏 10 个方块');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
   await sleep(200);
