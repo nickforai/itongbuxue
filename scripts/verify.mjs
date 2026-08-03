@@ -256,6 +256,8 @@ async function main() {
   await sleep(1500);
   const handCount = await page.locator('#myHand .ddz-card').count();
   assert(handCount >= 17 && handCount <= 20, '发牌正常（' + handCount + ' 张）');
+  assert((await page.locator('#btnAuto').count()) === 1, '托管按钮存在');
+  assert((await page.textContent('#ddzRole')).includes('你是'), '身份显示（地主/农民）');
   // 处理叫地主（如果轮到我）并等到我的回合
   let myTurn = false;
   for (let i = 0; i < 40 && !myTurn; i++) {

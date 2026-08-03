@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=38">
 </head>
 <body>
   <div class="page">
@@ -27,8 +27,7 @@
       <div class="panel">
         <h2>🎮 游戏大厅</h2>
         <p style="color:var(--muted);font-size:.92rem;line-height:1.7;margin-bottom:14px">
-          你和两个机器人打斗地主：完成作业赚星星，<b>5 颗星星 = 1 次游戏机会</b>。
-          赢一局开心一下，输掉不扣星星。
+          和小粉、小蓝两位好朋友打牌，<b>5 颗星星 = 1 次机会</b>。输赢都开心，不打紧！
         </p>
         <div class="stat-grid" style="margin-bottom:16px">
           <div class="stat-cell"><div class="sv" id="lobbyJifen">0</div><div class="sl">⭐ 星星</div></div>
@@ -38,48 +37,53 @@
         <div style="height:12px"></div>
         <button class="btn btn-gold" id="startBtn">🎮 开始游戏</button>
       </div>
-      <div class="panel" style="color:var(--muted);font-size:.85rem;line-height:1.7">
-        <b style="color:var(--ink)">怎么赚星星？</b><br>
-        📅 每天打卡 +4 · 🔢 口算一轮 +2（全对 +3）· 📖 古诗背诵（按准确率 +1~3）· 🔤 单词测验 +2（全对 +3）· 🔬 科学问答 +2（全对 +3）
+      <div class="panel" style="color:var(--muted);font-size:.85rem;line-height:1.8">
+        <b style="color:var(--ink)">儿童版规则</b><br>
+        🎲 开局随机一人当地主，不用叫分<br>
+        💡 不会出牌就点「提示」· 🤖 不想玩了点「托管」<br>
+        💖 小粉温柔、小蓝憨憨，都会让着你，赢多输少！
       </div>
     </section>
 
     <!-- 对局 -->
     <section id="game" class="hidden">
-      <div class="ddz-table">
-        <div class="ddz-bots">
-          <div class="ddz-bot" id="bot1">
-            <div class="bot-head">🤖 小蓝<span class="landlord-tag hidden" id="landlordTag1">地主</span></div>
-            <div class="bot-cards" id="bot1Back"></div>
-            <div class="bot-play" id="bot1Play"></div>
-          </div>
-          <div class="ddz-bot" id="bot2">
-            <div class="bot-head">🤖 小红<span class="landlord-tag hidden" id="landlordTag2">地主</span></div>
-            <div class="bot-cards" id="bot2Back"></div>
-            <div class="bot-play" id="bot2Play"></div>
-          </div>
+      <div class="ddz-statusbar">
+        <span id="ddzRole">🧑‍🌾 你是农民</span>
+        <span id="ddzStatus">准备开始…</span>
+      </div>
+      <div class="ddz-bots">
+        <div class="ddz-bot" id="bot1">
+          <div class="bot-head">💖 小粉<span class="landlord-tag hidden" id="landlordTag1">👑地主</span></div>
+          <div class="bot-cards" id="bot1Back"></div>
+          <div class="bot-chat" id="bot1Chat"></div>
+          <div class="bot-play" id="bot1Play"></div>
         </div>
-
-        <div class="ddz-center">
-          <div class="ddz-bottom" id="bottomCards"></div>
-          <div class="ddz-status" id="ddzStatus">准备开始…</div>
-          <div class="ddz-turn" id="ddzTurn"></div>
-          <div class="bid-row hidden" id="bidRow">
-            <button class="btn btn-gold" id="bidYes">🙋 叫地主</button>
-            <button class="btn btn-ghost" id="bidNo">不叫</button>
-          </div>
-        </div>
-
-        <div class="ddz-mine">
-          <div class="ddz-my-play" id="myPlay"></div>
-          <div class="ddz-hand" id="myHand"></div>
-          <div class="ddz-actions" id="actionRow">
-            <button class="btn btn-gold" id="btnPlay">出牌</button>
-            <button class="btn btn-ghost" id="btnPass">不出</button>
-            <button class="btn btn-blue" id="btnHint">💡 提示</button>
-          </div>
+        <div class="ddz-bot" id="bot2">
+          <div class="bot-head">🤪 小蓝<span class="landlord-tag hidden" id="landlordTag2">👑地主</span></div>
+          <div class="bot-cards" id="bot2Back"></div>
+          <div class="bot-chat" id="bot2Chat"></div>
+          <div class="bot-play" id="bot2Play"></div>
         </div>
       </div>
+
+      <div class="ddz-center">
+        <div class="ddz-bottom" id="bottomCards"></div>
+        <div class="ddz-turn" id="ddzTurn"></div>
+      </div>
+
+      <div class="ddz-mine">
+        <div class="ddz-my-play" id="myPlay"></div>
+        <div class="ddz-hand" id="myHand"></div>
+        <div class="ddz-actions" id="actionRow">
+          <button class="btn btn-red btn-big" id="btnPass">要不起</button>
+          <button class="btn btn-blue btn-big" id="btnHint">💡 提示</button>
+        </div>
+        <div class="ddz-actions">
+          <button class="btn btn-green btn-big" id="btnPlay">出牌！</button>
+          <button class="btn btn-gold btn-big" id="btnAuto">🤖 托管</button>
+        </div>
+      </div>
+
       <div class="panel ddz-history">
         <div class="hist-title">📜 出牌记录</div>
         <div class="hist-scroll" id="historyBox"></div>
@@ -100,10 +104,12 @@
         </div>
       </div>
     </section>
+
+    <div class="ddz-fireworks hidden" id="fireworks"></div>
   </div>
 
-  <script src="js/common.js?v=3"></script>
-  <script src="js/doudizhu-core.js?v=3"></script>
-  <script src="js/doudizhu.js?v=3"></script>
+  <script src="js/common.js?v=38"></script>
+  <script src="js/doudizhu-core.js?v=38"></script>
+  <script src="js/doudizhu.js?v=38"></script>
 </body>
 </html>

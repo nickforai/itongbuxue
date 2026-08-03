@@ -438,7 +438,14 @@
   /* 机器人出牌：返回 {cards} 或 null（不出） */
   function aiPlay(hand, ctx) {
     var last = ctx.lastPlay;
+    var friendly = ctx.friendly || 0;
     if (!last) return { cards: chooseLead(hand) };
+    if (friendly >= 1) {
+      // 温柔陪玩：先手时只出最小的散牌单张（放水）
+      var g0 = groupsOf(hand);
+      var s0 = g0.find(function (x) { return x.count === 1 && x.power <= 14; });
+      if (s0) return { cards: [s0.cards[0]] };
+    }
 
     var beat = findBeat(hand, last);
     if (!beat) return null;
@@ -449,6 +456,16 @@
     if (mine !== landlord) {
       teammate = 3 - mine - landlord; // 另一个农民
     }
+
+    // 温柔陪玩：孩子出的牌尽量不压，让孩子能一路领先
+    if (friendly >= 1 && ctx.lastPlayer === 0 && hand.length - beat.length > 0) return null;
+    // 永不拿王炸/炸弹炸孩子
+    if (friendly >= 1 && ctx.lastPlayer === 0) {
+      var fb = analyze(beat);
+      if (fb.type === TYPE.ROCKET || fb.type === TYPE.BOMB) return null;
+    }
+    // 超温柔（孩子连输后）：孩子出的牌一律不压
+    if (friendly >= 2 && ctx.lastPlayer === 0) return null;
 
     // 队友出的小单张/小对子不抢，让队友多出
     if (ctx.lastPlayer === teammate && hand.length - beat.length > 0) {

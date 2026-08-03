@@ -1467,3 +1467,69 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 .rd-text .rd-pending { color: #B9B9C6; }
 .rd-text .rd-punct { color: var(--muted); }
+
+/* ---------- 斗地主儿童版 ---------- */
+.ddz-statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: #E7F3FF;
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.ddz-statusbar #ddzRole { color: #B26A00; }
+.ddz-statusbar #ddzStatus { color: var(--muted); font-size: 0.85rem; text-align: right; }
+
+.bot-chat {
+  min-height: 24px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #FFE8B0;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.bot-chat.show { opacity: 1; }
+
+.btn-big {
+  padding: 18px;
+  font-size: 1.3rem;
+  border-radius: 22px;
+  min-height: 64px;
+}
+
+.ddz-hand .ddz-card {
+  width: 56px;
+  height: 88px;
+  font-size: 1.7rem;
+}
+.ddz-hand .ddz-card .rank { font-size: 1.7rem; }
+.ddz-hand .ddz-card .suit { font-size: 1rem; }
+
+.ddz-card.fly { animation: cardfly 0.45s ease-out; }
+@keyframes cardfly {
+  from { transform: translateY(-26px) scale(1.08); opacity: 0.35; }
+  to { transform: none; opacity: 1; }
+}
+
+.ddz-fireworks {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  overflow: hidden;
+}
+.ddz-fireworks span {
+  position: absolute;
+  bottom: 30%;
+  font-size: 2.4rem;
+  animation: fireup 2.8s ease-out forwards;
+}
+@keyframes fireup {
+  0% { transform: translateY(0) scale(0.6); opacity: 1; }
+  100% { transform: translateY(-72vh) scale(1.5); opacity: 0; }
+}
