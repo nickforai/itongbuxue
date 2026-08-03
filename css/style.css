@@ -1269,6 +1269,8 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .mc-hud-day { color: #FFE8B0; font-size: 0.8rem; font-weight: 800; }
 
 .mc-act.atk { background: rgba(232, 85, 109, 0.85); }
+.mc-act.paint { background: rgba(155, 107, 245, 0.85); }
+.mc-act.on { outline: 3px solid #fff; }
 .mc-act-row { gap: 8px; }
 .mc-act { width: 74px; height: 74px; }
 

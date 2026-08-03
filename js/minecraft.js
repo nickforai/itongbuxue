@@ -595,10 +595,13 @@
 
   function startGame() {
     var chosenMode = mode;
+    paintMode = false;
     App.el('mcLobby').classList.add('hidden');
     App.el('mcGame').classList.remove('hidden');
     App.el('mcUp').textContent = chosenMode === 'survival' ? '⤒' : '▲';
     App.el('mcDown').classList.toggle('hidden', chosenMode === 'survival');
+    App.el('mcPaintBtn').classList.toggle('hidden', chosenMode !== 'creative');
+    App.el('mcPaintBtn').classList.remove('on');
     try {
       init3D(chosenMode);
     } catch (e) {
@@ -745,6 +748,14 @@
       },
       releaseNet: function (type) {
         releaseAnimal('net_' + type);
+      },
+      paintAction: paintAction,
+      paintPlaceAt: function (x, y, z) { return putBlock(currentType, x, y, z); },
+      eraseVoxel: eraseVoxel,
+      setPaint: function (v) {
+        paintMode = !!v;
+        App.el('mcPaintBtn').classList.toggle('on', paintMode);
+        updateLabel();
       },
       pos: function () {
         return { x: camera.position.x, y: camera.position.y, z: camera.position.z };
@@ -979,6 +990,44 @@
     currentAction = 'place';
     updateLabel();
     placeAtTarget(t);
+  }
+
+  /* 画笔：往上拖 = 放置，往回拖 = 删除 */
+  function paintAction(cx, cy, totalY) {
+    if (!totalY) return false;
+    var t = getTargetAt(cx, cy);
+    if (!t) return false;
+    if (totalY < 0) {
+      var px = Math.floor(t.point.x + t.normal.x * 0.05);
+      var py = Math.floor(t.point.y + t.normal.y * 0.05);
+      var pz = Math.floor(t.point.z + t.normal.z * 0.05);
+      return putBlock(currentType, px, py, pz);
+    } else {
+      return eraseAt(t);
+    }
+  }
+
+  function eraseVoxel(x, y, z) {
+    var k = vkey(x, y, z);
+    var type = world[k];
+    if (!type) return false;
+    if (isFluid(type)) delete fluidLevel[k];
+    removeVoxel(k, type);
+    var drop = type === 'door' || type === 'door_open' ? 'door' : type === 'water_flow' ? 'water' : type === 'lava_flow' ? 'lava' : type;
+    if (drop === 'coal_ore') drop = 'coal';
+    else if (drop === 'iron_ore') drop = 'raw_iron';
+    else if (drop === 'gold_ore') drop = 'gold';
+    else if (drop === 'diamond_ore') drop = 'diamond';
+    addItem(drop, 1);
+    scheduleSave();
+    return true;
+  }
+
+  function eraseAt(t) {
+    var vx = Math.floor(t.point.x - t.normal.x * 0.05);
+    var vy = Math.floor(t.point.y - t.normal.y * 0.05);
+    var vz = Math.floor(t.point.z - t.normal.z * 0.05);
+    return eraseVoxel(vx, vy, vz);
   }
 
   function putBlock(type, vx, vy, vz) {
@@ -1503,6 +1552,8 @@
   var keys = {};
   var touches = {};
   var mineTimers = {};
+  var paintMode = false;
+  var lastPaint = 0;
 
   function bindControls() {
     var game = App.el('mcGame');
@@ -1512,6 +1563,10 @@
     });
     game.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.mc-ui')) return;
+      if (paintMode) {
+        touches[e.pointerId] = { x: e.clientX, y: e.clientY, lastY: e.clientY, totalY: 0, moved: false, mode: 'paint' };
+        return;
+      }
       var t = { x: e.clientX, y: e.clientY, t0: Date.now(), mode: 'pending', timer: null };
       touches[e.pointerId] = t;
       t.timer = setTimeout(function () {
@@ -1527,6 +1582,18 @@
     game.addEventListener('pointermove', function (e) {
       var t = touches[e.pointerId];
       if (!t) return;
+      if (t.mode === 'paint') {
+        var dy = e.clientY - t.lastY;
+        t.lastY = e.clientY;
+        if (Math.abs(e.clientX - t.x) + Math.abs(dy) > 8) t.moved = true;
+        t.totalY += dy;
+        var now = Date.now();
+        if (now - lastPaint > 90) {
+          lastPaint = now;
+          paintAction(e.clientX, e.clientY, t.totalY);
+        }
+        return;
+      }
       if (t.mode === 'pending') {
         if (Math.hypot(e.clientX - t.x, e.clientY - t.y) > 12) {
           clearTimeout(t.timer);
@@ -1549,6 +1616,8 @@
       clearTimeout(t.timer);
       if (t.mode === 'pending') {
         tapPlace(e.clientX, e.clientY); // 短按 = 放置
+      } else if (t.mode === 'paint') {
+        if (!t.moved) tapPlace(e.clientX, e.clientY);
       } else if (t.mode === 'mine') {
         stopMining(e.pointerId);
       } else if (t.mode === 'look' && e.pointerId === lookPointer) {
@@ -1610,6 +1679,12 @@
       e.preventDefault();
       e.stopPropagation();
       doAttack();
+    });
+    App.el('mcPaintBtn').addEventListener('click', function () {
+      paintMode = !paintMode;
+      App.el('mcPaintBtn').classList.toggle('on', paintMode);
+      updateLabel();
+      App.toast(paintMode ? '🖌️ 画笔：往上拖放方块，往回拖删方块' : '已退出画笔模式');
     });
 
     window.addEventListener('keydown', function (e) {
@@ -1724,6 +1799,7 @@
     var label = App.el('mcLabel');
     var act = currentAction === 'break' ? '⛏️ 拆' : currentAction === 'place' ? '🧱 放：' + ITEMS[currentType].name : '👆 使用';
     if (mode === 'survival') act += ' · 生存';
+    if (paintMode) act += ' · 🖌️画笔';
     if (equipped) act += ' · 手持 ' + ITEMS[equipped].name;
     if (equipped === 'bow' || equipped === 'cannon') act += '（点👆发射）';
     if (equipped === 'bucket' || equipped === 'water_bucket' || equipped === 'lava_bucket') act += '（点👆使用）';

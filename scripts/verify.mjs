@@ -437,6 +437,9 @@ async function main() {
   await page.evaluate(() => window.__mc.openTrade());
   assert((await page.locator('#mcTradePanel:not(.hidden)').count()) === 1, '村民交换面板可打开');
   assert((await page.locator('#mcTradeList .mc-recipe').count()) === 11, '11 条交换规则');
+  await page.evaluate(() => { document.getElementById('mcTradeClose').click(); });
+  await sleep(200);
+  assert((await page.locator('#mcTradePanel.hidden').count()) === 1, '村民交换面板已关闭');
   // 盔甲
   await page.evaluate(() => {
     window.__mc.addItem('raw_iron', 4);
@@ -542,6 +545,21 @@ async function main() {
   await page.evaluate(() => { window.__mc.setTime(0.9); });
   await sleep(300);
   assert((await page.evaluate(() => window.__mc.isNight())) === true, '夜晚标记正确');
+  // 创造模式画笔：前进放置、往回删除
+  assert((await page.locator('#mcPaintBtn:not(.hidden)').count()) === 1, '创造模式显示画笔按钮');
+  await page.click('#mcPaintBtn');
+  await sleep(200);
+  assert((await page.locator('#mcPaintBtn.on').count()) === 1, '画笔模式开启');
+  const paintResult = await page.evaluate(() => {
+    window.__mc.selectItem('brick');
+    const placed = window.__mc.paintPlaceAt(55, 30, 55);
+    const placedBlock = window.__mc.blockAt(55, 30, 55);
+    const erased = window.__mc.eraseVoxel(55, 30, 55);
+    const erasedBlock = window.__mc.blockAt(55, 30, 55);
+    return { placed: placed, placedBlock: placedBlock, erased: erased, erasedBlock: erasedBlock };
+  });
+  assert(paintResult.placed === true && paintResult.placedBlock === 'brick', '画笔放置方块');
+  assert(paintResult.erased === true && paintResult.erasedBlock === null, '画笔删除方块');
   await shot(page, 'minecraft');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
@@ -565,6 +583,7 @@ async function main() {
   assert((await page.textContent('#mcHunger')).includes('🍗'), '饥饿值 HUD 显示');
   assert((await page.locator('#mcAttack').count()) === 1, '攻击按钮存在');
   assert((await page.locator('#mcDown.hidden').count()) === 1, '生存模式下降按钮隐藏');
+  assert((await page.locator('#mcPaintBtn.hidden').count()) === 1, '生存模式隐藏画笔按钮');
   await page.evaluate(() => { window.__mc.setTime(0.9); });
   let hostileCount = 0;
   for (let i = 0; i < 16 && hostileCount < 1; i++) {
