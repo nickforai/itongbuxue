@@ -286,6 +286,11 @@ async function main() {
     assert(actionHidden === 1 && passLogged >= 1, '要不起时提示自动不出并记录');
   }
   assert((await page.locator('#historyBox .hist-row').count()) >= 1, '出牌记录已生成');
+  // 限时：倒计时显示 + 时间到结算
+  assert((await page.textContent('#ddzTimer')).includes(':'), '斗地主限时倒计时显示');
+  await page.evaluate(() => window.__ddz.forceTimeUp());
+  await sleep(300);
+  assert((await page.textContent('#overTitle')).includes('时间到'), '时间到结算出现');
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('xx3_learning_v1'));
     d.chances = 0;
@@ -562,6 +567,11 @@ async function main() {
   });
   assert(paintResult.placed === true && paintResult.placedBlock === 'brick', '画笔放置方块');
   assert(paintResult.erased === true && paintResult.erasedBlock === null, '画笔删除方块');
+  // 限时：倒计时显示 + 时间到提示
+  assert((await page.textContent('#mcTimer')).includes(':'), '我的世界限时倒计时显示');
+  await page.evaluate(() => window.__mc.forceTimeUp());
+  await sleep(300);
+  assert((await page.locator('#mcTimeUp:not(.hidden)').count()) === 1, '我的世界时间到提示弹出');
   await shot(page, 'minecraft');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 

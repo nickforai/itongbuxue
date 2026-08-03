@@ -9,6 +9,7 @@
   var PINK_MSGS = ['💖 让让你', '😊 加油！', '🌷 你好棒'];
   var BLUE_MSGS = ['🤪 我犯傻啦', '😴 没看见', '🍌 我输啦'];
   var G = null;
+  var stopTimer = null;
 
   /* ---------- 工具 ---------- */
   function byPower(a, b) { return a.power - b.power; }
@@ -113,6 +114,7 @@
     };
     G.hands[G.landlord] = G.hands[G.landlord].concat(G.bottom).sort(byPower);
     G.turn = G.landlord;
+    startTimer();
     App.el('lobby').classList.add('hidden');
     App.el('overlay').classList.add('hidden');
     App.el('game').classList.remove('hidden');
@@ -281,6 +283,7 @@
   /* ---------- 结算与烟花 ---------- */
   function gameOver(winner) {
     G.over = true;
+    stopTimer();
     var landlordWon = winner === G.landlord;
     var myWon = (G.landlord === 0 && landlordWon) || (G.landlord !== 0 && !landlordWon);
     data = App.store.load();
@@ -314,6 +317,43 @@
     }
     renderLobby();
   }
+
+  /* ---------- 限时：每局 10 分钟，最后 20 秒提醒 ---------- */
+  function startTimer() {
+    stopTimer = App.countdown(600, 20, {
+      onWarn: function () {
+        App.el('ddzTimer').classList.add('warn');
+        App.toast('⏰ 时间还剩 20 秒，抓紧出牌哦！');
+      },
+      onTick: function (left) {
+        App.el('ddzTimer').textContent = left > 20 ? '⏰ ' + App.formatClock(left) : '⏰ 只剩 ' + left + ' 秒';
+      },
+      onEnd: timeUp
+    });
+  }
+
+  function timeUp() {
+    if (!G || G.over) return;
+    G.over = true;
+    stopTimer();
+    App.el('game').classList.add('hidden');
+    App.el('overEmoji').textContent = '⏰';
+    App.el('overTitle').textContent = '时间到啦！';
+    App.el('overLine').textContent = '这局没分出胜负，下次再来玩';
+    var again = App.el('overAgain');
+    data = App.store.load();
+    if (data.chances > 0) {
+      again.disabled = false;
+      again.textContent = '🔄 再来一局（还剩 ' + data.chances + ' 次机会）';
+    } else {
+      again.disabled = true;
+      again.textContent = '🎮 机会用完啦，做作业赚星星吧';
+    }
+    App.el('overlay').classList.remove('hidden');
+    renderLobby();
+  }
+
+  window.__ddz = { forceTimeUp: timeUp };
 
   function fire() {
     var box = App.el('fireworks');

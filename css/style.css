@@ -1267,6 +1267,7 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   white-space: nowrap;
 }
 .mc-hud-day { color: #FFE8B0; font-size: 0.8rem; font-weight: 800; }
+#mcTimer.warn { color: #FF6B6B; font-weight: 900; }
 
 .mc-act.atk { background: rgba(232, 85, 109, 0.85); }
 .mc-act.paint { background: rgba(155, 107, 245, 0.85); }

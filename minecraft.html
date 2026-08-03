@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=34">
+  <link rel="stylesheet" href="css/style.css?v=39">
 </head>
 <body>
   <!-- 大厅：星星兑换 -->
@@ -67,6 +67,7 @@
       <div class="mc-hud-line" id="mcHearts"></div>
       <div class="mc-hud-line" id="mcHunger"></div>
       <div class="mc-hud-day" id="mcDayNight">🌞 白天</div>
+      <div class="mc-hud-day" id="mcTimer">⏰ 10:00</div>
     </div>
     <button class="mc-exit mc-ui" id="mcExit">🏠 退出</button>
 
@@ -144,8 +145,21 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=34"></script>
-  <script src="js/vendor/three.min.js?v=34"></script>
-  <script src="js/minecraft.js?v=34"></script>
+  <div class="mc-overlay mc-ui hidden" id="mcTimeUp">
+    <div class="mc-overlay-inner">
+      <div style="text-align:center">
+        <div style="font-size:3.4rem">⏰</div>
+        <div style="font-size:1.5rem;font-weight:800">时间到啦！</div>
+        <div style="color:var(--muted);margin:8px 0 16px">建造的世界已保存，下次再玩</div>
+        <button class="btn btn-gold" id="mcTimeHome">🏠 回首页</button>
+        <div style="height:10px"></div>
+        <button class="btn btn-ghost" id="mcTimeLobby">🎮 游戏大厅</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/common.js?v=39"></script>
+  <script src="js/vendor/three.min.js?v=39"></script>
+  <script src="js/minecraft.js?v=39"></script>
 </body>
 </html>

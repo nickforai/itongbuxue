@@ -240,6 +240,32 @@
     return { accuracy: accuracy, match: match, total: e.length, points: points };
   }
 
+  /* ---------- 游戏限时倒计时 ---------- */
+  function formatClock(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ':' + (s < 10 ? '0' + s : '' + s);
+  }
+
+  /* 返回停止函数。total=总秒数，warnAt=提前多少秒提醒 */
+  function countdown(total, warnAt, callbacks) {
+    var end = Date.now() + total * 1000;
+    var warned = false;
+    var timer = setInterval(function () {
+      var left = Math.max(0, Math.round((end - Date.now()) / 1000));
+      if (!warned && left <= warnAt) {
+        warned = true;
+        if (callbacks.onWarn) callbacks.onWarn();
+      }
+      if (callbacks.onTick) callbacks.onTick(left);
+      if (left <= 0) {
+        clearInterval(timer);
+        if (callbacks.onEnd) callbacks.onEnd();
+      }
+    }, 1000);
+    return function () { clearInterval(timer); };
+  }
+
   // 预热语音列表（Safari 首次可能为空）
   if ('speechSynthesis' in window) {
     window.speechSynthesis.getVoices();
@@ -271,6 +297,8 @@
     shuffle: shuffle,
     el: el,
     setStarsUI: setStarsUI,
-    reciteScore: reciteScore
+    reciteScore: reciteScore,
+    countdown: countdown,
+    formatClock: formatClock
   };
 })();

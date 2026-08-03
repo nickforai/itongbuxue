@@ -430,19 +430,21 @@
     } catch (e) { /* ignore */ }
   }
 
+  function saveNow() {
+    try {
+      var json = JSON.stringify({
+        seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
+        chestState: chestContents, chestDate: App.todayStr(), mode: mode
+      });
+      localStorage.setItem(SAVE_KEY, json);
+      localStorage.setItem(MC_BACKUP_KEY, json); // 自动备份
+    } catch (e) { /* 空间满就忽略 */ }
+  }
+
   var saveTimer = null;
   function scheduleSave() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () {
-      try {
-        var json = JSON.stringify({
-          seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
-          chestState: chestContents, chestDate: App.todayStr(), mode: mode
-        });
-        localStorage.setItem(SAVE_KEY, json);
-        localStorage.setItem(MC_BACKUP_KEY, json); // 自动备份
-      } catch (e) { /* 空间满就忽略 */ }
-    }, 600);
+    saveTimer = setTimeout(saveNow, 600);
   }
 
   /* ---------- 背包与合成 ---------- */
@@ -588,6 +590,29 @@
     window.location.href = 'index.html';
   });
 
+  /* ---------- 限时：每局 10 分钟，最后 20 秒提醒 ---------- */
+  function startTimer() {
+    stopTimer = App.countdown(600, 20, {
+      onWarn: function () {
+        App.el('mcTimer').classList.add('warn');
+        App.toast('⏰ 时间还剩 20 秒，抓紧时间哦！');
+      },
+      onTick: function (left) {
+        App.el('mcTimer').textContent = left > 20 ? '⏰ ' + App.formatClock(left) : '⏰ 只剩 ' + left + ' 秒';
+      },
+      onEnd: timeUp
+    });
+  }
+
+  function timeUp() {
+    if (stopTimer) stopTimer();
+    saveNow();
+    App.el('mcTimeUp').classList.remove('hidden');
+  }
+
+  App.el('mcTimeHome').addEventListener('click', function () { window.location.href = 'index.html'; });
+  App.el('mcTimeLobby').addEventListener('click', function () { window.location.href = 'minecraft.html'; });
+
   /* ---------- Three.js 场景 ---------- */
   var renderer = null, scene = null, camera = null, highlight = null, raycaster = null, clock = null;
   var yaw = Math.PI, pitch = -0.45;
@@ -596,6 +621,7 @@
   function startGame() {
     var chosenMode = mode;
     paintMode = false;
+    if (stopTimer) stopTimer();
     App.el('mcLobby').classList.add('hidden');
     App.el('mcGame').classList.remove('hidden');
     App.el('mcUp').textContent = chosenMode === 'survival' ? '⤒' : '▲';
@@ -604,6 +630,7 @@
     App.el('mcPaintBtn').classList.remove('on');
     try {
       init3D(chosenMode);
+      startTimer();
     } catch (e) {
       App.toast('此设备不支持 3D 游戏');
       console.error('3D init failed:', e);
@@ -721,6 +748,7 @@
         var gy = groundY(mx, mz);
         if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
       },
+      forceTimeUp: timeUp,
       sheepLying: function () {
         return mobs.filter(function (m) { return m.type === 'sheep'; }).every(function (m) { return !!m.lying; });
       },
@@ -1554,6 +1582,7 @@
   var mineTimers = {};
   var paintMode = false;
   var lastPaint = 0;
+  var stopTimer = null;
 
   function bindControls() {
     var game = App.el('mcGame');
