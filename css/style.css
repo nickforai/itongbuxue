@@ -1442,6 +1442,14 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 .char-quiz .quiz-options button:active { transform: scale(0.92); }
 
+.cq-progress { color: var(--muted); font-size: 0.9rem; margin-bottom: 6px; }
+.cq-question { font-size: 1.1rem; font-weight: 700; margin: 8px 0 4px; }
+.cq-pinyin { font-size: 3.2rem; font-weight: 800; color: var(--shuxue); margin: 10px 0 18px; }
+.cq-feedback { min-height: 28px; font-size: 1rem; font-weight: 800; margin-top: 12px; color: var(--ok); }
+#quizScreen .quiz-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+#quizScreen .quiz-options button { min-height: 84px; font-size: 2rem; font-weight: 800; }
+#quizScreen .quiz-options button:active { transform: scale(0.92); }
+
 /* ---------- 阅读 ---------- */
 .rd-text {
   font-size: 1.35rem;

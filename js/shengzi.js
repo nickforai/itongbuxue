@@ -74,7 +74,6 @@
     App.el('strokeHint').textContent = '看笔顺动画，跟着写一写';
     drawStrokes(item.c);
     markStep(item.c, 'stroke'); // ① 看笔顺：打开即看过动画
-    renderQuiz(item.c);
     renderLearnUI(item.c);
     App.el('charList').classList.add('hidden');
     App.el('charDetail').classList.remove('hidden');
@@ -153,6 +152,10 @@
 
   function renderQuiz(c) {
     var list = window.CHARS[grade];
+    var qi = list.findIndex(function (x) { return x.c === c; });
+    App.el('cqProgress').textContent = '第 ' + (qi + 1) + ' / ' + list.length + ' 个字';
+    App.el('cqFeedback').textContent = '';
+    App.el('quizDoneRow').classList.add('hidden');
     var others = App.shuffle(list.map(function (x) { return x.c; }).filter(function (x) { return x !== c; })).slice(0, 3);
     var options = App.shuffle([c].concat(others));
     App.el('cqPinyin').textContent = window.CHARS[grade].find(function (x) { return x.c === c; }).p;
@@ -165,16 +168,29 @@
       b.addEventListener('click', function () {
         if (ch === c) {
           markStep(c, 'quiz');
-          renderQuiz(c);
+          App.el('cqFeedback').textContent = '✓ 认对了！';
+          App.el('quizDoneRow').classList.remove('hidden');
           App.toast('✓ 认对了！');
         } else {
           b.classList.add('wrongpick');
-          App.toast('再想想，是哪一个字？');
+          App.el('cqFeedback').textContent = '再想想，是哪一个字？';
           setTimeout(function () { b.classList.remove('wrongpick'); }, 500);
         }
       });
       box.appendChild(b);
     });
+  }
+
+  function openQuiz(c) {
+    App.el('charDetail').classList.add('hidden');
+    App.el('quizScreen').classList.remove('hidden');
+    renderQuiz(c);
+    window.scrollTo(0, 0);
+  }
+
+  function closeQuiz() {
+    App.el('quizScreen').classList.add('hidden');
+    App.el('charDetail').classList.remove('hidden');
   }
 
   App.el('charSpeak').addEventListener('click', function () {
@@ -190,6 +206,17 @@
 
   App.el('charNext').addEventListener('click', function () {
     openChar((idx + 1) % window.CHARS[grade].length);
+  });
+
+  App.el('startQuizBtn').addEventListener('click', function () {
+    openQuiz(window.CHARS[grade][idx].c);
+  });
+
+  App.el('quizBack').addEventListener('click', closeQuiz);
+  App.el('quizBackToChar').addEventListener('click', closeQuiz);
+  App.el('quizNextChar').addEventListener('click', function () {
+    idx = (idx + 1) % window.CHARS[grade].length;
+    openQuiz(window.CHARS[grade][idx].c);
   });
 
   var replayBtn = App.el('strokeReplay');

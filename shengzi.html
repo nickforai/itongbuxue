@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=33">
+  <link rel="stylesheet" href="css/style.css?v=35">
 </head>
 <body>
   <div class="page">
@@ -46,10 +46,7 @@
         </div>
         <div class="char-words" id="charWords"></div>
         <div class="char-steps" id="charSteps"></div>
-        <div class="char-quiz" id="charQuiz">
-          <div class="cq-title">✏️ 认一认：选出拼音 <b id="cqPinyin"></b> 对应的字</div>
-          <div class="quiz-options" id="cqOptions"></div>
-        </div>
+        <button class="btn btn-blue" id="startQuizBtn">✏️ 认一认（隐藏答案）</button>
         <div class="stroke-box" id="strokeBox"></div>
         <div class="stroke-hint" id="strokeHint"></div>
         <div class="poem-nav">
@@ -58,11 +55,29 @@
         </div>
       </div>
     </section>
+
+    <section id="quizScreen" class="hidden">
+      <div class="topbar">
+        <button class="back" id="quizBack" aria-label="返回">←</button>
+        <h1>✏️ 认一认</h1>
+      </div>
+      <div class="panel" style="text-align:center">
+        <div class="cq-progress" id="cqProgress"></div>
+        <div class="cq-question">这个拼音对应哪个字？</div>
+        <div class="cq-pinyin" id="cqPinyin"></div>
+        <div class="quiz-options" id="cqOptions"></div>
+        <div class="cq-feedback" id="cqFeedback"></div>
+        <div class="btn-row hidden" id="quizDoneRow">
+          <button class="btn btn-ghost" id="quizBackToChar">返回字卡</button>
+          <button class="btn btn-green" id="quizNextChar">下一个字 ▶</button>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <script src="js/common.js?v=33"></script>
-  <script src="js/data-char.js?v=33"></script>
-  <script src="js/vendor/hanzi-writer.min.js?v=33"></script>
-  <script src="js/shengzi.js?v=33"></script>
+  <script src="js/common.js?v=35"></script>
+  <script src="js/data-char.js?v=35"></script>
+  <script src="js/vendor/hanzi-writer.min.js?v=35"></script>
+  <script src="js/shengzi.js?v=35"></script>
 </body>
 </html>
