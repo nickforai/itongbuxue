@@ -18,6 +18,7 @@
       chances: 0,
       mcChances: 0,
       games: { played: 0, won: 0 },
+      learned: {},
       checkins: [],
       wrong: { shuxue: [], yingyu: [], kexue: [] },
       awarded: { poems: {}, quizzes: {} },

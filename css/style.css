@@ -1328,6 +1328,73 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   margin-bottom: 12px;
 }
 
+.learn-progress {
+  font-weight: 800;
+  color: var(--shuxue);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.char-cell { position: relative; }
+.char-cell.learned { background: #EFFBF4; color: var(--ok); }
+.char-done {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 0.8rem;
+}
+
+.char-steps {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0 4px;
+}
+
+.learn-step {
+  background: #F0F0F6;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.learn-step.on {
+  background: linear-gradient(135deg, #55C98F, #2FB56E);
+  color: #fff;
+}
+
+.learn-done {
+  background: #FFF3D6;
+  color: #B26A00;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.char-quiz {
+  margin-top: 10px;
+  padding: 12px;
+  background: #F6F6FB;
+  border-radius: 16px;
+}
+
+.cq-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.char-quiz .quiz-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.char-quiz .quiz-options button {
+  min-height: 64px;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
 /* ---------- 阅读 ---------- */
 .rd-text {
   font-size: 1.35rem;

@@ -539,6 +539,17 @@ async function main() {
   assert((await page.locator('#strokeReplay').count()) === 1, '重写一遍按钮存在');
   await page.click('#strokeReplay');
   await sleep(300);
+  // 三步学习标记
+  assert((await page.locator('#charSteps .learn-step.on').count()) === 1, '打开字卡点亮①看笔顺');
+  assert((await page.textContent('#learnProgress')).includes('0 / 24'), '未学完前进度为 0/24');
+  await page.click('#charSpeak');
+  await sleep(200);
+  assert((await page.locator('#charSteps .learn-step.on').count()) === 2, '听读音后点亮②');
+  const quizChar = await page.textContent('#charBig');
+  await page.locator('#cqOptions button', { hasText: quizChar }).click();
+  await sleep(300);
+  assert((await page.locator('#charSteps .learn-done').count()) === 1, '三步完成显示已学会');
+  assert((await page.textContent('#learnProgress')).includes('1 / 24'), '学会后进度更新为 1/24');
   await shot(page, 'shengzi');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
