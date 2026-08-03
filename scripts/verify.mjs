@@ -608,6 +608,14 @@ async function main() {
   console.log('\n[9] 生字');
   fresh();
   await page.goto(BASE + 'shengzi.html', { waitUntil: 'networkidle' });
+  // 预置一个"昨天已学习"的字（河），用于考一考（今天学的字要明天才考）
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    if (!d.learned) d.learned = {};
+    d.learned['3_河'] = { stroke: true, listen: true, done: true, learned: '2000-01-01' };
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
   assert((await page.locator('#charGrades button').count()) === 6, '六个年级可选');
   assert((await page.locator('.char-cell').count()) === 24, '默认一年级 24 个字');
   await page.locator('#charGrades button', { hasText: '三年级' }).click();
@@ -625,7 +633,7 @@ async function main() {
   await sleep(300);
   // 三步学习标记
   assert((await page.locator('#charSteps .learn-step.on').count()) === 1, '打开字卡点亮①看笔顺');
-  assert((await page.textContent('#learnProgress')).includes('0 / 24'), '未学完前进度为 0/24');
+  assert((await page.textContent('#learnProgress')).includes('1 / 24'), '预置的昨日已学习字计入进度');
   await page.click('#charSpeak');
   await sleep(200);
   assert((await page.locator('#charSteps .learn-step.on').count()) === 2, '听读音后点亮②');
@@ -633,7 +641,7 @@ async function main() {
   await sleep(300);
   assert((await page.locator('#charSteps .learn-step.on').count()) === 3, '学完了点亮③');
   assert((await page.locator('#charSteps .learn-done').count()) === 1, '三步完成显示已学习');
-  assert((await page.textContent('#learnProgress')).includes('1 / 24'), '学习后进度更新为 1/24');
+  assert((await page.textContent('#learnProgress')).includes('2 / 24'), '学习后进度更新为 2/24');
   // 考一考独立页签：从已学习的字里抽题（此时只有“秋”）
   await page.click('#tabQuiz');
   await sleep(200);
@@ -642,7 +650,8 @@ async function main() {
   await page.click('#quizStartBtn');
   await sleep(300);
   assert((await page.locator('#quizPanel:not(.hidden)').count()) === 1, '考题出现');
-  await page.locator('#cqOptions button', { hasText: '秋' }).click();
+  assert((await page.textContent('#cqPinyin')) === 'hé', '今天学的“秋”不出现，考的是昨天学的“河”');
+  await page.locator('#cqOptions button', { hasText: '河' }).click();
   await sleep(1200);
   assert((await page.locator('#quizResult:not(.hidden)').count()) === 1, '考一考出结果');
   assert((await page.textContent('#quizResultScore')).includes('1 / 1'), '考一考全对');

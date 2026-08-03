@@ -169,9 +169,13 @@
   }
 
   function startQuiz() {
-    var list = learnedChars();
+    var today = App.todayStr();
+    var list = (window.CHARS[grade] || []).filter(function (item) {
+      var st = getLearn(item.c);
+      return st && st.learned && st.learned !== today; // 今天刚学的字明天才考
+    });
     if (!list.length) {
-      App.toast('还没有已学习的字，先去「学习」页学几个吧');
+      App.toast(learnedChars().length ? '今天刚学的字明天才能考，先去学更多字吧' : '还没有已学习的字，先去「学习」页学几个吧');
       return;
     }
     var picked = App.shuffle(list).slice(0, 10);
