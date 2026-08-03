@@ -421,6 +421,9 @@ async function main() {
   await sleep(1200);
   const lenAfter = await page.evaluate((k) => window.__mc.chestAt(k).length, chestKey0);
   assert(lenBefore === 0 && lenAfter >= 3, '新的一天箱子重新装满（' + lenBefore + ' → ' + lenAfter + '）');
+  assert((await page.evaluate(() => window.__mc.animalCount('sheep'))) >= 3, '新的一天羊刷新');
+  assert((await page.evaluate(() => window.__mc.animalCount('pig'))) >= 2, '新的一天猪刷新');
+  assert((await page.evaluate(() => window.__mc.animalCount('cow'))) >= 1, '新的一天牛刷新');
   // 村民交换
   assert(
     await page.evaluate(() => { window.__mc.addItem('diamond', 1); return window.__mc.trade('t_diamond_ingot'); }),

@@ -612,7 +612,6 @@
   function init3D(chosenMode) {
     loadWorld();
     mode = chosenMode || mode;
-    if (freshChests) App.toast('🌅 新的一天，村庄的箱子刷新了！');
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -651,6 +650,10 @@
     spawnVillagers(5);
     spawnPigs(2);
     spawnCows(1);
+    if (freshChests) {
+      topUpAnimals();
+      App.toast('🌅 新的一天，箱子和动物都刷新了！');
+    }
 
     bindControls();
     renderHotbar();
@@ -1139,6 +1142,19 @@
       var z = Math.floor(rnd(-BOUND + 3, BOUND - 3));
       addMob('cow', x, groundY(x, z), z);
     }
+  }
+
+  /* 每日刷新：把动物补齐到固定数量（和箱子同一个"新的一天"逻辑） */
+  function topUpAnimals() {
+    [['sheep', 3], ['pig', 2], ['cow', 1]].forEach(function (spec) {
+      var t = spec[0], min = spec[1];
+      var cur = mobs.filter(function (m) { return m.type === t; }).length;
+      for (var i = cur; i < min; i++) {
+        var x = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+        var z = Math.floor(rnd(-BOUND + 3, BOUND - 3));
+        addMob(t, x, groundY(x, z), z);
+      }
+    });
   }
 
   function addMob(type, x, y, z) {
@@ -2048,7 +2064,7 @@
       }
     } else {
       // 白天补充动物（羊/猪/牛保持一定数量）
-      [['sheep', 2], ['pig', 2], ['cow', 1]].forEach(function (spec) {
+      [['sheep', 3], ['pig', 2], ['cow', 1]].forEach(function (spec) {
         var t = spec[0], min = spec[1];
         if (mobs.filter(function (m) { return m.type === t; }).length < min && Math.random() < dt * 0.08) {
           var sx = Math.floor(rnd(-BOUND + 3, BOUND - 3));
