@@ -7,7 +7,9 @@
   var current = null; // {topic, idx, score, wrong, answered}
 
   function doneAll(topic) {
-    return data.awarded.quizzes[topic.id] === true;
+    var rec = data.awarded.quizzes[topic.id];
+    if (rec === true) return true; // 旧数据：学过的
+    return !!(rec && rec.date === App.todayStr() && rec.points > 0);
   }
 
   function renderTopics() {
@@ -112,12 +114,26 @@
     var emoji = current.score === total ? '🌟' : current.score >= total - 1 ? '👍' : '💪';
 
     data = App.store.load();
-    App.addStars(data, 'kexue', reward);
-    App.logActivity(data, '科学《' + current.topic.title + '》 ' + current.score + '/' + total);
-    if (current.score === total) {
-      data.awarded.quizzes[current.topic.id] = true;
-      App.store.save(data);
+    var today = App.todayStr();
+    var key = current.topic.id;
+    if (!data.awarded.quizzes) data.awarded.quizzes = {};
+    var rec = data.awarded.quizzes[key];
+    if (rec === true) rec = { date: today, best: total, points: 3 }; // 旧数据迁移：按今天已学过、满分计
+    else if (!rec || rec.date !== today) rec = { date: today, best: 0, points: 0 };
+
+    var diff = 0;
+    if (rec.points === 0) {
+      // 今天第一次完成：发星（全对 3 星，完成 2 星）
+      diff = reward;
+      rec.points = reward;
+      rec.best = current.score;
+      App.addStars(data, 'kexue', diff);
+      App.logActivity(data, '科学《' + current.topic.title + '》 ' + current.score + '/' + total);
+    } else if (current.score > rec.best) {
+      // 今天已学过，复习不加星，只更新最好成绩
+      rec.best = current.score;
     }
+    data.awarded.quizzes[key] = rec;
     current.wrong.forEach(function (w) { data.wrong.kexue.push(w); });
     if (data.wrong.kexue.length > 30) data.wrong.kexue = data.wrong.kexue.slice(-30);
     App.store.save(data);
@@ -126,7 +142,8 @@
     App.el('quizScreen').classList.add('hidden');
     App.el('qzResultEmoji').textContent = emoji;
     App.el('qzResultScore').textContent = current.score + ' / ' + total;
-    App.el('qzResultLine').textContent = '星星 +' + reward;
+    App.el('qzResultLine').textContent = diff > 0 ? '🎉 星星 +' + diff + '，一共 ' + (data.balance || 0) + ' 颗'
+      : '今天已经学过了，复习不加星';
 
     var wl = App.el('qzWrongList');
     wl.innerHTML = '';
