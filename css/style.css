@@ -933,6 +933,19 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   -webkit-user-select: none;
 }
 
+/* 禁止捏合/双击缩放，滚动区域单独放行 */
+#mcGame .mc-joy,
+#mcGame .mc-joy-knob,
+#mcGame .mc-alt,
+#mcGame .mc-act,
+#mcGame .mc-exit,
+#mcGame .mc-pack-btn,
+#mcGame .mc-block {
+  touch-action: manipulation;
+}
+
+#mcGame .mc-hotbar { touch-action: pan-x; }
+
 #mcGame canvas { display: block; }
 
 .mc-crosshair {
@@ -1090,13 +1103,14 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 
 .mc-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: rgba(15, 15, 30, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 70;
+  touch-action: manipulation;
 }
 
 .mc-overlay-inner {
@@ -1119,6 +1133,7 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   flex-direction: column;
   gap: 8px;
   max-height: 55vh;
+  touch-action: pan-y;
 }
 
 .mc-pack-row {

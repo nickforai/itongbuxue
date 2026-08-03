@@ -88,7 +88,9 @@
     { id: 't_plank_bow', name: '木板换弓', give: { plank: 3 }, get: { bow: 1 } },
     { id: 't_plank_meat', name: '木板换肉', give: { plank: 10 }, get: { raw_meat: 2 } },
     { id: 't_meat_bow', name: '肉换弓', give: { raw_meat: 1 }, get: { bow: 2 } },
-    { id: 't_meat_plank', name: '肉换木板', give: { raw_meat: 1 }, get: { plank: 6 } }
+    { id: 't_meat_plank', name: '肉换木板', give: { raw_meat: 1 }, get: { plank: 6 } },
+    { id: 't_ingot_cannon', name: '铁锭换大炮', give: { iron_ingot: 20 }, get: { cannon: 1 } },
+    { id: 't_ingot_cannonball', name: '铁锭换炮弹', give: { iron_ingot: 2 }, get: { cannonball: 1 } }
   ];
 
   var SAVE_KEY = 'xx3_mc_world_v1';
@@ -1390,6 +1392,10 @@
 
   function bindControls() {
     var game = App.el('mcGame');
+    // iOS 手势拦截：禁止捏合缩放页面
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
+      document.addEventListener(ev, function (e) { e.preventDefault(); }, false);
+    });
     game.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.mc-ui')) return;
       var t = { x: e.clientX, y: e.clientY, t0: Date.now(), mode: 'pending', timer: null };

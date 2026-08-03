@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="我的世界">
@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=23">
+  <link rel="stylesheet" href="css/style.css?v=28">
 </head>
 <body>
   <!-- 大厅：星星兑换 -->
@@ -89,47 +89,6 @@
 
     <div class="mc-hotbar mc-ui" id="mcHotbar"></div>
 
-    <div class="mc-overlay mc-ui hidden" id="mcBackpack">
-      <div class="mc-overlay-inner">
-        <h3>🎒 背包</h3>
-        <div style="color:var(--muted);font-size:.8rem;text-align:center">长按物品拖出来：拖到快捷栏选中，拖到世界放出来</div>
-        <div class="mc-overlay-list" id="mcBackpackList"></div>
-        <button class="btn btn-ghost" id="mcPackClose">关闭</button>
-      </div>
-    </div>
-
-    <div class="mc-overlay mc-ui hidden" id="mcCraftPanel">
-      <div class="mc-overlay-inner">
-        <h3>🛠️ 工作台合成</h3>
-        <div class="mc-overlay-list" id="mcRecipeList"></div>
-        <button class="btn btn-ghost" id="mcCraftClose">关闭</button>
-      </div>
-    </div>
-
-    <div class="mc-overlay mc-ui hidden" id="mcSmeltPanel">
-      <div class="mc-overlay-inner">
-        <h3>🔥 熔炉烧炼</h3>
-        <div class="mc-overlay-list" id="mcSmeltList"></div>
-        <button class="btn btn-ghost" id="mcSmeltClose">关闭</button>
-      </div>
-    </div>
-
-    <div class="mc-overlay mc-ui hidden" id="mcChestPanel">
-      <div class="mc-overlay-inner">
-        <h3>📦 箱子</h3>
-        <div class="mc-overlay-list" id="mcChestList"></div>
-        <button class="btn btn-ghost" id="mcChestClose">关闭</button>
-      </div>
-    </div>
-
-    <div class="mc-overlay mc-ui hidden" id="mcTradePanel">
-      <div class="mc-overlay-inner">
-        <h3>🤝 村民交换</h3>
-        <div class="mc-overlay-list" id="mcTradeList"></div>
-        <button class="btn btn-ghost" id="mcTradeClose">关闭</button>
-      </div>
-    </div>
-
     <div class="mc-death mc-ui hidden" id="mcDeath">
       <div class="mc-death-box">
         <div style="font-size:3.4rem">😵</div>
@@ -140,8 +99,49 @@
     <div class="mc-flash" id="mcFlash"></div>
   </div>
 
-  <script src="js/common.js?v=23"></script>
-  <script src="js/vendor/three.min.js?v=23"></script>
-  <script src="js/minecraft.js?v=23"></script>
+  <div class="mc-overlay mc-ui hidden" id="mcBackpack">
+    <div class="mc-overlay-inner">
+      <h3>🎒 背包</h3>
+      <div style="color:var(--muted);font-size:.8rem;text-align:center">长按物品拖出来：拖到快捷栏选中，拖到世界放出来</div>
+      <div class="mc-overlay-list" id="mcBackpackList"></div>
+      <button class="btn btn-ghost" id="mcPackClose">关闭</button>
+    </div>
+  </div>
+
+  <div class="mc-overlay mc-ui hidden" id="mcCraftPanel">
+    <div class="mc-overlay-inner">
+      <h3>🛠️ 工作台合成</h3>
+      <div class="mc-overlay-list" id="mcRecipeList"></div>
+      <button class="btn btn-ghost" id="mcCraftClose">关闭</button>
+    </div>
+  </div>
+
+  <div class="mc-overlay mc-ui hidden" id="mcSmeltPanel">
+    <div class="mc-overlay-inner">
+      <h3>🔥 熔炉烧炼</h3>
+      <div class="mc-overlay-list" id="mcSmeltList"></div>
+      <button class="btn btn-ghost" id="mcSmeltClose">关闭</button>
+    </div>
+  </div>
+
+  <div class="mc-overlay mc-ui hidden" id="mcChestPanel">
+    <div class="mc-overlay-inner">
+      <h3>📦 箱子</h3>
+      <div class="mc-overlay-list" id="mcChestList"></div>
+      <button class="btn btn-ghost" id="mcChestClose">关闭</button>
+    </div>
+  </div>
+
+  <div class="mc-overlay mc-ui hidden" id="mcTradePanel">
+    <div class="mc-overlay-inner">
+      <h3>🤝 村民交换</h3>
+      <div class="mc-overlay-list" id="mcTradeList"></div>
+      <button class="btn btn-ghost" id="mcTradeClose">关闭</button>
+    </div>
+  </div>
+
+  <script src="js/common.js?v=28"></script>
+  <script src="js/vendor/three.min.js?v=28"></script>
+  <script src="js/minecraft.js?v=28"></script>
 </body>
 </html>

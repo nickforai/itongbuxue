@@ -413,7 +413,7 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.trade('t_plank_meat'))) === false, '材料不够时交换失败');
   await page.evaluate(() => window.__mc.openTrade());
   assert((await page.locator('#mcTradePanel:not(.hidden)').count()) === 1, '村民交换面板可打开');
-  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 6, '6 条交换规则');
+  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 8, '8 条交换规则');
   // 盔甲
   await page.evaluate(() => {
     window.__mc.addItem('raw_iron', 4);
@@ -458,6 +458,13 @@ async function main() {
   assert((await page.evaluate(() => (window.__mc.backpack.bucket || 0))) === 1, '3 铁锭合成铁桶');
   assert((await page.evaluate(() => (window.__mc.backpack.cannon || 0))) === 1, '20 铁锭合成大炮');
   assert((await page.evaluate(() => (window.__mc.backpack.cannonball || 0))) === 1, '2 铁锭合成炮弹');
+  await page.evaluate(() => {
+    window.__mc.addItem('iron_ingot', 22);
+    window.__mc.trade('t_ingot_cannon');
+    window.__mc.trade('t_ingot_cannonball');
+  });
+  assert((await page.evaluate(() => (window.__mc.backpack.cannon || 0))) >= 2, '村民 20 铁锭换大炮');
+  assert((await page.evaluate(() => (window.__mc.backpack.cannonball || 0))) >= 2, '村民 2 铁锭换炮弹');
   await page.evaluate(() => {
     window.__mc.removeItem('arrow', 999);
     window.__mc.addItem('arrow', 1);
