@@ -56,6 +56,9 @@
     renderWrong('wrongYingyu', data.wrong.yingyu, function (w) {
       return w.word + ' → ' + w.zh + '（你选 ' + w.yours + '）';
     });
+    renderWrong('wrongYuwen', data.wrong.yuwen, function (w) {
+      return w.char + '（' + w.pinyin + '）';
+    });
     renderWrong('wrongKexue', data.wrong.kexue, function (w) {
       return w.text + '（' + w.answer + '）';
     });

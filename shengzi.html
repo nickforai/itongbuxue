@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=35">
+  <link rel="stylesheet" href="css/style.css?v=36">
 </head>
 <body>
   <div class="page">
@@ -26,58 +26,76 @@
       <a href="yuedu.html">📖 阅读</a>
     </div>
 
-    <div class="topic-chips" id="charGrades"></div>
+    <div class="tab-bar" style="margin-top:12px">
+      <button class="on" id="tabLearn">🖊️ 学习</button>
+      <button id="tabQuiz">✏️ 考一考</button>
+    </div>
 
-    <section id="charList">
-      <div class="panel" style="padding:14px 18px;color:var(--muted);font-size:.9rem">
-        点一个字，学习它的读音、组词和书写笔顺（有动画演示）。
+    <section id="learnSection">
+      <div class="topic-chips" id="charGrades"></div>
+      <div id="charList">
+        <div class="panel" style="padding:14px 18px;color:var(--muted);font-size:.9rem">
+          点一个字，学习读音、组词和笔顺；完成 ①看笔顺 ②听读音 ③学完了 即标「已学习」。
+        </div>
+        <div class="learn-progress" id="learnProgress">已学习 0 / 24 个字</div>
+        <div class="char-grid" id="charGrid"></div>
       </div>
-      <div class="learn-progress" id="learnProgress">已学会 0 / 24 个字</div>
-      <div class="char-grid" id="charGrid"></div>
+      <div id="charDetail" class="hidden">
+        <div class="panel" style="text-align:center">
+          <div class="char-big" id="charBig"></div>
+          <div class="char-pinyin" id="charPinyin"></div>
+          <div class="btn-row">
+            <button class="btn btn-green" id="charSpeak">🔊 听读音</button>
+            <button class="btn btn-gold" id="strokeReplay">🔄 重写一遍</button>
+          </div>
+          <div class="char-words" id="charWords"></div>
+          <div class="char-steps" id="charSteps"></div>
+          <button class="btn btn-blue" id="learnDoneBtn">✅ 我学完了</button>
+          <div class="stroke-box" id="strokeBox"></div>
+          <div class="stroke-hint" id="strokeHint"></div>
+          <div class="poem-nav">
+            <button class="btn btn-ghost" id="charPrev">◀ 上一个</button>
+            <button class="btn btn-ghost" id="charNext">下一个 ▶</button>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section id="charDetail" class="hidden">
-      <div class="panel" style="text-align:center">
-        <div class="char-big" id="charBig"></div>
-        <div class="char-pinyin" id="charPinyin"></div>
-        <div class="btn-row">
-          <button class="btn btn-green" id="charSpeak">🔊 听读音</button>
-          <button class="btn btn-gold" id="strokeReplay">🔄 重写一遍</button>
-        </div>
-        <div class="char-words" id="charWords"></div>
-        <div class="char-steps" id="charSteps"></div>
-        <button class="btn btn-blue" id="startQuizBtn">✏️ 认一认（隐藏答案）</button>
-        <div class="stroke-box" id="strokeBox"></div>
-        <div class="stroke-hint" id="strokeHint"></div>
-        <div class="poem-nav">
-          <button class="btn btn-ghost" id="charPrev">◀ 上一个</button>
-          <button class="btn btn-ghost" id="charNext">下一个 ▶</button>
-        </div>
+    <section id="quizSection" class="hidden">
+      <div class="topic-chips" id="quizGrades"></div>
+      <div class="panel" id="quizStartPanel">
+        <h2>✏️ 考一考</h2>
+        <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:14px">
+          从「已学习」的生字里抽题（看拼音选字），答对得星星，错题会进错题本。刚学的字明天也会出现在考一考里。
+        </p>
+        <button class="btn btn-blue" id="quizStartBtn">开始考一考</button>
       </div>
-    </section>
-
-    <section id="quizScreen" class="hidden">
-      <div class="topbar">
-        <button class="back" id="quizBack" aria-label="返回">←</button>
-        <h1>✏️ 认一认</h1>
-      </div>
-      <div class="panel" style="text-align:center">
-        <div class="cq-progress" id="cqProgress"></div>
+      <div class="panel hidden" id="quizPanel">
+        <div class="quiz-head">
+          <span id="quizProgress"></span>
+          <span id="quizScore"></span>
+        </div>
         <div class="cq-question">这个拼音对应哪个字？</div>
         <div class="cq-pinyin" id="cqPinyin"></div>
         <div class="quiz-options" id="cqOptions"></div>
         <div class="cq-feedback" id="cqFeedback"></div>
-        <div class="btn-row hidden" id="quizDoneRow">
-          <button class="btn btn-ghost" id="quizBackToChar">返回字卡</button>
-          <button class="btn btn-green" id="quizNextChar">下一个字 ▶</button>
+      </div>
+      <div class="panel result-box hidden" id="quizResult">
+        <div class="result-emoji" id="quizResultEmoji"></div>
+        <div class="result-score" id="quizResultScore"></div>
+        <div class="result-line" id="quizResultLine"></div>
+        <ul class="wrong-list hidden" id="quizWrongList"></ul>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="quizAgainBtn">🔄 再来一轮</button>
+          <button class="btn btn-ghost" id="quizBackLearnBtn">🖊️ 回学习</button>
         </div>
       </div>
     </section>
   </div>
 
-  <script src="js/common.js?v=35"></script>
-  <script src="js/data-char.js?v=35"></script>
-  <script src="js/vendor/hanzi-writer.min.js?v=35"></script>
-  <script src="js/shengzi.js?v=35"></script>
+  <script src="js/common.js?v=36"></script>
+  <script src="js/data-char.js?v=36"></script>
+  <script src="js/vendor/hanzi-writer.min.js?v=36"></script>
+  <script src="js/shengzi.js?v=36"></script>
 </body>
 </html>

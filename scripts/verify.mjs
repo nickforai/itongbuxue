@@ -629,19 +629,23 @@ async function main() {
   await page.click('#charSpeak');
   await sleep(200);
   assert((await page.locator('#charSteps .learn-step.on').count()) === 2, '听读音后点亮②');
-  // 认一认是独立页面：进去后字卡与笔顺隐藏
-  const quizChar = await page.textContent('#charBig');
-  await page.click('#startQuizBtn');
-  await sleep(200);
-  assert((await page.locator('#quizScreen:not(.hidden)').count()) === 1, '认一认独立页面打开');
-  assert((await page.locator('#charDetail.hidden').count()) === 1, '认一认时字卡与笔顺被隐藏');
-  await page.locator('#cqOptions button', { hasText: quizChar }).click();
+  await page.click('#learnDoneBtn');
   await sleep(300);
-  assert((await page.locator('#charSteps .learn-done').count()) === 1, '三步完成显示已学会');
-  assert((await page.textContent('#learnProgress')).includes('1 / 24'), '学会后进度更新为 1/24');
-  await page.click('#quizBackToChar');
+  assert((await page.locator('#charSteps .learn-step.on').count()) === 3, '学完了点亮③');
+  assert((await page.locator('#charSteps .learn-done').count()) === 1, '三步完成显示已学习');
+  assert((await page.textContent('#learnProgress')).includes('1 / 24'), '学习后进度更新为 1/24');
+  // 考一考独立页签：从已学习的字里抽题（此时只有“秋”）
+  await page.click('#tabQuiz');
   await sleep(200);
-  assert((await page.locator('#charDetail:not(.hidden)').count()) === 1, '返回字卡正常');
+  assert((await page.locator('#quizSection:not(.hidden)').count()) === 1, '考一考页签打开');
+  assert((await page.locator('#learnSection.hidden').count()) === 1, '学习区隐藏（看不到答案）');
+  await page.click('#quizStartBtn');
+  await sleep(300);
+  assert((await page.locator('#quizPanel:not(.hidden)').count()) === 1, '考题出现');
+  await page.locator('#cqOptions button', { hasText: '秋' }).click();
+  await sleep(1200);
+  assert((await page.locator('#quizResult:not(.hidden)').count()) === 1, '考一考出结果');
+  assert((await page.textContent('#quizResultScore')).includes('1 / 1'), '考一考全对');
   await shot(page, 'shengzi');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 

@@ -21,7 +21,7 @@
       games: { played: 0, won: 0 },
       learned: {},
       checkins: [],
-      wrong: { shuxue: [], yingyu: [], kexue: [] },
+      wrong: { shuxue: [], yingyu: [], kexue: [], yuwen: [] },
       awarded: { poems: {}, quizzes: {} },
       stats: {}
     };

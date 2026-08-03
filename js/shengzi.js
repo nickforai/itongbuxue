@@ -1,4 +1,4 @@
-/* 生字：读音、组词、笔顺动画 + 三步学习标记（看笔顺/听读音/认一认） */
+/* 生字：学习（笔顺/读音/学完了）+ 考一考（独立复习测验） */
 (function () {
   'use strict';
 
@@ -7,6 +7,8 @@
   var idx = 0;
   var writer = null;
   var data = App.store.load();
+  var qz = null;
+  var qzTimer = null;
 
   function saveGrade() {
     try { localStorage.setItem(GRADE_KEY, grade); } catch (e) { /* ignore */ }
@@ -22,26 +24,33 @@
   function charKey(c) { return grade + '_' + c; }
 
   function getLearn(c) {
-    return (data.learned && data.learned[charKey(c)]) || null;
+    var st = (data.learned && data.learned[charKey(c)]) || null;
+    if (st && st.quiz && !st.done) st.done = true; // 旧数据迁移
+    return st;
   }
 
-  function renderGrades() {
-    var box = App.el('charGrades');
-    box.innerHTML = '';
-    ['1', '2', '3', '4', '5', '6'].forEach(function (g) {
-      var b = document.createElement('button');
-      b.textContent = (g === '1' ? '一年级' : g === '2' ? '二年级' : g === '3' ? '三年级' : g === '4' ? '四年级' : g === '5' ? '五年级' : '六年级');
-      if (g === grade) b.classList.add('on');
-      b.addEventListener('click', function () {
-        grade = g;
-        saveGrade();
-        data = App.store.load();
-        renderGrades();
-        renderGrid();
-        App.el('charDetail').classList.add('hidden');
-        App.el('charList').classList.remove('hidden');
+  function renderGradeChips() {
+    ['charGrades', 'quizGrades'].forEach(function (boxId) {
+      var box = App.el(boxId);
+      box.innerHTML = '';
+      ['1', '2', '3', '4', '5', '6'].forEach(function (g) {
+        var b = document.createElement('button');
+        b.textContent = (g === '1' ? '一年级' : g === '2' ? '二年级' : g === '3' ? '三年级' : g === '4' ? '四年级' : g === '5' ? '五年级' : '六年级');
+        if (g === grade) b.classList.add('on');
+        b.addEventListener('click', function () {
+          grade = g;
+          saveGrade();
+          data = App.store.load();
+          renderGradeChips();
+          renderGrid();
+          App.el('charDetail').classList.add('hidden');
+          App.el('charList').classList.remove('hidden');
+          App.el('quizPanel').classList.add('hidden');
+          App.el('quizResult').classList.add('hidden');
+          App.el('quizStartPanel').classList.remove('hidden');
+        });
+        box.appendChild(b);
       });
-      box.appendChild(b);
     });
   }
 
@@ -59,7 +68,7 @@
       b.addEventListener('click', function () { openChar(i); });
       grid.appendChild(b);
     });
-    App.el('learnProgress').textContent = '已学会 ' + learnedCount + ' / ' + list.length + ' 个字';
+    App.el('learnProgress').textContent = '已学习 ' + learnedCount + ' / ' + list.length + ' 个字';
   }
 
   function openChar(i) {
@@ -122,14 +131,15 @@
   function markStep(c, step) {
     data = App.store.load();
     if (!data.learned) data.learned = {};
-    var st = data.learned[charKey(c)] || { stroke: false, listen: false, quiz: false, learned: '' };
+    var st = data.learned[charKey(c)] || { stroke: false, listen: false, done: false, learned: '' };
+    if (st.quiz && !st.done) st.done = true;
     if (!st[step]) {
       st[step] = true;
-      if (st.stroke && st.listen && st.quiz && !st.learned) {
+      if (st.stroke && st.listen && st.done && !st.learned) {
         st.learned = App.todayStr();
         App.addStars(data, 'yuwen', 1);
-        App.logActivity(data, '学会生字「' + c + '」');
-        App.toast('🎉 学会「' + c + '」了！+1⭐');
+        App.logActivity(data, '学完生字「' + c + '」');
+        App.toast('🎉 学完「' + c + '」了！+1⭐');
       }
       data.learned[charKey(c)] = st;
       App.store.save(data);
@@ -139,26 +149,54 @@
   }
 
   function renderLearnUI(c) {
-    var st = getLearn(c) || { stroke: false, listen: false, quiz: false, learned: '' };
+    var st = getLearn(c) || { stroke: false, listen: false, done: false, learned: '' };
     var steps = [
       { k: 'stroke', label: '① 看笔顺' },
       { k: 'listen', label: '② 听读音' },
-      { k: 'quiz', label: '③ 认一认' }
+      { k: 'done', label: '③ 学完了' }
     ];
     App.el('charSteps').innerHTML = steps.map(function (s) {
       return '<span class="learn-step' + (st[s.k] ? ' on' : '') + '">' + s.label + '</span>';
-    }).join('') + (st.learned ? '<span class="learn-done">✅ 已学会</span>' : '');
+    }).join('') + (st.learned ? '<span class="learn-done">✅ 已学习</span>' : '');
   }
 
-  function renderQuiz(c) {
-    var list = window.CHARS[grade];
-    var qi = list.findIndex(function (x) { return x.c === c; });
-    App.el('cqProgress').textContent = '第 ' + (qi + 1) + ' / ' + list.length + ' 个字';
+  /* ---------- 考一考 ---------- */
+  function learnedChars() {
+    return (window.CHARS[grade] || []).filter(function (item) {
+      var st = getLearn(item.c);
+      return st && st.learned;
+    });
+  }
+
+  function startQuiz() {
+    var list = learnedChars();
+    if (!list.length) {
+      App.toast('还没有已学习的字，先去「学习」页学几个吧');
+      return;
+    }
+    var picked = App.shuffle(list).slice(0, 10);
+    qz = {
+      list: picked,
+      idx: 0,
+      score: 0,
+      wrong: [],
+      answered: false
+    };
+    App.el('quizStartPanel').classList.add('hidden');
+    App.el('quizResult').classList.add('hidden');
+    App.el('quizPanel').classList.remove('hidden');
+    renderQuizQuestion();
+  }
+
+  function renderQuizQuestion() {
+    var q = qz.list[qz.idx];
+    qz.answered = false;
+    App.el('quizProgress').textContent = '第 ' + (qz.idx + 1) + ' / ' + qz.list.length + ' 题';
+    App.el('quizScore').textContent = '答对 ' + qz.score + ' 题';
+    App.el('cqPinyin').textContent = q.p;
     App.el('cqFeedback').textContent = '';
-    App.el('quizDoneRow').classList.add('hidden');
-    var others = App.shuffle(list.map(function (x) { return x.c; }).filter(function (x) { return x !== c; })).slice(0, 3);
-    var options = App.shuffle([c].concat(others));
-    App.el('cqPinyin').textContent = window.CHARS[grade].find(function (x) { return x.c === c; }).p;
+    var others = App.shuffle(window.CHARS[grade].map(function (x) { return x.c; }).filter(function (x) { return x !== q.c; })).slice(0, 3);
+    var options = App.shuffle([q.c].concat(others));
     var box = App.el('cqOptions');
     box.innerHTML = '';
     options.forEach(function (ch) {
@@ -166,32 +204,64 @@
       b.type = 'button';
       b.textContent = ch;
       b.addEventListener('click', function () {
-        if (ch === c) {
-          markStep(c, 'quiz');
-          App.el('cqFeedback').textContent = '✓ 认对了！';
-          App.el('quizDoneRow').classList.remove('hidden');
-          App.toast('✓ 认对了！');
+        if (qz.answered) return;
+        qz.answered = true;
+        if (ch === q.c) {
+          qz.score++;
+          App.el('cqFeedback').textContent = '✓ 对啦！';
+          App.toast('✓ 对啦！');
         } else {
           b.classList.add('wrongpick');
-          App.el('cqFeedback').textContent = '再想想，是哪一个字？';
-          setTimeout(function () { b.classList.remove('wrongpick'); }, 500);
+          qz.wrong.push({ char: q.c, pinyin: q.p });
+          App.el('cqFeedback').textContent = '正确答案是「' + q.c + '」，已记进错题本';
+          App.toast('✗ 记进错题本啦');
         }
+        App.el('quizScore').textContent = '答对 ' + qz.score + ' 题';
+        clearTimeout(qzTimer);
+        qzTimer = setTimeout(function () {
+          qz.idx++;
+          if (qz.idx >= qz.list.length) showQuizResult();
+          else renderQuizQuestion();
+        }, 900);
       });
       box.appendChild(b);
     });
   }
 
-  function openQuiz(c) {
-    App.el('charDetail').classList.add('hidden');
-    App.el('quizScreen').classList.remove('hidden');
-    renderQuiz(c);
-    window.scrollTo(0, 0);
+  function showQuizResult() {
+    var n = qz.list.length;
+    var stars = qz.score === n ? 3 : qz.score >= Math.ceil(n * 0.8) ? 2 : qz.score >= Math.ceil(n * 0.6) ? 1 : 0;
+    var emoji = qz.score === n ? '🏆' : qz.score >= Math.ceil(n * 0.8) ? '🎉' : '👍';
+    data = App.store.load();
+    App.addStars(data, 'yuwen', stars);
+    qz.wrong.forEach(function (w) { data.wrong.yuwen.push(w); });
+    if (data.wrong.yuwen.length > 30) data.wrong.yuwen = data.wrong.yuwen.slice(-30);
+    App.store.save(data);
+    App.logActivity(data, '生字考一考 ' + qz.score + '/' + n);
+    App.setStarsUI();
+
+    App.el('quizPanel').classList.add('hidden');
+    App.el('quizResultEmoji').textContent = emoji;
+    App.el('quizResultScore').textContent = qz.score + ' / ' + n;
+    App.el('quizResultLine').textContent = '获得 ' + stars + ' ⭐';
+    var wl = App.el('quizWrongList');
+    wl.innerHTML = '';
+    if (qz.wrong.length) {
+      wl.classList.remove('hidden');
+      qz.wrong.forEach(function (w) {
+        var li = document.createElement('li');
+        li.innerHTML = '<span>' + w.char + '（' + w.pinyin + '）</span><span class="wr-yours">记入错题本</span>';
+        wl.appendChild(li);
+      });
+    } else {
+      wl.classList.add('hidden');
+    }
+    App.el('quizResult').classList.remove('hidden');
   }
 
-  function closeQuiz() {
-    App.el('quizScreen').classList.add('hidden');
-    App.el('charDetail').classList.remove('hidden');
-  }
+  App.el('learnDoneBtn').addEventListener('click', function () {
+    markStep(window.CHARS[grade][idx].c, 'done'); // ③ 学完了
+  });
 
   App.el('charSpeak').addEventListener('click', function () {
     var item = window.CHARS[grade][idx];
@@ -208,17 +278,6 @@
     openChar((idx + 1) % window.CHARS[grade].length);
   });
 
-  App.el('startQuizBtn').addEventListener('click', function () {
-    openQuiz(window.CHARS[grade][idx].c);
-  });
-
-  App.el('quizBack').addEventListener('click', closeQuiz);
-  App.el('quizBackToChar').addEventListener('click', closeQuiz);
-  App.el('quizNextChar').addEventListener('click', function () {
-    idx = (idx + 1) % window.CHARS[grade].length;
-    openQuiz(window.CHARS[grade][idx].c);
-  });
-
   var replayBtn = App.el('strokeReplay');
   if (replayBtn) {
     replayBtn.addEventListener('click', function () {
@@ -228,8 +287,29 @@
     });
   }
 
+  /* ---------- 页签 ---------- */
+  App.el('tabLearn').addEventListener('click', function () {
+    App.el('tabLearn').classList.add('on');
+    App.el('tabQuiz').classList.remove('on');
+    App.el('quizSection').classList.add('hidden');
+    App.el('learnSection').classList.remove('hidden');
+  });
+  App.el('tabQuiz').addEventListener('click', function () {
+    App.el('tabQuiz').classList.add('on');
+    App.el('tabLearn').classList.remove('on');
+    App.el('learnSection').classList.add('hidden');
+    App.el('quizSection').classList.remove('hidden');
+    data = App.store.load();
+    renderGradeChips();
+  });
+  App.el('quizStartBtn').addEventListener('click', startQuiz);
+  App.el('quizAgainBtn').addEventListener('click', startQuiz);
+  App.el('quizBackLearnBtn').addEventListener('click', function () {
+    App.el('tabLearn').click();
+  });
+
   loadGrade();
-  renderGrades();
+  renderGradeChips();
   renderGrid();
   App.setStarsUI();
 })();
