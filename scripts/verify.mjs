@@ -291,7 +291,7 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 14, '14 种方块可切换（含门/工作台/木板/床/熔炉/水）');
+  assert((await page.locator('.mc-block').count()) === 15, '15 种方块可切换（含门/工作台/木板/床/熔炉/水/岩浆）');
   assert((await page.locator('#mcHotbar .mc-pack-btn').count()) === 1, '背包按钮在快捷栏左边');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
@@ -420,6 +420,56 @@ async function main() {
   });
   await sleep(300);
   assert((await page.evaluate(() => window.__mc.armor())) === 'iron_armor', '合成并穿戴铁甲');
+  // 地图扩大 5 倍 + 流体 + 铁桶 + 弓箭/大炮
+  assert((await page.evaluate(() => window.__mc.bounds())) === 68, '地图范围 ±68（面积约 5 倍）');
+  assert((await page.evaluate(() => window.__mc.blockAt(67, 0, 0))) !== null, '远处地形已生成');
+  await page.evaluate(() => {
+    window.__mc.addItem('water', 1);
+    window.__mc.placeAt('water', 30, 30, 30);
+    window.__mc.addItem('lava', 1);
+    window.__mc.placeAt('lava', 35, 30, 35);
+  });
+  await sleep(2000);
+  const flowBelow = await page.evaluate(() => window.__mc.blockAt(30, 29, 30));
+  assert(flowBelow === 'water_flow', '水会向下流动（实际：' + flowBelow + '）');
+  assert((await page.evaluate(() => window.__mc.blockAt(35, 29, 35))) === 'lava_flow', '岩浆会向下流动');
+  await page.evaluate(() => {
+    window.__mc.addItem('water', 1);
+    window.__mc.addItem('lava', 1);
+    window.__mc.placeAt('lava', 40, 30, 40);
+    window.__mc.placeAt('water', 40, 31, 40);
+  });
+  await sleep(500);
+  assert((await page.evaluate(() => window.__mc.blockAt(40, 30, 40))) === 'obsidian', '水浇在岩浆上变成黑曜石');
+  await page.evaluate(() => {
+    window.__mc.addItem('iron_ingot', 25);
+    window.__mc.craft('bucket');
+    window.__mc.craft('cannon');
+    window.__mc.craft('cannonball');
+  });
+  await sleep(300);
+  assert((await page.evaluate(() => (window.__mc.backpack.bucket || 0))) === 1, '3 铁锭合成铁桶');
+  assert((await page.evaluate(() => (window.__mc.backpack.cannon || 0))) === 1, '20 铁锭合成大炮');
+  assert((await page.evaluate(() => (window.__mc.backpack.cannonball || 0))) === 1, '2 铁锭合成炮弹');
+  await page.evaluate(() => {
+    window.__mc.removeItem('arrow', 999);
+    window.__mc.addItem('arrow', 1);
+    window.__mc.shoot('arrow');
+  });
+  await sleep(200);
+  const arrowAfter = await page.evaluate(() => (window.__mc.backpack.arrow || 0));
+  assert(arrowAfter === 0, '射箭消耗 1 支箭（剩：' + arrowAfter + '）');
+  await page.evaluate(() => window.__mc.shoot('arrow'));
+  await sleep(200);
+  const arrowAfter2 = await page.evaluate(() => (window.__mc.backpack.arrow || 0));
+  assert(arrowAfter2 === 0, '没有箭时不能再发射（实际剩：' + arrowAfter2 + '）');
+  await page.evaluate(() => {
+    window.__mc.addItem('stone', 1);
+    window.__mc.placeAt('stone', 45, 30, 45);
+  });
+  await page.evaluate(() => window.__mc.explodeAt({ x: 45.5, y: 30.5, z: 45.5 }));
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.blockAt(45, 30, 45))) === null, '炮弹爆炸能采矿（炸掉方块）');
   // 昼夜：白天不生成、夜晚标记
   await page.evaluate(() => { window.__mc.setTime(0.3); });
   await sleep(300);

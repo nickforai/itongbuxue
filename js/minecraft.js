@@ -21,6 +21,10 @@
     bed: { name: '床', color: 0xE8508A, emoji: '🛏️', kind: 'block' },
     furnace: { name: '熔炉', color: 0x777777, emoji: '🔥', kind: 'block' },
     water: { name: '水', color: 0x3D9BE9, emoji: '💧', kind: 'block' },
+    water_flow: { name: '流动的水', color: 0x4FB3E8, emoji: '💧', kind: 'block' },
+    lava: { name: '岩浆', color: 0xF26D21, emoji: '🌋', kind: 'block' },
+    lava_flow: { name: '流动的岩浆', color: 0xD9501E, emoji: '🌋', kind: 'block' },
+    obsidian: { name: '黑曜石', color: 0x2A2A3A, emoji: '🪨', kind: 'block' },
     chest: { name: '箱子', color: 0xA9743F, emoji: '📦', kind: 'block' },
     coal_ore: { name: '煤矿石', color: 0x3A3A3A, emoji: '⬛', kind: 'block' },
     iron_ore: { name: '铁矿石', color: 0xB87333, emoji: '🟠', kind: 'block' },
@@ -34,7 +38,7 @@
     gold: { name: '金', color: 0xF2C94C, emoji: '🪙', kind: 'material' },
     diamond: { name: '钻石', color: 0x66E0E8, emoji: '💎', kind: 'material' },
     arrow: { name: '箭', color: 0x8B5A2B, emoji: '➶', kind: 'material' },
-    bow: { name: '弓', color: 0xA9743F, emoji: '🏹', kind: 'material' },
+    bow: { name: '弓', color: 0xA9743F, emoji: '🏹', kind: 'tool' },
     apple: { name: '苹果', emoji: '🍎', kind: 'food', value: 3 },
     raw_meat: { name: '生肉', emoji: '🍖', kind: 'food', value: 4 },
     cooked_meat: { name: '烤肉', emoji: '🥩', kind: 'food', value: 6 },
@@ -44,10 +48,15 @@
     iron_sword: { name: '铁剑', emoji: '⚔️', kind: 'tool' },
     iron_pickaxe: { name: '铁镐', emoji: '⛏️', kind: 'tool' },
     iron_armor: { name: '铁甲', emoji: '🛡️', kind: 'armor', defense: 1 },
-    diamond_armor: { name: '钻石甲', emoji: '🛡️', kind: 'armor', defense: 2 }
+    diamond_armor: { name: '钻石甲', emoji: '🛡️', kind: 'armor', defense: 2 },
+    bucket: { name: '铁桶', color: 0xC0C0C8, emoji: '🪣', kind: 'tool' },
+    water_bucket: { name: '水桶', color: 0x3D9BE9, emoji: '🪣', kind: 'tool' },
+    lava_bucket: { name: '岩浆桶', color: 0xF26D21, emoji: '🪣', kind: 'tool' },
+    cannon: { name: '大炮', color: 0x3A3A4A, emoji: '💣', kind: 'tool' },
+    cannonball: { name: '炮弹', color: 0x2C2C2C, emoji: '⚫', kind: 'material' }
   };
 
-  var HOTBAR = ['grass', 'dirt', 'stone', 'plank', 'wood', 'workbench', 'furnace', 'door', 'bed', 'water', 'leaves', 'sand', 'brick', 'glass'];
+  var HOTBAR = ['grass', 'dirt', 'stone', 'plank', 'wood', 'workbench', 'furnace', 'door', 'bed', 'water', 'lava', 'leaves', 'sand', 'brick', 'glass'];
 
   var RECIPES = [
     { id: 'planks', name: '木板', result: 'plank', count: 4, need: { wood: 1 } },
@@ -62,7 +71,10 @@
     { id: 'iron_sword', name: '铁剑', result: 'iron_sword', count: 1, need: { iron_ingot: 2, stick: 1 } },
     { id: 'iron_pickaxe', name: '铁镐', result: 'iron_pickaxe', count: 1, need: { iron_ingot: 3, stick: 2 } },
     { id: 'iron_armor', name: '铁甲', result: 'iron_armor', count: 1, need: { iron_ingot: 4 } },
-    { id: 'diamond_armor', name: '钻石甲', result: 'diamond_armor', count: 1, need: { diamond: 4 } }
+    { id: 'diamond_armor', name: '钻石甲', result: 'diamond_armor', count: 1, need: { diamond: 4 } },
+    { id: 'bucket', name: '铁桶', result: 'bucket', count: 1, need: { iron_ingot: 3 } },
+    { id: 'cannon', name: '大炮', result: 'cannon', count: 1, need: { iron_ingot: 20 } },
+    { id: 'cannonball', name: '炮弹', result: 'cannonball', count: 1, need: { iron_ingot: 2 } }
   ];
 
   var SMELT_RECIPES = [
@@ -88,6 +100,9 @@
   var armor = null;
   var chestContents = {};
   var freshChests = false;
+  var fluidLevel = {};
+  var fluidQueue = [];
+  var fluidTimer = 0;
   var meshes = {};
   var meshList = [];
   var currentType = 'grass';
@@ -120,7 +135,88 @@
 
   function isSolid(x, y, z) {
     var b = world[vkey(x, y, z)];
-    return !!b && b !== 'water';
+    return !!b && b !== 'water' && b !== 'water_flow' && b !== 'lava' && b !== 'lava_flow';
+  }
+
+  function isWaterFluid(t) { return t === 'water' || t === 'water_flow'; }
+  function isLavaFluid(t) { return t === 'lava' || t === 'lava_flow'; }
+  function isFluid(t) { return isWaterFluid(t) || isLavaFluid(t); }
+  function flowOf(t) { return isWaterFluid(t) ? 'water_flow' : 'lava_flow'; }
+
+  var FLUID_MAX = { water: 3, lava: 2 };
+
+  function activateFluid(k) {
+    if (fluidQueue.indexOf(k) === -1) fluidQueue.push(k);
+  }
+
+  function setFluid(k, type, level) {
+    world[k] = type;
+    changes[k] = type;
+    fluidLevel[k] = level;
+    rebuildType(type);
+    activateFluid(k);
+  }
+
+  function convertFluid(k) {
+    var t = world[k];
+    if (!isFluid(t)) return;
+    var target = isLavaFluid(t) ? 'obsidian' : 'stone';
+    delete fluidLevel[k];
+    world[k] = target;
+    changes[k] = target;
+    rebuildType(target);
+    playSound('place');
+  }
+
+  function checkFluidNeighbors(k) {
+    var p = k.split(',').map(Number);
+    var dirs = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+    for (var i = 0; i < dirs.length; i++) {
+      var nk = vkey(p[0] + dirs[i][0], p[1] + dirs[i][1], p[2] + dirs[i][2]);
+      if (isFluid(world[nk]) && isWaterFluid(world[k]) !== isWaterFluid(world[nk])) {
+        convertFluid(nk);
+      }
+    }
+  }
+
+  function updateFluids(dt) {
+    fluidTimer += dt;
+    if (fluidTimer < 0.5) return;
+    fluidTimer = 0;
+    var processed = 0;
+    while (fluidQueue.length && processed < 60) {
+      var k = fluidQueue.shift();
+      processed++;
+      var t = world[k];
+      if (!isFluid(t)) continue;
+      var level = fluidLevel[k] || 0;
+      var maxLevel = FLUID_MAX[isWaterFluid(t) ? 'water' : 'lava'];
+      if (level >= maxLevel) continue;
+      var p = k.split(',').map(Number);
+      var below = vkey(p[0], p[1] - 1, p[2]);
+      var bt = world[below];
+      if (!bt || isFluid(bt)) {
+        if (!bt) {
+          setFluid(below, flowOf(t), level + 1);
+          continue;
+        }
+        if (isWaterFluid(t) !== isWaterFluid(bt)) { convertFluid(below); continue; }
+      }
+      // 水平扩散（下方要有支撑）
+      var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      for (var i = 0; i < dirs.length && processed < 60; i++) {
+        var nk = vkey(p[0] + dirs[i][0], p[1], p[2] + dirs[i][1]);
+        if (!world[nk]) {
+          var belowN = vkey(p[0] + dirs[i][0], p[1] - 1, p[2] + dirs[i][1]);
+          if (world[belowN] && !isFluid(world[belowN])) {
+            setFluid(nk, flowOf(t), level + 1);
+            processed++;
+          }
+        } else if (isFluid(world[nk]) && isWaterFluid(t) !== isWaterFluid(world[nk])) {
+          convertFluid(nk);
+        }
+      }
+    }
   }
 
   function groundY(x, z) {
@@ -130,7 +226,7 @@
     return 1;
   }
 
-  var BOUND = 30;
+  var BOUND = 68; // 地图范围扩大 5 倍
 
   function heightAt(x, z) {
     return Math.max(-2, Math.round(
@@ -235,9 +331,9 @@
       }
     }
     // 树
-    for (var t = 0; t < 14; t++) {
-      var tx = Math.floor(rng() * 54) - 27;
-      var tz = Math.floor(rng() * 54) - 27;
+    for (var t = 0; t < 30; t++) {
+      var tx = Math.floor(rng() * (BOUND * 2 - 4)) - (BOUND - 2);
+      var tz = Math.floor(rng() * (BOUND * 2 - 4)) - (BOUND - 2);
       var th = heightAt(tx, tz);
       if (th < 0) continue;
       for (y = th + 1; y <= th + 4; y++) world[vkey(tx, y, tz)] = 'wood';
@@ -254,14 +350,14 @@
     }
     // 矿脉：煤/铁/金/钻石
     [
-      { type: 'coal_ore', count: 24, y0: -1, y1: -5 },
-      { type: 'iron_ore', count: 18, y0: -3, y1: -6 },
-      { type: 'gold_ore', count: 10, y0: -4, y1: -7 },
-      { type: 'diamond_ore', count: 7, y0: -6, y1: -8 }
+      { type: 'coal_ore', count: 60, y0: -1, y1: -5 },
+      { type: 'iron_ore', count: 45, y0: -3, y1: -6 },
+      { type: 'gold_ore', count: 25, y0: -4, y1: -7 },
+      { type: 'diamond_ore', count: 18, y0: -6, y1: -8 }
     ].forEach(function (ore) {
       for (var v = 0; v < ore.count; v++) {
-        var ox2 = Math.floor(rng() * 56) - 28;
-        var oz2 = Math.floor(rng() * 56) - 28;
+        var ox2 = Math.floor(rng() * (BOUND * 2 - 4)) - (BOUND - 2);
+        var oz2 = Math.floor(rng() * (BOUND * 2 - 4)) - (BOUND - 2);
         var span = Math.abs(ore.y1 - ore.y0) + 1;
         var oy2 = ore.y0 - Math.floor(rng() * span);
         var vein = 2 + Math.floor(rng() * 2);
@@ -611,6 +707,14 @@
         mobDrops({ type: type });
         return (backpack.raw_meat || 0) - before;
       },
+      bounds: function () { return BOUND; },
+      shoot: shootProjectile,
+      explodeAt: explodeAt,
+      removeItem: function (id, n) {
+        backpack[id] = (backpack[id] || 0) - n;
+        if (backpack[id] <= 0) delete backpack[id];
+        scheduleSave();
+      },
       pos: function () {
         return { x: camera.position.x, y: camera.position.y, z: camera.position.z };
       },
@@ -649,7 +753,7 @@
 
   function materialFor(id) {
     var b = ITEMS[id];
-    if (id === 'glass' || id === 'water') {
+    if (id === 'glass' || id === 'water' || id === 'water_flow') {
       return new THREE.MeshLambertMaterial({ color: b.color, transparent: true, opacity: id === 'glass' ? 0.35 : 0.55, depthWrite: false });
     }
     return new THREE.MeshLambertMaterial({ color: b.color });
@@ -742,7 +846,8 @@
       if (world[below] === type) removeVoxel(below, type);
       if (world[above] === type) removeVoxel(above, type);
     }
-    var drop = type === 'door' || type === 'door_open' ? 'door' : type;
+    var drop = type === 'door' || type === 'door_open' ? 'door' : type === 'water_flow' ? 'water' : type === 'lava_flow' ? 'lava' : type;
+    if (isFluid(type)) delete fluidLevel[k];
     var needPick = type === 'stone' || type === 'coal_ore' || type === 'iron_ore' || type === 'gold_ore' || type === 'diamond_ore';
     if (needPick && equipped !== 'pickaxe' && equipped !== 'iron_pickaxe') {
       App.toast('没有稿子，挖不出石头/矿石');
@@ -810,6 +915,11 @@
       changes[k] = type;
       rebuildType(type);
     }
+    if (isWaterFluid(type) || isLavaFluid(type)) {
+      fluidLevel[k] = 0;
+      activateFluid(k);
+      checkFluidNeighbors(k);
+    }
     scheduleSave();
     playSound('place');
     return true;
@@ -840,6 +950,14 @@
   }
 
   function doUse() {
+    if (equipped === 'bow' || equipped === 'cannon') {
+      shootProjectile(equipped === 'bow' ? 'arrow' : 'cannonball');
+      return;
+    }
+    if (equipped === 'bucket' || equipped === 'water_bucket' || equipped === 'lava_bucket') {
+      doBucketUse();
+      return;
+    }
     if (hitMobAt(window.innerWidth / 2, window.innerHeight / 2)) {
       openTrade();
       return;
@@ -1041,6 +1159,10 @@
     var d = Math.hypot(mob.pos.x - camera.position.x, mob.pos.z - camera.position.z);
     if (d > 8) return;
     var dmg = equipped === 'iron_sword' ? 6 : equipped === 'sword' ? 4 : 2;
+    damageMob(mob, dmg);
+  }
+
+  function damageMob(mob, dmg) {
     mob.hp -= dmg;
     flashMob(mob);
     var dx = mob.pos.x - camera.position.x;
@@ -1054,6 +1176,150 @@
       removeMob(mob);
       App.toast(mob.type === 'sheep' ? '小羊回家了 🐑' : '怪物消灭了！');
     }
+  }
+
+  /* ---------- 铁桶：装水/岩浆、倒水/岩浆 ---------- */
+  function doBucketUse() {
+    var t = getTarget();
+    if (!t) return;
+    var vx = Math.floor(t.point.x - t.normal.x * 0.05);
+    var vy = Math.floor(t.point.y - t.normal.y * 0.05);
+    var vz = Math.floor(t.point.z - t.normal.z * 0.05);
+    var k = vkey(vx, vy, vz);
+    var type = world[k];
+
+    if (equipped === 'bucket') {
+      if (isWaterFluid(type)) { collectFluid(k, 'water_bucket'); return; }
+      if (isLavaFluid(type)) { collectFluid(k, 'lava_bucket'); return; }
+      App.toast('对准水或岩浆，用铁桶装');
+      return;
+    }
+
+    var isWater = equipped === 'water_bucket';
+    if (isWater && isLavaFluid(type)) {
+      convertFluid(k); // 水倒在岩浆上 → 黑曜石
+      equipped = 'bucket';
+      scheduleSave(); renderBackpack(); updateLabel();
+      App.toast('岩浆变成了黑曜石！');
+      return;
+    }
+    if (!isWater && isWaterFluid(type)) {
+      delete fluidLevel[k];
+      world[k] = 'stone';
+      changes[k] = 'stone';
+      rebuildType('stone'); // 岩浆盖在水上 → 石头
+      equipped = 'bucket';
+      scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
+      App.toast('水变成了石头！');
+      return;
+    }
+    // 倒到相邻空格
+    var px = Math.floor(t.point.x + t.normal.x * 0.05);
+    var py = Math.floor(t.point.y + t.normal.y * 0.05);
+    var pz = Math.floor(t.point.z + t.normal.z * 0.05);
+    var placed = putBlock(isWater ? 'water' : 'lava', px, py, pz);
+    if (placed) {
+      equipped = 'bucket';
+      scheduleSave(); renderBackpack(); updateLabel();
+      App.toast(isWater ? '倒出了一桶水 💧' : '倒出了岩浆 🌋');
+    } else {
+      App.toast('这里放不下');
+    }
+  }
+
+  function collectFluid(k, filledId) {
+    var type = world[k];
+    delete fluidLevel[k];
+    removeVoxel(k, type);
+    backpack.bucket = (backpack.bucket || 0) - 1;
+    if (backpack.bucket <= 0) delete backpack.bucket;
+    backpack[filledId] = (backpack[filledId] || 0) + 1;
+    equipped = filledId;
+    scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
+    App.toast(filledId === 'water_bucket' ? '装了一桶水 💧' : '装了一桶岩浆 🌋');
+  }
+
+  /* ---------- 弓箭与大炮 ---------- */
+  var projectiles = [];
+
+  function shootProjectile(kind) {
+    var ammo = kind === 'arrow' ? 'arrow' : 'cannonball';
+    if ((backpack[ammo] || 0) < 1) {
+      App.toast(kind === 'arrow' ? '没有可用的箭' : '没有可用的炮弹');
+      return;
+    }
+    backpack[ammo] -= 1;
+    if (backpack[ammo] <= 0) delete backpack[ammo];
+    scheduleSave();
+    renderBackpack();
+    var dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    var mesh = kind === 'arrow'
+      ? new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.45, 6), new THREE.MeshLambertMaterial({ color: 0x8B5A2B }))
+      : new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), new THREE.MeshLambertMaterial({ color: 0x2C2C2C }));
+    mesh.position.copy(camera.position).addScaledVector(dir, 0.5);
+    scene.add(mesh);
+    projectiles.push({ kind: kind, mesh: mesh, dir: dir.clone(), speed: kind === 'arrow' ? 34 : 26, ttl: 4 });
+    playSound('shoot');
+  }
+
+  function updateProjectiles(dt) {
+    if (!projectiles.length) return;
+    for (var i = projectiles.length - 1; i >= 0; i--) {
+      var p = projectiles[i];
+      var step = p.speed * dt;
+      raycaster.set(p.mesh.position, p.dir);
+      raycaster.far = step;
+      var blockHits = raycaster.intersectObjects(meshList, false);
+      var mobHits = raycaster.intersectObjects(mobGroups, true);
+      var hitMob = null;
+      if (mobHits.length && (!blockHits.length || mobHits[0].distance <= blockHits[0].distance)) {
+        hitMob = mobHits[0].object.userData.mob;
+      }
+      if (hitMob) {
+        if (hitMob.type !== 'villager') {
+          damageMob(hitMob, p.kind === 'arrow' ? 4 : 6);
+        }
+        removeProjectile(i);
+      } else if (blockHits.length) {
+        if (p.kind === 'cannonball') explodeAt(blockHits[0].point);
+        removeProjectile(i);
+      } else {
+        p.mesh.position.addScaledVector(p.dir, step);
+        p.ttl -= dt;
+        if (p.ttl <= 0 || p.mesh.position.distanceTo(camera.position) > 80) removeProjectile(i);
+      }
+    }
+  }
+
+  function removeProjectile(i) {
+    var p = projectiles[i];
+    scene.remove(p.mesh);
+    projectiles.splice(i, 1);
+  }
+
+  function explodeAt(point) {
+    var cx = Math.floor(point.x), cy = Math.floor(point.y), cz = Math.floor(point.z);
+    for (var dx = -1; dx <= 1; dx++) {
+      for (var dy = -1; dy <= 1; dy++) {
+        for (var dz = -1; dz <= 1; dz++) {
+          var k = vkey(cx + dx, cy + dy, cz + dz);
+          var type = world[k];
+          if (!type || isFluid(type)) continue;
+          removeVoxel(k, type);
+          var drop = type === 'door' || type === 'door_open' ? 'door' : type === 'water_flow' ? 'water' : type === 'lava_flow' ? 'lava' : type;
+          if (drop === 'coal_ore') drop = 'coal';
+          else if (drop === 'iron_ore') drop = 'raw_iron';
+          else if (drop === 'gold_ore') drop = 'gold';
+          else if (drop === 'diamond_ore') drop = 'diamond';
+          addItem(drop, 1);
+        }
+      }
+    }
+    renderBackpack();
+    scheduleSave();
+    playSound('hit');
+    App.toast('💥 轰！');
   }
 
   /* ---------- 生存数值 ---------- */
@@ -1327,6 +1593,8 @@
     var act = currentAction === 'break' ? '⛏️ 拆' : currentAction === 'place' ? '🧱 放：' + ITEMS[currentType].name : '👆 使用';
     if (mode === 'survival') act += ' · 生存';
     if (equipped) act += ' · 手持 ' + ITEMS[equipped].name;
+    if (equipped === 'bow' || equipped === 'cannon') act += '（点👆发射）';
+    if (equipped === 'bucket' || equipped === 'water_bucket' || equipped === 'lava_bucket') act += '（点👆使用）';
     if (armor) act += ' · 🛡️ ' + ITEMS[armor].name;
     label.textContent = act;
   }
@@ -1715,11 +1983,13 @@
         m.flashUntil = 0;
         m.parts.forEach(function (p) { p.material.emissive = new THREE.Color(0x000000); });
       }
-      if (Math.hypot(m.pos.x - camera.position.x, m.pos.z - camera.position.z) > 42) removeMob(m);
+      // 只清理离玩家太远的夜间怪物，家畜保留
+      if ((m.type === 'zombie' || m.type === 'skeleton') && Math.hypot(m.pos.x - camera.position.x, m.pos.z - camera.position.z) > 42) removeMob(m);
     }
   }
 
   function updatePhysics(dt) {
+    updateFluids(dt);
     var speed = mode === 'survival' ? 7 : 10;
     var forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
@@ -1741,6 +2011,9 @@
       camera.position.y += vy2 * dt;
       camera.position.y = clamp(camera.position.y, 0.6, 60);
     } else {
+      // 岩浆烫伤
+      var feetBlock = world[vkey(Math.floor(camera.position.x), Math.floor(camera.position.y - 1.6), Math.floor(camera.position.z))];
+      if (isLavaFluid(feetBlock)) damagePlayer(1);
       // 水平碰撞
       if (!collides(camera.position.x + move.x, camera.position.y, camera.position.z)) camera.position.x += move.x;
       if (!collides(camera.position.x, camera.position.y, camera.position.z + move.z)) camera.position.z += move.z;
@@ -1803,6 +2076,7 @@
     updateDayNight(dt);
     updatePhysics(dt);
     updateMobs(dt);
+    updateProjectiles(dt);
 
     cameraEuler.set(pitch, yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(cameraEuler);
