@@ -142,6 +142,8 @@
   var boats = [];      // 水面上的船 {pos, group}
   var boatGroups = []; // 船网格，用于射线检测
   var onBoat = null;   // 当前乘坐的船
+  var ownedMobs = [];  // 玩家圈养的动物/鱼（放出来养的，存档保留）
+  var savedOwned = []; // 从存档读出的圈养动物记录
 
   function vkey(x, y, z) { return x + ',' + y + ',' + z; }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -413,6 +415,7 @@
       equipped = raw.equipped || null;
       armor = raw.armor || null;
       mode = raw.mode || 'creative';
+      savedOwned = raw.ownedMobs || [];
     } catch (e) {
       seed = Date.now() % 100000 + 1;
       changes = {};
@@ -420,6 +423,7 @@
       equipped = null;
       armor = null;
       mode = 'creative';
+      savedOwned = [];
     }
     generateWorld(seed);
     applyChanges();
@@ -440,7 +444,10 @@
     try {
       var json = JSON.stringify({
         seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
-        chestState: chestContents, chestDate: App.todayStr(), mode: mode
+        chestState: chestContents, chestDate: App.todayStr(), mode: mode,
+        ownedMobs: ownedMobs.map(function (m) {
+          return { type: m.type, x: m.pos.x, y: m.pos.y, z: m.pos.z };
+        })
       });
       localStorage.setItem(SAVE_KEY, json);
       localStorage.setItem(MC_BACKUP_KEY, json); // 自动备份
@@ -448,9 +455,14 @@
   }
 
   var saveTimer = null;
+  var saveDirty = false; // 是否有还没落盘的改动
   function scheduleSave() {
+    saveDirty = true;
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveNow, 600);
+    saveTimer = setTimeout(function () {
+      saveDirty = false;
+      saveNow();
+    }, 600);
   }
 
   /* ---------- 背包与合成 ---------- */
@@ -617,6 +629,13 @@
   }
 
   App.el('mcTimeHome').addEventListener('click', function () { window.location.href = 'index.html'; });
+  window.addEventListener('pagehide', function () {
+    // 有未保存的改动才补一次存档，避免覆盖其它写入
+    if (saveDirty) {
+      saveDirty = false;
+      saveNow();
+    }
+  });
   App.el('mcTimeLobby').addEventListener('click', function () { window.location.href = 'minecraft.html'; });
 
   /* ---------- Three.js 场景 ---------- */
@@ -687,6 +706,7 @@
     spawnPigs(2);
     spawnCows(1);
     spawnFish(3);
+    restoreOwnedMobs(); // 把上次圈养的动物/鱼放回原来的位置
     if (freshChests) {
       topUpAnimals();
       App.toast('🌅 新的一天，箱子和动物都刷新了！');
@@ -785,6 +805,9 @@
       },
       animalCount: function (type) {
         return mobs.filter(function (m) { return m.type === type; }).length;
+      },
+      ownedCount: function (type) {
+        return ownedMobs.filter(function (m) { return !type || m.type === type; }).length;
       },
       fishPos: function () {
         return mobs.filter(function (m) { return m.type === 'fish'; }).map(function (m) {
@@ -977,6 +1000,43 @@
   }
 
   /* ---------- 网：抓动物 / 放动物 ---------- */
+  function markOwned(mob) {
+    mob.owned = true;
+    if (ownedMobs.indexOf(mob) === -1) ownedMobs.push(mob);
+    scheduleSave();
+  }
+
+  function forgetOwned(mob) {
+    var i = ownedMobs.indexOf(mob);
+    if (i !== -1) ownedMobs.splice(i, 1);
+  }
+
+  /* 重新进入游戏时，把圈养的动物/鱼放回原来的位置 */
+  function restoreOwnedMobs() {
+    savedOwned.forEach(function (rec) {
+      if (rec.type !== 'sheep' && rec.type !== 'pig' && rec.type !== 'cow' && rec.type !== 'fish') return;
+      var x = rec.x, z = rec.z;
+      if (rec.type === 'fish') {
+        // 鱼必须待在水里；原来的水没了就找附近的水域
+        var fy = rec.y;
+        if (waterSurfaceY(x, z) === null) {
+          var s = waterSpotNear(x, z, 12) || waterSpot();
+          if (!s) return;
+          x = s.x; z = s.z; fy = s.y;
+        }
+        if (fy == null) fy = waterSurfaceY(x, z);
+        if (fy == null) return;
+        var fMob = addMob('fish', x, fy, z);
+        markOwned(fMob);
+      } else {
+        var mob = addMob(rec.type, x, groundY(x, z), z);
+        markOwned(mob);
+        mob.home = { x: x, z: z };
+      }
+    });
+    savedOwned = [];
+  }
+
   function tryCatchAnimal(mob) {
     if (mob.type !== 'pig' && mob.type !== 'cow' && mob.type !== 'sheep' && mob.type !== 'fish') {
       App.toast('只能用网抓猪、牛、羊、鱼');
@@ -986,6 +1046,7 @@
     backpack.net -= 1;
     if (backpack.net <= 0) delete backpack.net;
     backpack['net_' + mob.type] = (backpack['net_' + mob.type] || 0) + 1;
+    if (mob.owned) forgetOwned(mob); // 抓回背包，不再留在圈养列表里
     removeMob(mob);
     scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
     App.toast('抓住了' + ITEMS['net_' + mob.type].name.replace('网中的', '') + '！');
@@ -1019,7 +1080,9 @@
       backpack[filledId] -= 1;
       if (backpack[filledId] <= 0) delete backpack[filledId];
       backpack.net = (backpack.net || 0) + 1;
-      addMob('fish', spot.x, spot.y, spot.z);
+      var fMob = addMob('fish', spot.x, spot.y, spot.z);
+      markOwned(fMob);
+      fMob.home = { x: spot.x, z: spot.z };
       scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
       App.toast('🐟 鱼放回水里啦，可以养着！');
       return;
@@ -1038,7 +1101,9 @@
     backpack[filledId] -= 1;
     if (backpack[filledId] <= 0) delete backpack[filledId];
     backpack.net = (backpack.net || 0) + 1;
-    addMob(type, x, groundY(x, z), z);
+    var mob = addMob(type, x, groundY(x, z), z);
+    markOwned(mob);
+    mob.home = { x: x, z: z };
     scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
     App.toast('放出了' + ITEMS[filledId].name.replace('网中的', '') + '！');
   }
@@ -1463,6 +1528,7 @@
     mob.parts = [body, head];
     mobs.push(mob);
     mobGroups.push(group);
+    return mob;
   }
 
   function removeMob(mob) {
@@ -1653,6 +1719,7 @@
     mob.pos.z += dz / len * 0.9;
     playSound('hit');
     if (mob.hp <= 0) {
+      if (mob.owned) forgetOwned(mob);
       mobDrops(mob);
       removeMob(mob);
       App.toast(mob.type === 'sheep' ? '小羊回家了 🐑' : '怪物消灭了！');
@@ -2485,7 +2552,13 @@
       if (m.type === 'sheep' || m.type === 'villager' || m.type === 'pig' || m.type === 'cow') {
         if (!m.wanderUntil || now > m.wanderUntil) {
           m.wanderUntil = now + rnd(1500, 3500);
-          if (Math.random() < 0.7) {
+          if (m.owned && m.home && Math.hypot(m.pos.x - m.home.x, m.pos.z - m.home.z) > 8) {
+            // 圈养的动物不会跑远，自己走回窝
+            var hdx = m.home.x - m.pos.x, hdz = m.home.z - m.pos.z;
+            var hl = Math.hypot(hdx, hdz) || 1;
+            m.dir = { x: hdx / hl, z: hdz / hl };
+            m.wanderUntil = now + 400;
+          } else if (Math.random() < 0.7) {
             var a = rnd(0, Math.PI * 2);
             m.dir = { x: Math.cos(a), z: Math.sin(a) };
           } else {

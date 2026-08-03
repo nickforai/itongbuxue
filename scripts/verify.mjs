@@ -550,6 +550,33 @@ async function main() {
   assert(boatMoved, '船能开动（位置变化）');
   assert((await page.evaluate(() => window.__mc.boatOff())) === true, '下船成功');
   assert((await page.evaluate(() => window.__mc.riding())) === false, '已不在船上');
+  // 圈养动物持久化：放出来养的动物/鱼，重新进入游戏还在
+  await page.evaluate(() => { window.__mc.addItem('net', 1); });
+  assert((await page.evaluate(() => window.__mc.catchFirst('sheep'))) === true, '抓一只羊（圈养测试）');
+  await page.evaluate(() => window.__mc.releaseNet('sheep'));
+  await sleep(800); // 等存档写入
+  assert((await page.evaluate(() => window.__mc.ownedCount('sheep'))) >= 1, '放出来养的羊已标记圈养');
+  const fp = await page.evaluate(() => window.__mc.fishPos()[0]);
+  if (fp) {
+    assert((await page.evaluate(() => window.__mc.catchFirst('fish'))) === true, '抓一条鱼（圈养测试）');
+    await page.evaluate(([fx, fy, fz]) => window.__mc.lookAt(fx, fy, fz), fp);
+    await sleep(200);
+    await page.evaluate(() => window.__mc.releaseNet('fish'));
+    await sleep(500);
+    assert((await page.evaluate(() => window.__mc.ownedCount('fish'))) >= 1, '放回水里的鱼已标记圈养');
+  }
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    d.balance = 12;
+    d.mcChances = 1;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.click('#mcStartBtn');
+  await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
+  await sleep(800);
+  assert((await page.evaluate(() => window.__mc.ownedCount('sheep'))) >= 1, '重新进入游戏后圈养的羊还在');
+  assert((await page.evaluate(() => window.__mc.ownedCount('fish'))) >= 1, '重新进入游戏后养在池塘的鱼还在');
   // 门可以打开
   await page.evaluate(() => {
     window.__mc.addItem('plank', 4);
