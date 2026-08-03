@@ -691,6 +691,20 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   color: var(--muted);
 }
 
+.backup-box {
+  width: 100%;
+  min-height: 90px;
+  border-radius: 12px;
+  border: 1px solid #E2E2EC;
+  padding: 10px;
+  font-size: 0.78rem;
+  font-family: Menlo, Consolas, monospace;
+  background: #F6F6FB;
+  color: var(--ink);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .danger-zone {
   border: 2px dashed #F0C2CB;
   border-radius: 20px;
@@ -1068,9 +1082,10 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   background: rgba(20, 20, 35, 0.6);
   padding: 8px;
   border-radius: 18px;
-  max-width: 96vw;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  max-width: 640px;
+  overflow: visible;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 5px;
   padding: 6px;
 }

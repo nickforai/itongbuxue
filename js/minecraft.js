@@ -25,6 +25,9 @@
     lava: { name: '岩浆', color: 0xF26D21, emoji: '🌋', kind: 'block' },
     lava_flow: { name: '流动的岩浆', color: 0xD9501E, emoji: '🌋', kind: 'block' },
     obsidian: { name: '黑曜石', color: 0x2A2A3A, emoji: '🪨', kind: 'block' },
+    fence: { name: '栅栏', color: 0x8B5A2B, emoji: '🚧', kind: 'block' },
+    fence_gate: { name: '栅栏门', color: 0x7A5230, emoji: '🚪', kind: 'block' },
+    fence_gate_open: { name: '栅栏门（开）', color: 0x6E4520, emoji: '🚪', kind: 'block' },
     chest: { name: '箱子', color: 0xA9743F, emoji: '📦', kind: 'block' },
     coal_ore: { name: '煤矿石', color: 0x3A3A3A, emoji: '⬛', kind: 'block' },
     iron_ore: { name: '铁矿石', color: 0xB87333, emoji: '🟠', kind: 'block' },
@@ -53,10 +56,14 @@
     water_bucket: { name: '水桶', color: 0x3D9BE9, emoji: '🪣', kind: 'tool' },
     lava_bucket: { name: '岩浆桶', color: 0xF26D21, emoji: '🪣', kind: 'tool' },
     cannon: { name: '大炮', color: 0x3A3A4A, emoji: '💣', kind: 'tool' },
-    cannonball: { name: '炮弹', color: 0x2C2C2C, emoji: '⚫', kind: 'material' }
+    cannonball: { name: '炮弹', color: 0x2C2C2C, emoji: '⚫', kind: 'material' },
+    net: { name: '网', color: 0x4A4A5A, emoji: '🥅', kind: 'tool' },
+    net_pig: { name: '网中的猪', color: 0xF4A7B9, emoji: '🐷', kind: 'tool' },
+    net_cow: { name: '网中的牛', color: 0x8B5A2B, emoji: '🐮', kind: 'tool' },
+    net_sheep: { name: '网中的羊', color: 0xFFFFFF, emoji: '🐑', kind: 'tool' }
   };
 
-  var HOTBAR = ['grass', 'dirt', 'stone', 'plank', 'wood', 'workbench', 'furnace', 'door', 'bed', 'water', 'lava', 'leaves', 'sand', 'brick', 'glass'];
+  var HOTBAR = ['grass', 'dirt', 'stone', 'plank', 'wood', 'workbench', 'furnace', 'door', 'fence', 'fence_gate', 'bed', 'water', 'lava', 'leaves', 'sand', 'brick', 'glass'];
 
   var RECIPES = [
     { id: 'planks', name: '木板', result: 'plank', count: 4, need: { wood: 1 } },
@@ -74,7 +81,9 @@
     { id: 'diamond_armor', name: '钻石甲', result: 'diamond_armor', count: 1, need: { diamond: 4 } },
     { id: 'bucket', name: '铁桶', result: 'bucket', count: 1, need: { iron_ingot: 3 } },
     { id: 'cannon', name: '大炮', result: 'cannon', count: 1, need: { iron_ingot: 20 } },
-    { id: 'cannonball', name: '炮弹', result: 'cannonball', count: 1, need: { iron_ingot: 2 } }
+    { id: 'cannonball', name: '炮弹', result: 'cannonball', count: 1, need: { iron_ingot: 2 } },
+    { id: 'fence', name: '栅栏', result: 'fence', count: 1, need: { plank: 1 } },
+    { id: 'fence_gate', name: '栅栏门', result: 'fence_gate', count: 1, need: { plank: 2 } }
   ];
 
   var SMELT_RECIPES = [
@@ -90,10 +99,14 @@
     { id: 't_meat_bow', name: '肉换弓', give: { raw_meat: 1 }, get: { bow: 2 } },
     { id: 't_meat_plank', name: '肉换木板', give: { raw_meat: 1 }, get: { plank: 6 } },
     { id: 't_ingot_cannon', name: '铁锭换大炮', give: { iron_ingot: 20 }, get: { cannon: 1 } },
-    { id: 't_ingot_cannonball', name: '铁锭换炮弹', give: { iron_ingot: 2 }, get: { cannonball: 1 } }
+    { id: 't_ingot_cannonball', name: '铁锭换炮弹', give: { iron_ingot: 2 }, get: { cannonball: 1 } },
+    { id: 't_wood_net', name: '木头换网', give: { wood: 3 }, get: { net: 1 } },
+    { id: 't_plank_fence', name: '木板换栅栏', give: { plank: 1 }, get: { fence: 1 } },
+    { id: 't_plank_fencegate', name: '木板换栅栏门', give: { plank: 2 }, get: { fence_gate: 1 } }
   ];
 
   var SAVE_KEY = 'xx3_mc_world_v1';
+  var MC_BACKUP_KEY = 'xx3_mc_world_v1_backup';
   var world = {};
   var seed = 0;
   var changes = {};
@@ -385,7 +398,7 @@
   function loadWorld() {
     freshChests = false;
     try {
-      var raw = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+      var raw = JSON.parse(localStorage.getItem(SAVE_KEY) || localStorage.getItem(MC_BACKUP_KEY) || '{}');
       seed = raw.seed || (Date.now() % 100000 + 1);
       changes = raw.changes || {};
       backpack = raw.backpack || {};
@@ -404,7 +417,7 @@
     applyChanges();
     // 箱子每日刷新：同一天保留拿取进度，新的一天重新装满
     try {
-      var st = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+      var st = JSON.parse(localStorage.getItem(SAVE_KEY) || localStorage.getItem(MC_BACKUP_KEY) || '{}');
       if (st.chestDate === App.todayStr()) {
         if (st.chestState) {
           Object.keys(st.chestState).forEach(function (k) { chestContents[k] = st.chestState[k]; });
@@ -420,10 +433,12 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify({
+        var json = JSON.stringify({
           seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
           chestState: chestContents, chestDate: App.todayStr(), mode: mode
-        }));
+        });
+        localStorage.setItem(SAVE_KEY, json);
+        localStorage.setItem(MC_BACKUP_KEY, json); // 自动备份
       } catch (e) { /* 空间满就忽略 */ }
     }, 600);
   }
@@ -513,7 +528,7 @@
   /* ---------- 大厅（模式选择 + 星星兑换） ---------- */
   function getSavedMode() {
     try {
-      var raw = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+      var raw = JSON.parse(localStorage.getItem(SAVE_KEY) || localStorage.getItem(MC_BACKUP_KEY) || '{}');
       return raw.mode || 'creative';
     } catch (e) { return 'creative'; }
   }
@@ -717,6 +732,15 @@
         if (backpack[id] <= 0) delete backpack[id];
         scheduleSave();
       },
+      catchFirst: function (type) {
+        var mob = mobs.find(function (m) { return m.type === type; });
+        if (!mob || (backpack.net || 0) < 1) return false;
+        tryCatchAnimal(mob);
+        return true;
+      },
+      releaseNet: function (type) {
+        releaseAnimal('net_' + type);
+      },
       pos: function () {
         return { x: camera.position.x, y: camera.position.y, z: camera.position.z };
       },
@@ -785,10 +809,19 @@
       }
     });
     if (!coords.length) return;
-    var mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), materialFor(id), coords.length);
+    var geom = new THREE.BoxGeometry(1, 1, 1);
+    var useRot = false;
+    if (id === 'fence') geom = new THREE.BoxGeometry(0.2, 1, 0.2);
+    else if (id === 'door_open' || id === 'fence_gate_open') { geom = new THREE.BoxGeometry(1, 1, 0.18); useRot = true; }
+    var mesh = new THREE.InstancedMesh(geom, materialFor(id), coords.length);
     var m = new THREE.Matrix4();
     coords.forEach(function (c, i) {
-      m.makeTranslation(c[0] + 0.5, c[1] + 0.5, c[2] + 0.5);
+      if (useRot) {
+        m.makeRotationY(Math.PI / 2);
+        m.setPosition(c[0] + 0.5, c[1] + 0.5, c[2] + 0.5);
+      } else {
+        m.makeTranslation(c[0] + 0.5, c[1] + 0.5, c[2] + 0.5);
+      }
       mesh.setMatrixAt(i, m);
     });
     mesh.instanceMatrix.needsUpdate = true;
@@ -821,9 +854,46 @@
     var hits = raycaster.intersectObjects(mobGroups, true);
     for (var i = 0; i < hits.length; i++) {
       var mob = hits[i].object.userData.mob;
-      if (mob && mob.type === 'villager') return mob;
+      if (mob) return mob;
     }
     return null;
+  }
+
+  /* ---------- 网：抓动物 / 放动物 ---------- */
+  function tryCatchAnimal(mob) {
+    if (mob.type !== 'pig' && mob.type !== 'cow' && mob.type !== 'sheep') {
+      App.toast('只能用网抓猪、牛、羊');
+      return;
+    }
+    if ((backpack.net || 0) < 1) { App.toast('没有网，找村民用 3 个木头换'); return; }
+    backpack.net -= 1;
+    if (backpack.net <= 0) delete backpack.net;
+    backpack['net_' + mob.type] = (backpack['net_' + mob.type] || 0) + 1;
+    removeMob(mob);
+    scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
+    App.toast('抓住了' + ITEMS['net_' + mob.type].name.replace('网中的', '') + '！');
+  }
+
+  function releaseAnimal(filledId) {
+    var type = filledId.replace('net_', '');
+    if ((backpack[filledId] || 0) < 1) return;
+    var t = getTarget();
+    var x, z;
+    if (t) {
+      x = Math.floor(t.point.x + t.normal.x * 0.5);
+      z = Math.floor(t.point.z + t.normal.z * 0.5);
+    } else {
+      var dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      x = Math.floor(camera.position.x + dir.x * 3);
+      z = Math.floor(camera.position.z + dir.z * 3);
+    }
+    backpack[filledId] -= 1;
+    if (backpack[filledId] <= 0) delete backpack[filledId];
+    backpack.net = (backpack.net || 0) + 1;
+    addMob(type, x, groundY(x, z), z);
+    scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
+    App.toast('放出了' + ITEMS[filledId].name.replace('网中的', '') + '！');
   }
 
   function removeVoxel(k, type) {
@@ -893,7 +963,12 @@
 
   /* 手指点到哪，放到哪 */
   function tapPlace(cx, cy) {
-    if (hitMobAt(cx, cy)) { openTrade(); return; }
+    var mv = hitMobAt(cx, cy);
+    if (mv) {
+      if (mv.type === 'villager') { openTrade(); return; }
+      if (equipped === 'net') { tryCatchAnimal(mv); return; }
+      if (equipped === 'net_pig' || equipped === 'net_cow' || equipped === 'net_sheep') { releaseAnimal(equipped); return; }
+    }
     var t = getTargetAt(cx, cy);
     if (!t) return;
     currentAction = 'place';
@@ -960,7 +1035,18 @@
       doBucketUse();
       return;
     }
-    if (hitMobAt(window.innerWidth / 2, window.innerHeight / 2)) {
+    if (equipped === 'net') {
+      var mv = hitMobAt(window.innerWidth / 2, window.innerHeight / 2);
+      if (mv) { tryCatchAnimal(mv); return; }
+      App.toast('对准动物点「使用」就能抓');
+      return;
+    }
+    if (equipped === 'net_pig' || equipped === 'net_cow' || equipped === 'net_sheep') {
+      releaseAnimal(equipped);
+      return;
+    }
+    var mv2 = hitMobAt(window.innerWidth / 2, window.innerHeight / 2);
+    if (mv2 && mv2.type === 'villager') {
       openTrade();
       return;
     }
@@ -978,6 +1064,16 @@
       if (mode !== 'survival') { App.toast('创造模式不用睡觉哦'); return; }
       if (!isNight()) { App.toast('现在睡不着，天黑再睡吧'); return; }
       sleepInBed(vx, vy, vz);
+      return;
+    }
+    if (type === 'fence_gate' || type === 'fence_gate_open') {
+      var ng = type === 'fence_gate' ? 'fence_gate_open' : 'fence_gate';
+      world[k] = ng;
+      changes[k] = ng;
+      rebuildType('fence_gate');
+      rebuildType('fence_gate_open');
+      scheduleSave();
+      playSound('place');
       return;
     }
     if (type === 'door' || type === 'door_open') {
@@ -1280,7 +1376,7 @@
       }
       if (hitMob) {
         if (hitMob.type !== 'villager') {
-          damageMob(hitMob, p.kind === 'arrow' ? 4 : 6);
+          damageMob(hitMob, 6); // 弓箭与大炮同样有伤害
         }
         removeProjectile(i);
       } else if (blockHits.length) {

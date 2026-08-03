@@ -23,6 +23,7 @@ async function main() {
   });
   const ctx = await browser.newContext({ viewport: { width: 820, height: 1180 } });
   const page = await ctx.newPage();
+  page.on('dialog', (d) => d.accept());
   page.setDefaultTimeout(12000);
   page.setDefaultNavigationTimeout(15000);
   const errors = [];
@@ -211,6 +212,24 @@ async function main() {
   assert(parseInt(await page.textContent('#stTotal'), 10) >= 5, '总星星统计正常');
   assert(parseInt(await page.textContent('#stJifen'), 10) >= 5, '家长页积分统计正常');
   assert((await page.textContent('#wrongShuxue')).length > 0, '错题本区域渲染');
+  // 备份与恢复存档
+  await page.click('#backupBtn');
+  await sleep(300);
+  const archive = await page.inputValue('#backupText');
+  const parsedArchive = JSON.parse(archive);
+  assert(!!parsedArchive.learning && ('minecraft' in parsedArchive), '备份存档包含学习数据与游戏存档字段');
+  assert((await page.evaluate(() => !!localStorage.getItem('xx3_learning_v1_backup'))) === true, '自动备份键已写入');
+  await page.evaluate(() => localStorage.removeItem('xx3_learning_v1'));
+  await page.reload({ waitUntil: 'networkidle' });
+  assert(parseInt(await page.textContent('#stJifen'), 10) >= 5, '主数据丢失时自动从备份恢复');
+  await page.click('#backupBtn');
+  await sleep(200);
+  const archive2 = await page.inputValue('#backupText');
+  await page.fill('#restoreText', archive2);
+  await page.click('#restoreBtn');
+  await sleep(400);
+  const restoredBalance = await page.evaluate(() => JSON.parse(localStorage.getItem('xx3_learning_v1')).balance);
+  assert(restoredBalance >= 5, '手动恢复存档成功');
   await shot(page, 'parent');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
@@ -298,7 +317,7 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 15, '15 种方块可切换（含门/工作台/木板/床/熔炉/水/岩浆）');
+  assert((await page.locator('.mc-block').count()) === 17, '17 种方块可切换（含栅栏/栅栏门）');
   assert((await page.locator('#mcHotbar .mc-pack-btn').count()) === 1, '背包按钮在快捷栏左边');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
@@ -413,7 +432,7 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.trade('t_plank_meat'))) === false, '材料不够时交换失败');
   await page.evaluate(() => window.__mc.openTrade());
   assert((await page.locator('#mcTradePanel:not(.hidden)').count()) === 1, '村民交换面板可打开');
-  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 8, '8 条交换规则');
+  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 11, '11 条交换规则');
   // 盔甲
   await page.evaluate(() => {
     window.__mc.addItem('raw_iron', 4);
@@ -465,6 +484,34 @@ async function main() {
   });
   assert((await page.evaluate(() => (window.__mc.backpack.cannon || 0))) >= 2, '村民 20 铁锭换大炮');
   assert((await page.evaluate(() => (window.__mc.backpack.cannonball || 0))) >= 2, '村民 2 铁锭换炮弹');
+  // 网：抓动物再放出来
+  await page.evaluate(() => { window.__mc.addItem('wood', 3); window.__mc.trade('t_wood_net'); });
+  assert((await page.evaluate(() => (window.__mc.backpack.net || 0))) >= 1, '3 木头换网');
+  const sheepBefore = await page.evaluate(() => window.__mc.animalCount('sheep'));
+  assert((await page.evaluate(() => window.__mc.catchFirst('sheep'))) === true, '用网抓住一只羊');
+  assert((await page.evaluate(() => (window.__mc.backpack.net_sheep || 0))) === 1, '网中的羊进背包');
+  await page.evaluate(() => window.__mc.releaseNet('sheep'));
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.animalCount('sheep'))) >= sheepBefore, '羊被放出来');
+  assert((await page.evaluate(() => (window.__mc.backpack.net || 0))) >= 1, '网回到背包可再用');
+  // 栅栏与栅栏门兑换
+  await page.evaluate(() => {
+    window.__mc.addItem('plank', 3);
+    window.__mc.trade('t_plank_fence');
+    window.__mc.trade('t_plank_fencegate');
+  });
+  assert((await page.evaluate(() => (window.__mc.backpack.fence || 0))) >= 1, '1 木板换栅栏');
+  assert((await page.evaluate(() => (window.__mc.backpack.fence_gate || 0))) >= 1, '2 木板换栅栏门');
+  // 门可以打开
+  await page.evaluate(() => {
+    window.__mc.addItem('plank', 4);
+    window.__mc.craft('door');
+    window.__mc.placeAt('door', 50, 30, 50);
+  });
+  await page.evaluate(() => window.__mc.lookAt(50, 30.5, 50));
+  await page.evaluate(() => window.__mc.use());
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.blockAt(50, 30, 50))) === 'door_open', '门可以打开');
   await page.evaluate(() => {
     window.__mc.removeItem('arrow', 999);
     window.__mc.addItem('arrow', 1);

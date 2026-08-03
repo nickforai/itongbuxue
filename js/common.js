@@ -3,6 +3,7 @@
   'use strict';
 
   var KEY = 'xx3_learning_v1';
+  var BACKUP_KEY = 'xx3_learning_v1_backup';
 
   var SUBJECTS = {
     yuwen: { name: '语文', emoji: '📖' },
@@ -29,7 +30,7 @@
   var store = {
     load: function () {
       try {
-        var raw = localStorage.getItem(KEY);
+        var raw = localStorage.getItem(KEY) || localStorage.getItem(BACKUP_KEY);
         if (raw) {
           var base = defaultData();
           var parsed = JSON.parse(raw);
@@ -49,10 +50,17 @@
       return defaultData();
     },
     save: function (data) {
-      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
+      try {
+        var json = JSON.stringify(data);
+        localStorage.setItem(KEY, json);
+        localStorage.setItem(BACKUP_KEY, json); // 自动备份，主数据丢失时可恢复
+      } catch (e) { /* ignore */ }
     },
     reset: function () {
-      try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+      try {
+        localStorage.removeItem(KEY);
+        localStorage.removeItem(BACKUP_KEY);
+      } catch (e) { /* ignore */ }
     }
   };
 
