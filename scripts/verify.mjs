@@ -511,6 +511,14 @@ async function main() {
   await sleep(300);
   assert((await page.evaluate(() => window.__mc.animalCount('sheep'))) >= sheepBefore, '羊被放出来');
   assert((await page.evaluate(() => (window.__mc.backpack.net || 0))) >= 1, '网回到背包可再用');
+  // 鱼也能用网抓、放回水里
+  const fishBefore = await page.evaluate(() => window.__mc.animalCount('fish'));
+  assert((await page.evaluate(() => window.__mc.catchFirst('fish'))) === true, '用网抓住一条鱼');
+  assert((await page.evaluate(() => (window.__mc.backpack.net_fish || 0))) === 1, '网中的鱼进背包');
+  await page.evaluate(() => window.__mc.releaseNet('fish'));
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.animalCount('fish'))) >= fishBefore, '鱼被放回水里');
+  assert((await page.evaluate(() => (window.__mc.backpack.net || 0))) >= 1, '网回收可再用');
   // 栅栏与栅栏门兑换
   await page.evaluate(() => {
     window.__mc.addItem('plank', 3);

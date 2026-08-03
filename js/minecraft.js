@@ -60,7 +60,8 @@
     net: { name: '网', color: 0x4A4A5A, emoji: '🥅', kind: 'tool' },
     net_pig: { name: '网中的猪', color: 0xF4A7B9, emoji: '🐷', kind: 'tool' },
     net_cow: { name: '网中的牛', color: 0x8B5A2B, emoji: '🐮', kind: 'tool' },
-    net_sheep: { name: '网中的羊', color: 0xFFFFFF, emoji: '🐑', kind: 'tool' }
+    net_sheep: { name: '网中的羊', color: 0xFFFFFF, emoji: '🐑', kind: 'tool' },
+    net_fish: { name: '网中的鱼', color: 0xF4A03A, emoji: '🐟', kind: 'tool' }
   };
 
   var HOTBAR_FUNC = ['workbench', 'furnace', 'door', 'fence_gate', 'bed', 'water', 'lava'];
@@ -906,8 +907,8 @@
 
   /* ---------- 网：抓动物 / 放动物 ---------- */
   function tryCatchAnimal(mob) {
-    if (mob.type !== 'pig' && mob.type !== 'cow' && mob.type !== 'sheep') {
-      App.toast('只能用网抓猪、牛、羊');
+    if (mob.type !== 'pig' && mob.type !== 'cow' && mob.type !== 'sheep' && mob.type !== 'fish') {
+      App.toast('只能用网抓猪、牛、羊、鱼');
       return;
     }
     if ((backpack.net || 0) < 1) { App.toast('没有网，找村民用 3 个木头换'); return; }
@@ -922,6 +923,36 @@
   function releaseAnimal(filledId) {
     var type = filledId.replace('net_', '');
     if ((backpack[filledId] || 0) < 1) return;
+    if (type === 'fish') {
+      // 鱼要放进水里（自己造的水塘或附近水域）
+      var spot = null;
+      var ft = getTarget();
+      function isWater(x, y, z) {
+        var w = world[vkey(x, y, z)];
+        return w === 'water' || w === 'water_flow';
+      }
+      if (ft) {
+        var wx = Math.floor(ft.point.x + ft.normal.x * 0.5);
+        var wz = Math.floor(ft.point.z + ft.normal.z * 0.5);
+        for (var y = 8; y >= -5 && !spot; y--) if (isWater(wx, y, wz)) spot = { x: wx, y: y + 0.4, z: wz };
+        for (var ox = -3; ox <= 3 && !spot; ox++) {
+          for (var oz = -3; oz <= 3 && !spot; oz++) {
+            for (var y2 = 8; y2 >= -5 && !spot; y2--) {
+              if (isWater(wx + ox, y2, wz + oz)) spot = { x: wx + ox, y: y2 + 0.4, z: wz + oz };
+            }
+          }
+        }
+      }
+      if (!spot) spot = waterSpot();
+      if (!spot) { App.toast('没有水，放不了鱼哦'); return; }
+      backpack[filledId] -= 1;
+      if (backpack[filledId] <= 0) delete backpack[filledId];
+      backpack.net = (backpack.net || 0) + 1;
+      addMob('fish', spot.x, spot.y, spot.z);
+      scheduleSave(); renderBackpack(); updateLabel(); playSound('place');
+      App.toast('🐟 鱼放回水里啦，可以养着！');
+      return;
+    }
     var t = getTarget();
     var x, z;
     if (t) {
@@ -1012,7 +1043,7 @@
     if (mv) {
       if (mv.type === 'villager') { openTrade(); return; }
       if (equipped === 'net') { tryCatchAnimal(mv); return; }
-      if (equipped === 'net_pig' || equipped === 'net_cow' || equipped === 'net_sheep') { releaseAnimal(equipped); return; }
+      if (equipped === 'net_pig' || equipped === 'net_cow' || equipped === 'net_sheep' || equipped === 'net_fish') { releaseAnimal(equipped); return; }
     }
     var t = getTargetAt(cx, cy);
     if (!t) return;
@@ -1124,7 +1155,7 @@
       App.toast('对准动物点「使用」就能抓');
       return;
     }
-    if (equipped === 'net_pig' || equipped === 'net_cow' || equipped === 'net_sheep') {
+    if (equipped === 'net_pig' || equipped === 'net_cow' || equipped === 'net_sheep' || equipped === 'net_fish') {
       releaseAnimal(equipped);
       return;
     }
