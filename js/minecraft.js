@@ -757,6 +757,11 @@
       animalCount: function (type) {
         return mobs.filter(function (m) { return m.type === type; }).length;
       },
+      fishPos: function () {
+        return mobs.filter(function (m) { return m.type === 'fish'; }).map(function (m) {
+          return [m.pos.x, m.pos.y, m.pos.z];
+        });
+      },
       dropMeat: function (type) {
         var before = backpack.raw_meat || 0;
         mobDrops({ type: type });
@@ -934,11 +939,11 @@
       if (ft) {
         var wx = Math.floor(ft.point.x + ft.normal.x * 0.5);
         var wz = Math.floor(ft.point.z + ft.normal.z * 0.5);
-        for (var y = 8; y >= -5 && !spot; y--) if (isWater(wx, y, wz)) spot = { x: wx, y: y + 0.4, z: wz };
+        for (var y = 8; y >= -5 && !spot; y--) if (isWater(wx, y, wz)) spot = { x: wx, y: y + 0.82, z: wz };
         for (var ox = -3; ox <= 3 && !spot; ox++) {
           for (var oz = -3; oz <= 3 && !spot; oz++) {
             for (var y2 = 8; y2 >= -5 && !spot; y2--) {
-              if (isWater(wx + ox, y2, wz + oz)) spot = { x: wx + ox, y: y2 + 0.4, z: wz + oz };
+              if (isWater(wx + ox, y2, wz + oz)) spot = { x: wx + ox, y: y2 + 0.82, z: wz + oz };
             }
           }
         }
@@ -1258,8 +1263,21 @@
       for (var z = -BOUND + 4; z <= BOUND - 4; z += 6) {
         for (var y = 8; y >= -5; y--) {
           var t = world[vkey(x, y, z)];
-          if (t === 'water' || t === 'water_flow') return { x: x, y: y + 0.4, z: z };
+          if (t === 'water' || t === 'water_flow') return { x: x, y: y + 0.82, z: z };
         }
+      }
+    }
+    return null;
+  }
+
+  function waterSpotNear(cx, cz, radius) {
+    for (var tries = 0; tries < 40; tries++) {
+      var x = Math.floor(cx + rnd(-radius, radius));
+      var z = Math.floor(cz + rnd(-radius, radius));
+      if (x < -BOUND + 2 || x > BOUND - 2 || z < -BOUND + 2 || z > BOUND - 2) continue;
+      for (var y = 8; y >= -5; y--) {
+        var t = world[vkey(x, y, z)];
+        if (t === 'water' || t === 'water_flow') return { x: x, y: y + 0.82, z: z };
       }
     }
     return null;
@@ -1267,7 +1285,7 @@
 
   function spawnFish(n) {
     for (var i = 0; i < n; i++) {
-      var s = waterSpot();
+      var s = waterSpotNear(camera.position.x, camera.position.z, 25) || waterSpot();
       if (!s) continue;
       addMob('fish', s.x, s.y, s.z);
     }
@@ -1342,11 +1360,11 @@
       }
     } else if (type === 'fish') {
       // 水里的鱼：身体 + 尾巴
-      body = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 0.65), new THREE.MeshLambertMaterial({ color: 0xF4A03A }));
+      body = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.28, 0.85), new THREE.MeshLambertMaterial({ color: 0xF4A03A }));
       body.position.y = 0;
-      head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.22, 0.18), new THREE.MeshLambertMaterial({ color: 0xE07B2A }));
+      head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.26, 0.24), new THREE.MeshLambertMaterial({ color: 0xE07B2A }));
       head.position.set(0, 0, -0.4);
-      group.scale.set(0.9, 0.9, 0.9);
+      group.scale.set(1.35, 1.35, 1.35);
     } else {
       body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.4), new THREE.MeshLambertMaterial({ color: bodyColor }));
       body.position.y = 0.7;
@@ -2246,8 +2264,12 @@
     for (var i = mobs.length - 1; i >= 0; i--) {
       var m = mobs[i];
       if (m.type === 'fish') {
-        // 鱼待在水里，轻轻浮动
-        m.group.position.set(m.pos.x, m.pos.y + Math.sin(now * 0.002 + m.pos.x * 0.7) * 0.08, m.pos.z);
+        // 鱼待在水里：轻轻浮动，偶尔跳出水面
+        var jumpT = (now / 1000) % 7;
+        var jumping = jumpT < 1.2;
+        var jumpDy = jumping ? Math.sin(jumpT / 1.2 * Math.PI) * 1.6 : 0;
+        m.group.rotation.x = jumping ? -Math.sin(jumpT / 1.2 * Math.PI) * 0.9 : 0;
+        m.group.position.set(m.pos.x, m.pos.y + Math.sin(now * 0.002 + m.pos.x * 0.7) * 0.05 + jumpDy, m.pos.z);
         if (m.flashUntil && now > m.flashUntil) {
           m.flashUntil = 0;
           m.parts.forEach(function (p) { p.material.emissive = new THREE.Color(0x000000); });
