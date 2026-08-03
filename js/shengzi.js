@@ -160,6 +160,7 @@
     box.innerHTML = '';
     options.forEach(function (ch) {
       var b = document.createElement('button');
+      b.type = 'button';
       b.textContent = ch;
       b.addEventListener('click', function () {
         if (ch === c) {

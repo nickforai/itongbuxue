@@ -1394,6 +1394,7 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   font-size: 1.5rem;
   font-weight: 800;
 }
+.char-quiz .quiz-options button:active { transform: scale(0.92); }
 
 /* ---------- 阅读 ---------- */
 .rd-text {
