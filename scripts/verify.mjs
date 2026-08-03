@@ -374,8 +374,10 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.sheepLying())) === true, '羊是趴着的');
   assert((await page.evaluate(() => window.__mc.animalCount('pig'))) >= 1, '有粉色的猪');
   assert((await page.evaluate(() => window.__mc.animalCount('cow'))) >= 1, '有棕色的牛');
+  assert((await page.evaluate(() => window.__mc.animalCount('fish'))) >= 1, '水里有鱼');
   assert((await page.evaluate(() => window.__mc.dropMeat('pig'))) === 2, '猪掉 2 肉');
   assert((await page.evaluate(() => window.__mc.dropMeat('cow'))) === 5, '牛掉 5 肉');
+  assert((await page.evaluate(() => window.__mc.dropMeat('fish'))) === 1, '一条鱼 = 1 块肉');
   // 触摸手势冒烟测试：点按放置、长按挖方块（无报错即可）
   await page.mouse.move(650, 520);
   await page.mouse.down();
@@ -430,6 +432,7 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.animalCount('sheep'))) >= 3, '新的一天羊刷新');
   assert((await page.evaluate(() => window.__mc.animalCount('pig'))) >= 2, '新的一天猪刷新');
   assert((await page.evaluate(() => window.__mc.animalCount('cow'))) >= 1, '新的一天牛刷新');
+  assert((await page.evaluate(() => window.__mc.animalCount('fish'))) >= 1, '新的一天鱼刷新');
   // 村民交换
   assert(
     await page.evaluate(() => { window.__mc.addItem('diamond', 1); return window.__mc.trade('t_diamond_ingot'); }),

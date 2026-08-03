@@ -680,6 +680,7 @@
     spawnVillagers(5);
     spawnPigs(2);
     spawnCows(1);
+    spawnFish(3);
     if (freshChests) {
       topUpAnimals();
       App.toast('🌅 新的一天，箱子和动物都刷新了！');
@@ -1221,16 +1222,44 @@
     }
   }
 
-  /* 每日刷新：把动物补齐到固定数量（和箱子同一个"新的一天"逻辑） */
-  function topUpAnimals() {
-    [['sheep', 3], ['pig', 2], ['cow', 1]].forEach(function (spec) {
-      var t = spec[0], min = spec[1];
-      var cur = mobs.filter(function (m) { return m.type === t; }).length;
-      for (var i = cur; i < min; i++) {
+  function waterSpot() {
+    for (var x = -BOUND + 4; x <= BOUND - 4; x += 6) {
+      for (var z = -BOUND + 4; z <= BOUND - 4; z += 6) {
+        for (var y = 8; y >= -5; y--) {
+          var t = world[vkey(x, y, z)];
+          if (t === 'water' || t === 'water_flow') return { x: x, y: y + 0.4, z: z };
+        }
+      }
+    }
+    return null;
+  }
+
+  function spawnFish(n) {
+    for (var i = 0; i < n; i++) {
+      var s = waterSpot();
+      if (!s) continue;
+      addMob('fish', s.x, s.y, s.z);
+    }
+  }
+
+  function spawnToTarget(type, min) {
+    var cur = mobs.filter(function (m) { return m.type === type; }).length;
+    var need = min - cur;
+    if (need <= 0) return;
+    if (type === 'fish') spawnFish(need);
+    else {
+      for (var i = 0; i < need; i++) {
         var x = Math.floor(rnd(-BOUND + 3, BOUND - 3));
         var z = Math.floor(rnd(-BOUND + 3, BOUND - 3));
-        addMob(t, x, groundY(x, z), z);
+        addMob(type, x, groundY(x, z), z);
       }
+    }
+  }
+
+  /* 每日刷新：把动物补齐到固定数量（和箱子同一个"新的一天"逻辑） */
+  function topUpAnimals() {
+    [['sheep', 3], ['pig', 2], ['cow', 1], ['fish', 3]].forEach(function (spec) {
+      spawnToTarget(spec[0], spec[1]);
     });
   }
 
@@ -1238,7 +1267,7 @@
     var mob = {
       type: type,
       pos: { x: x, y: y, z: z },
-      hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : type === 'cow' ? 6 : type === 'pig' ? 4 : 3,
+      hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : type === 'cow' ? 6 : type === 'pig' ? 4 : type === 'fish' ? 2 : 3,
       speed: type === 'sheep' || type === 'villager' || type === 'pig' || type === 'cow' ? 1.4 : 2.4,
       lying: type === 'sheep',
       dir: null,
@@ -1280,6 +1309,13 @@
           group.add(horn);
         });
       }
+    } else if (type === 'fish') {
+      // 水里的鱼：身体 + 尾巴
+      body = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 0.65), new THREE.MeshLambertMaterial({ color: 0xF4A03A }));
+      body.position.y = 0;
+      head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.22, 0.18), new THREE.MeshLambertMaterial({ color: 0xE07B2A }));
+      head.position.set(0, 0, -0.4);
+      group.scale.set(0.9, 0.9, 0.9);
     } else {
       body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.85, 0.4), new THREE.MeshLambertMaterial({ color: bodyColor }));
       body.position.y = 0.7;
@@ -1331,6 +1367,8 @@
       drops.push(['raw_meat', 2]); // 猪掉 2 肉
     } else if (mob.type === 'cow') {
       drops.push(['raw_meat', 5]); // 牛掉 5 肉
+    } else if (mob.type === 'fish') {
+      drops.push(['raw_meat', 1]); // 一条鱼 = 1 块肉
     } else {
       drops.push(['wool', 1 + (Math.random() < 0.5 ? 1 : 0)]);
       drops.push(['raw_meat', 1]); // 羊掉肉
@@ -2169,18 +2207,22 @@
       }
     } else {
       // 白天补充动物（羊/猪/牛保持一定数量）
-      [['sheep', 3], ['pig', 2], ['cow', 1]].forEach(function (spec) {
-        var t = spec[0], min = spec[1];
-        if (mobs.filter(function (m) { return m.type === t; }).length < min && Math.random() < dt * 0.08) {
-          var sx = Math.floor(rnd(-BOUND + 3, BOUND - 3));
-          var sz = Math.floor(rnd(-BOUND + 3, BOUND - 3));
-          addMob(t, sx, groundY(sx, sz), sz);
-        }
+      [['sheep', 3], ['pig', 2], ['cow', 1], ['fish', 3]].forEach(function (spec) {
+        if (Math.random() < dt * 0.08) spawnToTarget(spec[0], spec[1]);
       });
     }
 
     for (var i = mobs.length - 1; i >= 0; i--) {
       var m = mobs[i];
+      if (m.type === 'fish') {
+        // 鱼待在水里，轻轻浮动
+        m.group.position.set(m.pos.x, m.pos.y + Math.sin(now * 0.002 + m.pos.x * 0.7) * 0.08, m.pos.z);
+        if (m.flashUntil && now > m.flashUntil) {
+          m.flashUntil = 0;
+          m.parts.forEach(function (p) { p.material.emissive = new THREE.Color(0x000000); });
+        }
+        continue;
+      }
       if (m.type === 'sheep' || m.type === 'villager' || m.type === 'pig' || m.type === 'cow') {
         if (!m.wanderUntil || now > m.wanderUntil) {
           m.wanderUntil = now + rnd(1500, 3500);
