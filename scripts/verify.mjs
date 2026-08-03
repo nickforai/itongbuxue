@@ -532,6 +532,24 @@ async function main() {
   });
   assert((await page.evaluate(() => (window.__mc.backpack.fence || 0))) >= 1, '1 木板换栅栏');
   assert((await page.evaluate(() => (window.__mc.backpack.fence_gate || 0))) >= 1, '2 木板换栅栏门');
+  // 船：3 木板合成，可放水面、上船、开船、下船
+  await page.evaluate(() => { window.__mc.addItem('plank', 3); });
+  assert((await page.evaluate(() => window.__mc.craft('boat'))) === true, '3 木板合成船');
+  assert((await page.evaluate(() => (window.__mc.backpack.boat || 0))) === 1, '背包里有船');
+  assert((await page.evaluate(() => window.__mc.boatPlace())) === true, '船放到水面上');
+  assert((await page.evaluate(() => window.__mc.boatCount())) >= 1, '水面上有一艘船');
+  assert((await page.evaluate(() => window.__mc.boatBoard())) === true, '上船成功');
+  assert((await page.evaluate(() => window.__mc.riding())) === true, '正在开船');
+  const boatMoved = await page.evaluate(() => {
+    const before = JSON.stringify(window.__mc.boatPos()[0]);
+    if (!window.__mc.boatMove(1, 0) || JSON.stringify(window.__mc.boatPos()[0]) === before) {
+      window.__mc.boatMove(0, 1);
+    }
+    return JSON.stringify(window.__mc.boatPos()[0]) !== before;
+  });
+  assert(boatMoved, '船能开动（位置变化）');
+  assert((await page.evaluate(() => window.__mc.boatOff())) === true, '下船成功');
+  assert((await page.evaluate(() => window.__mc.riding())) === false, '已不在船上');
   // 门可以打开
   await page.evaluate(() => {
     window.__mc.addItem('plank', 4);

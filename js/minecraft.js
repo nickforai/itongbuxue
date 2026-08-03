@@ -61,7 +61,8 @@
     net_pig: { name: '网中的猪', color: 0xF4A7B9, emoji: '🐷', kind: 'tool' },
     net_cow: { name: '网中的牛', color: 0x8B5A2B, emoji: '🐮', kind: 'tool' },
     net_sheep: { name: '网中的羊', color: 0xFFFFFF, emoji: '🐑', kind: 'tool' },
-    net_fish: { name: '网中的鱼', color: 0xF4A03A, emoji: '🐟', kind: 'tool' }
+    net_fish: { name: '网中的鱼', color: 0xF4A03A, emoji: '🐟', kind: 'tool' },
+    boat: { name: '船', color: 0xC49A5C, emoji: '⛵', kind: 'tool' }
   };
 
   var HOTBAR_FUNC = ['workbench', 'furnace', 'door', 'fence_gate', 'bed', 'water', 'lava'];
@@ -86,7 +87,8 @@
     { id: 'cannon', name: '大炮', result: 'cannon', count: 1, need: { iron_ingot: 20 } },
     { id: 'cannonball', name: '炮弹', result: 'cannonball', count: 1, need: { iron_ingot: 2 } },
     { id: 'fence', name: '栅栏', result: 'fence', count: 1, need: { plank: 1 } },
-    { id: 'fence_gate', name: '栅栏门', result: 'fence_gate', count: 1, need: { plank: 2 } }
+    { id: 'fence_gate', name: '栅栏门', result: 'fence_gate', count: 1, need: { plank: 2 } },
+    { id: 'boat', name: '船', result: 'boat', count: 1, need: { plank: 3 } }
   ];
 
   var SMELT_RECIPES = [
@@ -137,6 +139,9 @@
   var spawnPoint = null, bedPoint = null;
   var mobs = [];
   var mobGroups = [];
+  var boats = [];      // 水面上的船 {pos, group}
+  var boatGroups = []; // 船网格，用于射线检测
+  var onBoat = null;   // 当前乘坐的船
 
   function vkey(x, y, z) { return x + ',' + y + ',' + z; }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -786,6 +791,43 @@
           return [m.pos.x, m.pos.y, m.pos.z];
         });
       },
+      boatCount: function () { return boats.length; },
+      boatPos: function () {
+        return boats.map(function (b) { return [b.pos.x, b.pos.y, b.pos.z]; });
+      },
+      riding: function () { return !!onBoat; },
+      boatPlace: function () {
+        // 测试钩子：在玩家最近的水面直接放一艘船（不消耗背包）
+        var best = null, bestD = 1e9;
+        var cx = Math.floor(camera.position.x), cz = Math.floor(camera.position.z);
+        for (var dx = -8; dx <= 8; dx++) {
+          for (var dz = -8; dz <= 8; dz++) {
+            var x = cx + dx, z = cz + dz;
+            var sy = waterSurfaceY(x + 0.5, z + 0.5);
+            if (sy !== null) {
+              var d = Math.hypot(dx, dz);
+              if (d < bestD) { bestD = d; best = { x: x + 0.5, y: sy, z: z + 0.5 }; }
+            }
+          }
+        }
+        if (!best) return false;
+        makeBoat(best.x, best.y, best.z);
+        return true;
+      },
+      boatBoard: function () {
+        var b = boats[0];
+        if (!b) return false;
+        return boardBoat(b);
+      },
+      boatOff: function () {
+        if (!onBoat) return false;
+        return getOffBoat();
+      },
+      boatMove: function (dx, dz) {
+        if (!onBoat) return false;
+        moveBoat(0.1, new THREE.Vector3(dx, 0, dz));
+        return true;
+      },
       dropMeat: function (type) {
         var before = backpack.raw_meat || 0;
         mobDrops({ type: type });
@@ -1170,8 +1212,23 @@
   }
 
   function doUse() {
+    // 开着船：再点「使用」就下船
+    if (onBoat) {
+      getOffBoat();
+      return;
+    }
+    // 准星对着水面上的船 → 上船
+    var bHit = boatAtCrosshair();
+    if (bHit) {
+      boardBoat(bHit);
+      return;
+    }
     if (equipped === 'bow' || equipped === 'cannon') {
       shootProjectile(equipped === 'bow' ? 'arrow' : 'cannonball');
+      return;
+    }
+    if (equipped === 'boat') {
+      placeBoat();
       return;
     }
     if (equipped === 'bucket' || equipped === 'water_bucket' || equipped === 'lava_bucket') {
@@ -1414,6 +1471,126 @@
     if (i !== -1) mobs.splice(i, 1);
     var j = mobGroups.indexOf(mob.group);
     if (j !== -1) mobGroups.splice(j, 1);
+  }
+
+  /* ---------- 船：放到水面、上船、开船、下船 ---------- */
+  function waterSurfaceY(x, z) {
+    for (var y = 60; y >= -5; y--) {
+      var t = world[vkey(Math.floor(x), y, Math.floor(z))];
+      if (t === 'water' || t === 'water_flow') return y + 1.05;
+    }
+    return null;
+  }
+
+  function makeBoat(x, y, z) {
+    var group = new THREE.Group();
+    var hull = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.32, 0.95), new THREE.MeshLambertMaterial({ color: 0xC49A5C }));
+    hull.position.y = 0;
+    var inner = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.18, 0.5), new THREE.MeshLambertMaterial({ color: 0x8B5A2B }));
+    inner.position.y = 0.18;
+    var mast = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.08), new THREE.MeshLambertMaterial({ color: 0x6E4520 }));
+    mast.position.set(0, 0.55, 0);
+    group.add(hull);
+    group.add(inner);
+    group.add(mast);
+    group.position.set(x, y, z);
+    scene.add(group);
+    var b = { pos: { x: x, y: y, z: z }, group: group };
+    group.userData.boat = b;
+    hull.userData.boat = b;
+    inner.userData.boat = b;
+    mast.userData.boat = b;
+    boats.push(b);
+    boatGroups.push(group);
+    return b;
+  }
+
+  function boatAtCrosshair() {
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    var hits = raycaster.intersectObjects(boatGroups, true);
+    for (var i = 0; i < hits.length; i++) {
+      var b = hits[i].object.userData.boat;
+      if (b) return b;
+    }
+    return null;
+  }
+
+  function placeBoat() {
+    if ((backpack.boat || 0) < 1) { App.toast('背包里没有船'); return; }
+    var t = getTarget();
+    if (!t) { App.toast('对准水面点「使用」放船'); return; }
+    var wx = Math.floor(t.point.x + t.normal.x * 0.05);
+    var wz = Math.floor(t.point.z + t.normal.z * 0.05);
+    var sy = waterSurfaceY(wx + 0.5, wz + 0.5);
+    if (sy === null) { App.toast('要放到水面上哦 💧'); return; }
+    makeBoat(wx + 0.5, sy, wz + 0.5);
+    backpack.boat -= 1;
+    if (backpack.boat <= 0) delete backpack.boat;
+    scheduleSave();
+    renderBackpack();
+    playSound('place');
+    App.toast('船放下水啦 ⛵');
+  }
+
+  function boardBoat(b) {
+    var d = Math.hypot(b.pos.x - camera.position.x, b.pos.z - camera.position.z);
+    if (d > 4) { App.toast('离船太远了，走近一点再上船'); return false; }
+    onBoat = b;
+    vy = 0;
+    onGround = false;
+    camera.position.set(b.pos.x, b.pos.y + 1.5, b.pos.z);
+    updateLabel();
+    App.toast('上船啦！点「使用」或跳一下下船 ⛵');
+    return true;
+  }
+
+  function getOffBoat() {
+    if (!onBoat) return false;
+    var b = onBoat;
+    onBoat = null;
+    var best = null, bestD = 5;
+    for (var dx = -2; dx <= 2; dx++) {
+      for (var dz = -2; dz <= 2; dz++) {
+        if (dx === 0 && dz === 0) continue;
+        var sx = b.pos.x + dx, sz = b.pos.z + dz;
+        var gy = groundY(sx, sz);
+        var foot = world[vkey(Math.floor(sx), Math.floor(gy), Math.floor(sz))];
+        if (!isWaterFluid(foot)) {
+          var d = Math.hypot(dx, dz);
+          if (d < bestD) { bestD = d; best = { x: sx, y: gy, z: sz }; }
+        }
+      }
+    }
+    if (best) {
+      camera.position.set(best.x, best.y + 1.6, best.z);
+    } else {
+      // 附近没有陆地，站回船旁的水里（跳着可以游回岸）
+      camera.position.set(b.pos.x + 1.2, b.pos.y + 0.8, b.pos.z);
+    }
+    vy = 0;
+    updateLabel();
+    App.toast('下船了 👋');
+    return true;
+  }
+
+  function moveBoat(dt, move) {
+    var b = onBoat;
+    if (!b) return;
+    if (move.lengthSq() > 0) {
+      move.normalize().multiplyScalar(9 * dt);
+      var nx = b.pos.x + move.x;
+      var nz = b.pos.z + move.z;
+      if (waterSurfaceY(nx, nz) !== null) {
+        b.pos.x = clamp(nx, -BOUND - 1, BOUND + 1);
+        b.pos.z = clamp(nz, -BOUND - 1, BOUND + 1);
+        b.group.rotation.y = Math.atan2(move.x, move.z);
+      }
+    }
+    var sy = waterSurfaceY(b.pos.x, b.pos.z);
+    if (sy !== null) b.pos.y = sy;
+    b.group.position.set(b.pos.x, b.pos.y, b.pos.z);
+    camera.position.set(b.pos.x, b.pos.y + 1.5, b.pos.z);
+    vy = 0;
   }
 
   function clearHostiles() {
@@ -1937,12 +2114,17 @@
 
   function updateLabel() {
     var label = App.el('mcLabel');
+    if (onBoat) {
+      label.textContent = '⛵ 开船中（点「使用」或跳一下下船）';
+      return;
+    }
     var act = currentAction === 'break' ? '⛏️ 拆' : currentAction === 'place' ? '🧱 放：' + ITEMS[currentType].name : '👆 使用';
     if (mode === 'survival') act += ' · 生存';
     if (paintMode) act += ' · 🖌️画笔';
     if (equipped) act += ' · 手持 ' + ITEMS[equipped].name;
     if (equipped === 'bow' || equipped === 'cannon') act += '（点👆发射）';
     if (equipped === 'bucket' || equipped === 'water_bucket' || equipped === 'lava_bucket') act += '（点👆使用）';
+    if (equipped === 'boat') act += '（点👆放到水面/上船）';
     if (armor) act += ' · 🛡️ ' + ITEMS[armor].name;
     label.textContent = act;
   }
@@ -2371,6 +2553,16 @@
     if (keys['a'] || keys['arrowleft']) move.addScaledVector(right, -1);
     if (keys['d'] || keys['arrowright']) move.addScaledVector(right, 1);
     if (move.lengthSq() > 0) move.normalize().multiplyScalar(speed * dt);
+
+    // 开船：跳过行走/重力，船只在水中行驶
+    if (onBoat) {
+      if (upPressed || keys[' ']) getOffBoat();
+      else moveBoat(dt, move);
+      camera.position.x = clamp(camera.position.x, -BOUND - 1, BOUND + 1);
+      camera.position.z = clamp(camera.position.z, -BOUND - 1, BOUND + 1);
+      updateHud();
+      return;
+    }
 
     if (mode === 'creative') {
       camera.position.add(move);
