@@ -750,6 +750,30 @@
         var gy = groundY(mx, mz);
         if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
       },
+      lavaKillsZombie: function () {
+        // 测试钩子：清掉怪物，在远离玩家的位置挖一个 3x3 岩浆坑，放一只僵尸进去
+        mobs.forEach(function (m) {
+          if (m.type === 'zombie' || m.type === 'skeleton') removeMob(m);
+        });
+        var x0 = 40, z0 = 40;
+        for (var dx = 0; dx < 3; dx++) {
+          for (var dz = 0; dz < 3; dz++) {
+            var gy = groundY(x0 + dx, z0 + dz);
+            eraseVoxel(x0 + dx, gy - 1, z0 + dz);
+            putBlock('lava', x0 + dx, gy - 1, z0 + dz);
+          }
+        }
+        addMob('zombie', x0 + 1.5, groundY(x0 + 1, z0 + 1), z0 + 1.5);
+        // 同步返回刚放进去的僵尸数（正常应为 1）
+        return mobs.filter(function (m) {
+          return (m.type === 'zombie' || m.type === 'skeleton') && Math.hypot(m.pos.x - (x0 + 1.5), m.pos.z - (z0 + 1.5)) <= 3;
+        }).length;
+      },
+      hostileNear: function (x, z, r) {
+        return mobs.filter(function (m) {
+          return (m.type === 'zombie' || m.type === 'skeleton') && Math.hypot(m.pos.x - x, m.pos.z - z) <= r;
+        }).length;
+      },
       forceTimeUp: timeUp,
       sheepLying: function () {
         return mobs.filter(function (m) { return m.type === 'sheep'; }).every(function (m) { return !!m.lying; });
@@ -2310,6 +2334,17 @@
       } else {
         m.pos.y = groundY(m.pos.x, m.pos.z);
         m.group.position.set(m.pos.x, m.pos.y, m.pos.z);
+      }
+      // 岩浆烫伤：僵尸/骷髅碰到岩浆立刻死亡
+      if (m.type === 'zombie' || m.type === 'skeleton') {
+        var lavaAt = world[vkey(Math.floor(m.pos.x), Math.floor(m.pos.y), Math.floor(m.pos.z))]
+          || world[vkey(Math.floor(m.pos.x), Math.floor(m.pos.y + 1), Math.floor(m.pos.z))];
+        if (isLavaFluid(lavaAt)) {
+          removeMob(m);
+          playSound('hurt');
+          App.toast((m.type === 'zombie' ? '僵尸' : '骷髅') + '被岩浆烧没了 🔥');
+          continue;
+        }
       }
       if (m.flashUntil && now > m.flashUntil) {
         m.flashUntil = 0;

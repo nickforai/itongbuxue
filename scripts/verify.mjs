@@ -519,6 +519,11 @@ async function main() {
   await sleep(300);
   assert((await page.evaluate(() => window.__mc.animalCount('fish'))) >= fishBefore, '鱼被放回水里');
   assert((await page.evaluate(() => (window.__mc.backpack.net || 0))) >= 1, '网回收可再用');
+  // 岩浆：僵尸碰到立刻死亡
+  await page.evaluate(() => window.__mc.setTime(0.9)); // 夜晚，怪物才会活动
+  assert((await page.evaluate(() => window.__mc.lavaKillsZombie())) === 1, '僵尸已放入岩浆坑');
+  await sleep(500);
+  assert((await page.evaluate(() => window.__mc.hostileNear(41.5, 41.5, 5))) === 0, '僵尸碰到岩浆立刻死亡');
   // 栅栏与栅栏门兑换
   await page.evaluate(() => {
     window.__mc.addItem('plank', 3);
