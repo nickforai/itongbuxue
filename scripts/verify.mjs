@@ -487,20 +487,26 @@ async function main() {
   await page.evaluate(() => {
     window.__mc.addItem('iron_ingot', 25);
     window.__mc.craft('bucket');
-    window.__mc.craft('cannon');
-    window.__mc.craft('cannonball');
+    window.__mc.craft('pistol');
+    window.__mc.craft('bullet');
   });
   await sleep(300);
   assert((await page.evaluate(() => (window.__mc.backpack.bucket || 0))) === 1, '3 铁锭合成铁桶');
-  assert((await page.evaluate(() => (window.__mc.backpack.cannon || 0))) === 1, '20 铁锭合成大炮');
-  assert((await page.evaluate(() => (window.__mc.backpack.cannonball || 0))) === 1, '2 铁锭合成炮弹');
+  assert((await page.evaluate(() => (window.__mc.backpack.pistol || 0))) === 1, '10 铁锭合成手枪');
+  assert((await page.evaluate(() => (window.__mc.backpack.bullet || 0))) === 5, '1 铁锭合成 5 颗子弹');
   await page.evaluate(() => {
-    window.__mc.addItem('iron_ingot', 22);
-    window.__mc.trade('t_ingot_cannon');
-    window.__mc.trade('t_ingot_cannonball');
+    window.__mc.addItem('iron_ingot', 11);
+    window.__mc.trade('t_ingot_pistol');
+    window.__mc.trade('t_ingot_bullet');
   });
-  assert((await page.evaluate(() => (window.__mc.backpack.cannon || 0))) >= 2, '村民 20 铁锭换大炮');
-  assert((await page.evaluate(() => (window.__mc.backpack.cannonball || 0))) >= 2, '村民 2 铁锭换炮弹');
+  assert((await page.evaluate(() => (window.__mc.backpack.pistol || 0))) >= 2, '村民 10 铁锭换手枪');
+  assert((await page.evaluate(() => (window.__mc.backpack.bullet || 0))) >= 10, '村民 1 铁锭换 5 颗子弹');
+  // 开枪消耗子弹
+  const bulletBefore = await page.evaluate(() => (window.__mc.backpack.bullet || 0));
+  await page.evaluate(() => window.__mc.shoot('bullet'));
+  await sleep(200);
+  const bulletAfter = await page.evaluate(() => (window.__mc.backpack.bullet || 0));
+  assert(bulletAfter === bulletBefore - 1, '开枪消耗 1 颗子弹（剩：' + bulletAfter + '）');
   // 网：抓动物再放出来
   await page.evaluate(() => { window.__mc.addItem('wood', 3); window.__mc.trade('t_wood_net'); });
   assert((await page.evaluate(() => (window.__mc.backpack.net || 0))) >= 1, '3 木头换网');
@@ -520,7 +526,6 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.animalCount('fish'))) >= fishBefore, '鱼被放回水里');
   assert((await page.evaluate(() => (window.__mc.backpack.net || 0))) >= 1, '网回收可再用');
   // 岩浆：僵尸碰到立刻死亡
-  await page.evaluate(() => window.__mc.setTime(0.9)); // 夜晚，怪物才会活动
   assert((await page.evaluate(() => window.__mc.lavaKillsZombie())) === 1, '僵尸已放入岩浆坑');
   await sleep(500);
   assert((await page.evaluate(() => window.__mc.hostileNear(41.5, 41.5, 5))) === 0, '僵尸碰到岩浆立刻死亡');
@@ -562,7 +567,7 @@ async function main() {
     await page.evaluate(([fx, fy, fz]) => window.__mc.lookAt(fx, fy, fz), fp);
     await sleep(200);
     await page.evaluate(() => window.__mc.releaseNet('fish'));
-    await sleep(500);
+    await sleep(800); // 等存档防抖写完，避免离开页面时覆盖测试注入的数据
     assert((await page.evaluate(() => window.__mc.ownedCount('fish'))) >= 1, '放回水里的鱼已标记圈养');
   }
   await page.evaluate(() => {
@@ -570,6 +575,13 @@ async function main() {
     d.balance = 12;
     d.mcChances = 1;
     localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+    // 旧存档迁移测试：塞入一把大炮和两颗炮弹、手持大炮
+    const raw = JSON.parse(localStorage.getItem('xx3_mc_world_v1'));
+    raw.backpack = raw.backpack || {};
+    raw.backpack.cannon = 1;
+    raw.backpack.cannonball = 2;
+    raw.equipped = 'cannon';
+    localStorage.setItem('xx3_mc_world_v1', JSON.stringify(raw));
   });
   await page.reload({ waitUntil: 'networkidle' });
   await page.click('#mcStartBtn');
@@ -577,6 +589,15 @@ async function main() {
   await sleep(800);
   assert((await page.evaluate(() => window.__mc.ownedCount('sheep'))) >= 1, '重新进入游戏后圈养的羊还在');
   assert((await page.evaluate(() => window.__mc.ownedCount('fish'))) >= 1, '重新进入游戏后养在池塘的鱼还在');
+  const mig = await page.evaluate(() => ({
+    pistol: window.__mc.backpack.pistol || 0,
+    bullet: window.__mc.backpack.bullet || 0,
+    equipped: window.__mc.equipped()
+  }));
+  assert(mig.pistol >= 3, '旧存档的大炮已换成手枪（' + mig.pistol + '）');
+  assert(mig.bullet >= 11, '旧存档的炮弹已换成子弹（' + mig.bullet + '）');
+  assert(mig.equipped === 'pistol', '旧存档手持的大炮已换成手枪');
+  await page.evaluate(() => window.__mc.dropItem('pistol')); // 收起手枪，避免影响后续开门测试
   // 门可以打开
   await page.evaluate(() => {
     window.__mc.addItem('plank', 4);
@@ -605,7 +626,7 @@ async function main() {
   });
   await page.evaluate(() => window.__mc.explodeAt({ x: 45.5, y: 30.5, z: 45.5 }));
   await sleep(300);
-  assert((await page.evaluate(() => window.__mc.blockAt(45, 30, 45))) === null, '炮弹爆炸能采矿（炸掉方块）');
+  assert((await page.evaluate(() => window.__mc.blockAt(45, 30, 45))) === null, '子弹爆炸能采矿（炸掉方块）');
   // 昼夜：白天不生成、夜晚标记
   await page.evaluate(() => { window.__mc.setTime(0.3); });
   await sleep(300);
@@ -668,6 +689,20 @@ async function main() {
     hostileCount = await page.evaluate(() => window.__mc.hostiles());
   }
   assert(hostileCount >= 1, '夜晚生成怪物（' + hostileCount + ' 只）');
+  // 怪物只在地图边界出现、慢慢走向玩家
+  const hPos0 = await page.evaluate(() => window.__mc.hostilePos());
+  const farEnough = await page.evaluate((list) => {
+    const p = window.__mc.pos();
+    return list.length > 0 && list.every(([x, , z]) => Math.hypot(x - p.x, z - p.z) >= 30);
+  }, hPos0);
+  assert(farEnough, '怪物在地图边界出现（离玩家至少 30 格）');
+  const h1 = await page.evaluate(() => window.__mc.hostilePos()[0] || null);
+  await sleep(1200);
+  const h2 = await page.evaluate(() => window.__mc.hostilePos()[0] || null);
+  if (h1 && h2) {
+    const moved = Math.hypot(h2[0] - h1[0], h2[2] - h1[2]);
+    assert(moved < 3, '怪物慢慢走向玩家（1.2 秒移动 ' + moved.toFixed(2) + ' 格）');
+  }
   await page.evaluate(() => {
     window.__mc.addItem('wool', 3);
     window.__mc.addItem('plank', 3);

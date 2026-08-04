@@ -55,8 +55,8 @@
     bucket: { name: '铁桶', color: 0xC0C0C8, emoji: '🪣', kind: 'tool' },
     water_bucket: { name: '水桶', color: 0x3D9BE9, emoji: '🪣', kind: 'tool' },
     lava_bucket: { name: '岩浆桶', color: 0xF26D21, emoji: '🪣', kind: 'tool' },
-    cannon: { name: '大炮', color: 0x3A3A4A, emoji: '💣', kind: 'tool' },
-    cannonball: { name: '炮弹', color: 0x2C2C2C, emoji: '⚫', kind: 'material' },
+    pistol: { name: '手枪', color: 0x3A3A4A, emoji: '🔫', kind: 'tool' },
+    bullet: { name: '子弹', color: 0x2C2C2C, emoji: '🔸', kind: 'material' },
     net: { name: '网', color: 0x4A4A5A, emoji: '🥅', kind: 'tool' },
     net_pig: { name: '网中的猪', color: 0xF4A7B9, emoji: '🐷', kind: 'tool' },
     net_cow: { name: '网中的牛', color: 0x8B5A2B, emoji: '🐮', kind: 'tool' },
@@ -84,8 +84,8 @@
     { id: 'iron_armor', name: '铁甲', result: 'iron_armor', count: 1, need: { iron_ingot: 4 } },
     { id: 'diamond_armor', name: '钻石甲', result: 'diamond_armor', count: 1, need: { diamond: 4 } },
     { id: 'bucket', name: '铁桶', result: 'bucket', count: 1, need: { iron_ingot: 3 } },
-    { id: 'cannon', name: '大炮', result: 'cannon', count: 1, need: { iron_ingot: 20 } },
-    { id: 'cannonball', name: '炮弹', result: 'cannonball', count: 1, need: { iron_ingot: 2 } },
+    { id: 'pistol', name: '手枪', result: 'pistol', count: 1, need: { iron_ingot: 10 } },
+    { id: 'bullet', name: '子弹', result: 'bullet', count: 5, need: { iron_ingot: 1 } },
     { id: 'fence', name: '栅栏', result: 'fence', count: 1, need: { plank: 1 } },
     { id: 'fence_gate', name: '栅栏门', result: 'fence_gate', count: 1, need: { plank: 2 } },
     { id: 'boat', name: '船', result: 'boat', count: 1, need: { plank: 3 } }
@@ -103,8 +103,8 @@
     { id: 't_plank_meat', name: '木板换肉', give: { plank: 10 }, get: { raw_meat: 2 } },
     { id: 't_meat_bow', name: '肉换弓', give: { raw_meat: 1 }, get: { bow: 2 } },
     { id: 't_meat_plank', name: '肉换木板', give: { raw_meat: 1 }, get: { plank: 6 } },
-    { id: 't_ingot_cannon', name: '铁锭换大炮', give: { iron_ingot: 20 }, get: { cannon: 1 } },
-    { id: 't_ingot_cannonball', name: '铁锭换炮弹', give: { iron_ingot: 2 }, get: { cannonball: 1 } },
+    { id: 't_ingot_pistol', name: '铁锭换手枪', give: { iron_ingot: 10 }, get: { pistol: 1 } },
+    { id: 't_ingot_bullet', name: '铁锭换子弹', give: { iron_ingot: 1 }, get: { bullet: 5 } },
     { id: 't_wood_net', name: '木头换网', give: { wood: 3 }, get: { net: 1 } },
     { id: 't_plank_fence', name: '木板换栅栏', give: { plank: 1 }, get: { fence: 1 } },
     { id: 't_plank_fencegate', name: '木板换栅栏门', give: { plank: 2 }, get: { fence_gate: 1 } }
@@ -416,6 +416,16 @@
       armor = raw.armor || null;
       mode = raw.mode || 'creative';
       savedOwned = raw.ownedMobs || [];
+      // 旧存档迁移：大炮/炮弹 → 手枪/子弹
+      if (backpack.cannon) {
+        backpack.pistol = (backpack.pistol || 0) + backpack.cannon;
+        delete backpack.cannon;
+      }
+      if (backpack.cannonball) {
+        backpack.bullet = (backpack.bullet || 0) + backpack.cannonball;
+        delete backpack.cannonball;
+      }
+      if (equipped === 'cannon') equipped = 'pistol';
     } catch (e) {
       seed = Date.now() % 100000 + 1;
       changes = {};
@@ -705,7 +715,7 @@
     spawnVillagers(5);
     spawnPigs(2);
     spawnCows(1);
-    spawnFish(3);
+    spawnFish(6);
     restoreOwnedMobs(); // 把上次圈养的动物/鱼放回原来的位置
     if (freshChests) {
       topUpAnimals();
@@ -736,6 +746,7 @@
       openTrade: openTrade,
       backpack: backpack,
       mode: function () { return mode; },
+      equipped: function () { return equipped; },
       mobs: function () { return mobs.length; },
       hostiles: function () { return mobs.filter(function (m) { return m.type === 'zombie' || m.type === 'skeleton'; }).length; },
       setTime: function (t) { time = t; },
@@ -768,12 +779,15 @@
         return Object.keys(world).filter(function (k) { return world[k] === type; }).length;
       },
       forceSpawnHostile: function () {
-        var ang = rnd(0, Math.PI * 2);
-        var rad = rnd(16, 26);
-        var mx = clamp(Math.round(camera.position.x + Math.cos(ang) * rad), -BOUND, BOUND);
-        var mz = clamp(Math.round(camera.position.z + Math.sin(ang) * rad), -BOUND, BOUND);
-        var gy = groundY(mx, mz);
-        if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
+        var pos = boundarySpot();
+        if (!pos) return false;
+        addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', pos.x, pos.y, pos.z);
+        return true;
+      },
+      hostilePos: function () {
+        return mobs.filter(function (m) { return m.type === 'zombie' || m.type === 'skeleton'; }).map(function (m) {
+          return [m.pos.x, m.pos.y, m.pos.z];
+        });
       },
       lavaKillsZombie: function () {
         // 测试钩子：清掉怪物，在远离玩家的位置挖一个 3x3 岩浆坑，放一只僵尸进去
@@ -1288,8 +1302,8 @@
       boardBoat(bHit);
       return;
     }
-    if (equipped === 'bow' || equipped === 'cannon') {
-      shootProjectile(equipped === 'bow' ? 'arrow' : 'cannonball');
+    if (equipped === 'bow' || equipped === 'pistol') {
+      shootProjectile(equipped === 'bow' ? 'arrow' : 'bullet');
       return;
     }
     if (equipped === 'boat') {
@@ -1453,7 +1467,7 @@
 
   /* 每日刷新：把动物补齐到固定数量（和箱子同一个"新的一天"逻辑） */
   function topUpAnimals() {
-    [['sheep', 3], ['pig', 2], ['cow', 1], ['fish', 3]].forEach(function (spec) {
+    [['sheep', 3], ['pig', 2], ['cow', 1], ['fish', 6]].forEach(function (spec) {
       spawnToTarget(spec[0], spec[1]);
     });
   }
@@ -1463,7 +1477,8 @@
       type: type,
       pos: { x: x, y: y, z: z },
       hp: type === 'zombie' ? 6 : type === 'skeleton' ? 5 : type === 'cow' ? 6 : type === 'pig' ? 4 : type === 'fish' ? 2 : 3,
-      speed: type === 'sheep' || type === 'villager' || type === 'pig' || type === 'cow' ? 1.4 : 2.4,
+      speed: type === 'sheep' || type === 'villager' || type === 'pig' || type === 'cow' ? 1.4
+        : (type === 'zombie' || type === 'skeleton') ? 1.1 : 2.4,
       lying: type === 'sheep',
       dir: null,
       wanderUntil: 0,
@@ -1791,9 +1806,9 @@
   var projectiles = [];
 
   function shootProjectile(kind) {
-    var ammo = kind === 'arrow' ? 'arrow' : 'cannonball';
+    var ammo = kind === 'arrow' ? 'arrow' : 'bullet';
     if ((backpack[ammo] || 0) < 1) {
-      App.toast(kind === 'arrow' ? '没有可用的箭' : '没有可用的炮弹');
+      App.toast(kind === 'arrow' ? '没有可用的箭' : '没有可用的子弹');
       return;
     }
     backpack[ammo] -= 1;
@@ -1804,10 +1819,11 @@
     camera.getWorldDirection(dir);
     var mesh = kind === 'arrow'
       ? new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.45, 6), new THREE.MeshLambertMaterial({ color: 0x8B5A2B }))
-      : new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), new THREE.MeshLambertMaterial({ color: 0x2C2C2C }));
+      : new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.32, 8), new THREE.MeshLambertMaterial({ color: 0xE8C63A }));
+    if (kind !== 'arrow') mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
     mesh.position.copy(camera.position).addScaledVector(dir, 0.5);
     scene.add(mesh);
-    projectiles.push({ kind: kind, mesh: mesh, dir: dir.clone(), speed: kind === 'arrow' ? 34 : 26, ttl: 4 });
+    projectiles.push({ kind: kind, mesh: mesh, dir: dir.clone(), speed: kind === 'arrow' ? 34 : 40, ttl: 4 });
     playSound('shoot');
   }
 
@@ -1830,7 +1846,7 @@
         }
         removeProjectile(i);
       } else if (blockHits.length) {
-        if (p.kind === 'cannonball') explodeAt(blockHits[0].point);
+        if (p.kind === 'bullet') explodeAt(blockHits[0].point);
         removeProjectile(i);
       } else {
         p.mesh.position.addScaledVector(p.dir, step);
@@ -2189,7 +2205,7 @@
     if (mode === 'survival') act += ' · 生存';
     if (paintMode) act += ' · 🖌️画笔';
     if (equipped) act += ' · 手持 ' + ITEMS[equipped].name;
-    if (equipped === 'bow' || equipped === 'cannon') act += '（点👆发射）';
+    if (equipped === 'bow' || equipped === 'pistol') act += '（点👆发射）';
     if (equipped === 'bucket' || equipped === 'water_bucket' || equipped === 'lava_bucket') act += '（点👆使用）';
     if (equipped === 'boat') act += '（点👆放到水面/上船）';
     if (armor) act += ' · 🛡️ ' + ITEMS[armor].name;
@@ -2520,16 +2536,12 @@
     if (isNight()) {
       var hostile = mobs.filter(function (m) { return m.type === 'zombie' || m.type === 'skeleton'; }).length;
       if (hostile < 4 && Math.random() < dt * 0.6) {
-        var ang = rnd(0, Math.PI * 2);
-        var rad = rnd(16, 26);
-        var mx = clamp(Math.round(camera.position.x + Math.cos(ang) * rad), -BOUND, BOUND);
-        var mz = clamp(Math.round(camera.position.z + Math.sin(ang) * rad), -BOUND, BOUND);
-        var gy = groundY(mx, mz);
-        if (gy <= 32) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', mx, gy, mz);
+        var pos = boundarySpot();
+        if (pos) addMob(Math.random() < 0.5 ? 'zombie' : 'skeleton', pos.x, pos.y, pos.z);
       }
     } else {
       // 白天补充动物（羊/猪/牛保持一定数量）
-      [['sheep', 3], ['pig', 2], ['cow', 1], ['fish', 3]].forEach(function (spec) {
+      [['sheep', 3], ['pig', 2], ['cow', 1], ['fish', 6]].forEach(function (spec) {
         if (Math.random() < dt * 0.08) spawnToTarget(spec[0], spec[1]);
       });
     }
@@ -2566,6 +2578,15 @@
           }
         }
       } else {
+        // 岩浆烫伤：僵尸/骷髅碰到岩浆立刻死亡（白天站在岩浆里也一样被烧）
+        var lavaNow = world[vkey(Math.floor(m.pos.x), Math.floor(m.pos.y), Math.floor(m.pos.z))]
+          || world[vkey(Math.floor(m.pos.x), Math.floor(m.pos.y + 1), Math.floor(m.pos.z))];
+        if (isLavaFluid(lavaNow)) {
+          removeMob(m);
+          playSound('hurt');
+          App.toast((m.type === 'zombie' ? '僵尸' : '骷髅') + '被岩浆烧没了 🔥');
+          continue;
+        }
         if (!isNight()) { removeMob(m); continue; }
         var dx = camera.position.x - m.pos.x;
         var dz = camera.position.z - m.pos.z;
@@ -2590,24 +2611,28 @@
         m.pos.y = groundY(m.pos.x, m.pos.z);
         m.group.position.set(m.pos.x, m.pos.y, m.pos.z);
       }
-      // 岩浆烫伤：僵尸/骷髅碰到岩浆立刻死亡
-      if (m.type === 'zombie' || m.type === 'skeleton') {
-        var lavaAt = world[vkey(Math.floor(m.pos.x), Math.floor(m.pos.y), Math.floor(m.pos.z))]
-          || world[vkey(Math.floor(m.pos.x), Math.floor(m.pos.y + 1), Math.floor(m.pos.z))];
-        if (isLavaFluid(lavaAt)) {
-          removeMob(m);
-          playSound('hurt');
-          App.toast((m.type === 'zombie' ? '僵尸' : '骷髅') + '被岩浆烧没了 🔥');
-          continue;
-        }
-      }
       if (m.flashUntil && now > m.flashUntil) {
         m.flashUntil = 0;
         m.parts.forEach(function (p) { p.material.emissive = new THREE.Color(0x000000); });
       }
-      // 只清理离玩家太远的夜间怪物，家畜保留
-      if ((m.type === 'zombie' || m.type === 'skeleton') && Math.hypot(m.pos.x - camera.position.x, m.pos.z - camera.position.z) > 42) removeMob(m);
     }
+  }
+
+  /* 在地图边界找一个能刷怪的位置（离玩家至少 20 格、不在水里） */
+  function boundarySpot() {
+    for (var tries = 0; tries < 16; tries++) {
+      var ang = rnd(0, Math.PI * 2);
+      var rad = BOUND - 4;
+      var mx = clamp(Math.round(Math.cos(ang) * rad), -BOUND + 2, BOUND - 2);
+      var mz = clamp(Math.round(Math.sin(ang) * rad), -BOUND + 2, BOUND - 2);
+      if (Math.hypot(mx - camera.position.x, mz - camera.position.z) < 20) continue;
+      var gy = groundY(mx, mz);
+      if (gy > 32) continue;
+      var foot = world[vkey(mx, Math.floor(gy), mz)];
+      if (isWaterFluid(foot)) continue;
+      return { x: mx, y: gy, z: mz };
+    }
+    return null;
   }
 
   function updatePhysics(dt) {
