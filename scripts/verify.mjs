@@ -323,10 +323,10 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 17, '17 种方块可切换（含栅栏/栅栏门）');
+  assert((await page.locator('.mc-block').count()) === 18, '18 种方块可切换（含栅栏/栅栏门/梯子）');
   assert((await page.locator('#mcHotbarWrap .mc-pack-btn').count()) === 1, '背包按钮在功能栏');
   assert((await page.locator('#mcHotbarFunc .mc-block').count()) === 7, '功能栏 7 个功能方块');
-  assert((await page.locator('#mcHotbarMat .mc-block').count()) === 10, '方块栏 10 个方块');
+  assert((await page.locator('#mcHotbarMat .mc-block').count()) === 11, '方块栏 11 个方块');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
   await sleep(200);
@@ -446,7 +446,7 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.trade('t_plank_meat'))) === false, '材料不够时交换失败');
   await page.evaluate(() => window.__mc.openTrade());
   assert((await page.locator('#mcTradePanel:not(.hidden)').count()) === 1, '村民交换面板可打开');
-  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 11, '11 条交换规则');
+  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 12, '12 条交换规则');
   await page.evaluate(() => { document.getElementById('mcTradeClose').click(); });
   await sleep(200);
   assert((await page.locator('#mcTradePanel.hidden').count()) === 1, '村民交换面板已关闭');
@@ -537,6 +537,12 @@ async function main() {
   });
   assert((await page.evaluate(() => (window.__mc.backpack.fence || 0))) >= 1, '1 木板换栅栏');
   assert((await page.evaluate(() => (window.__mc.backpack.fence_gate || 0))) >= 1, '2 木板换栅栏门');
+  // 梯子：3 木板换 1 个梯子
+  await page.evaluate(() => {
+    window.__mc.addItem('plank', 3);
+    window.__mc.trade('t_plank_ladder');
+  });
+  assert((await page.evaluate(() => (window.__mc.backpack.ladder || 0))) >= 1, '3 木板换 1 个梯子');
   // 船：3 木板合成，可放水面、上船、开船、下船
   await page.evaluate(() => { window.__mc.addItem('plank', 3); });
   assert((await page.evaluate(() => window.__mc.craft('boat'))) === true, '3 木板合成船');
@@ -710,6 +716,20 @@ async function main() {
   });
   await sleep(300);
   assert((await page.textContent('#mcBackpackList')).includes('床'), '合成床成功（3羊毛+3木板）');
+  // 梯子爬墙：贴着梯子按住上，能爬过 3 格高的墙
+  await page.evaluate(() => {
+    window.__mc.addItem('plank', 3);
+    window.__mc.trade('t_plank_ladder');
+    window.__mc.placeAt('ladder', 1, 2, 8); // 放在玩家旁边一格（梯子不挡路）
+  });
+  await sleep(300);
+  const climbStart = (await page.evaluate(() => window.__mc.pos())).y;
+  await page.evaluate(() => window.__mc.setKey(' ', true));
+  await sleep(1200);
+  const climbEnd = (await page.evaluate(() => window.__mc.pos())).y;
+  await page.evaluate(() => window.__mc.setKey(' ', false));
+  assert(climbEnd > climbStart + 1.8, '贴着梯子能向上爬（' + climbStart.toFixed(2) + ' → ' + climbEnd.toFixed(2) + '）');
+  assert(climbEnd < 7, '一格梯子最多爬 3 格高（' + climbEnd.toFixed(2) + '）');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
   /* ---------- 生字 ---------- */

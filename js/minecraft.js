@@ -26,6 +26,7 @@
     lava_flow: { name: '流动的岩浆', color: 0xD9501E, emoji: '🌋', kind: 'block' },
     obsidian: { name: '黑曜石', color: 0x2A2A3A, emoji: '🪨', kind: 'block' },
     fence: { name: '栅栏', color: 0x8B5A2B, emoji: '🚧', kind: 'block' },
+    ladder: { name: '梯子', color: 0xC49A5C, emoji: '🪜', kind: 'block' },
     fence_gate: { name: '栅栏门', color: 0x7A5230, emoji: '🚪', kind: 'block' },
     fence_gate_open: { name: '栅栏门（开）', color: 0x6E4520, emoji: '🚪', kind: 'block' },
     chest: { name: '箱子', color: 0xA9743F, emoji: '📦', kind: 'block' },
@@ -66,7 +67,7 @@
   };
 
   var HOTBAR_FUNC = ['workbench', 'furnace', 'door', 'fence_gate', 'bed', 'water', 'lava'];
-  var HOTBAR_MAT = ['grass', 'dirt', 'stone', 'plank', 'wood', 'fence', 'leaves', 'sand', 'brick', 'glass'];
+  var HOTBAR_MAT = ['grass', 'dirt', 'stone', 'plank', 'wood', 'fence', 'ladder', 'leaves', 'sand', 'brick', 'glass'];
   var HOTBAR = HOTBAR_FUNC.concat(HOTBAR_MAT);
 
   var RECIPES = [
@@ -107,7 +108,8 @@
     { id: 't_ingot_bullet', name: '铁锭换子弹', give: { iron_ingot: 1 }, get: { bullet: 5 } },
     { id: 't_wood_net', name: '木头换网', give: { wood: 3 }, get: { net: 1 } },
     { id: 't_plank_fence', name: '木板换栅栏', give: { plank: 1 }, get: { fence: 1 } },
-    { id: 't_plank_fencegate', name: '木板换栅栏门', give: { plank: 2 }, get: { fence_gate: 1 } }
+    { id: 't_plank_fencegate', name: '木板换栅栏门', give: { plank: 2 }, get: { fence_gate: 1 } },
+    { id: 't_plank_ladder', name: '木板换梯子', give: { plank: 3 }, get: { ladder: 1 } }
   ];
 
   var SAVE_KEY = 'xx3_mc_world_v1';
@@ -160,7 +162,7 @@
 
   function isSolid(x, y, z) {
     var b = world[vkey(x, y, z)];
-    return !!b && b !== 'water' && b !== 'water_flow' && b !== 'lava' && b !== 'lava_flow';
+    return !!b && b !== 'water' && b !== 'water_flow' && b !== 'lava' && b !== 'lava_flow' && b !== 'ladder';
   }
 
   function isWaterFluid(t) { return t === 'water' || t === 'water_flow'; }
@@ -920,6 +922,9 @@
         var dz = z - camera.position.z;
         yaw = Math.atan2(-dx, -dz);
         pitch = Math.atan2(dy, Math.hypot(dx, dz));
+      },
+      setKey: function (name, on) {
+        keys[name] = !!on;
       }
     };
   }
@@ -2635,6 +2640,24 @@
     return null;
   }
 
+  /* 玩家身体周围有没有梯子；返回梯子所在高度，一格梯子能往上爬 3 格 */
+  function ladderNear() {
+    var feetY = camera.position.y - 1.6;
+    var x0 = Math.floor(camera.position.x - 0.4), x1 = Math.floor(camera.position.x + 0.4);
+    var z0 = Math.floor(camera.position.z - 0.4), z1 = Math.floor(camera.position.z + 0.4);
+    var best = null;
+    for (var yy = Math.floor(feetY - 3); yy <= Math.floor(feetY); yy++) {
+      for (var xx = x0 - 1; xx <= x1 + 1; xx++) {
+        for (var zz = z0 - 1; zz <= z1 + 1; zz++) {
+          if (world[vkey(xx, yy, zz)] === 'ladder' && (!best || yy > best.y)) {
+            best = { y: yy, limit: yy + 3 };
+          }
+        }
+      }
+    }
+    return best;
+  }
+
   function updatePhysics(dt) {
     updateFluids(dt);
     var speed = mode === 'survival' ? 7 : 10;
@@ -2674,6 +2697,24 @@
       // 水平碰撞
       if (!collides(camera.position.x + move.x, camera.position.y, camera.position.z)) camera.position.x += move.x;
       if (!collides(camera.position.x, camera.position.y, camera.position.z + move.z)) camera.position.z += move.z;
+      // 梯子：贴着梯子按上（或空格/前进键）爬墙，一格梯子能跨过 3 格高的墙
+      var ladder = ladderNear();
+      if (ladder) {
+        var feetNow = camera.position.y - 1.6;
+        var wantUp = upPressed || keys[' '] || keys['w'] || keys['arrowup'];
+        var wantDown = downPressed || keys['s'] || keys['arrowdown'] || keys['shift'];
+        if (wantUp && feetNow < ladder.limit + 0.2) {
+          camera.position.y += 4.2 * dt;
+          vy = 0;
+          onGround = false;
+          fallStart = null;
+        } else if (wantDown && feetNow > ladder.y - 0.2) {
+          camera.position.y -= 4.2 * dt;
+          vy = 0;
+          onGround = false;
+          fallStart = null;
+        }
+      }
       // 重力与落地
       var feet = camera.position.y - 1.6;
       var below = Math.floor(feet - 0.001);
