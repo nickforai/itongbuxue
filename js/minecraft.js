@@ -86,6 +86,7 @@
     { id: 'iron_armor', name: '铁甲', result: 'iron_armor', count: 1, need: { iron_ingot: 4 } },
     { id: 'diamond_armor', name: '钻石甲', result: 'diamond_armor', count: 1, need: { diamond: 4 } },
     { id: 'diamond_block', name: '钻石块', result: 'diamond_block', count: 1, need: { diamond: 9 } },
+    { id: 'decomp_diamond_block', name: '分解钻石块', result: 'diamond', count: 9, need: { diamond_block: 1 }, decomp: true },
     { id: 'bucket', name: '铁桶', result: 'bucket', count: 1, need: { iron_ingot: 3 } },
     { id: 'pistol', name: '手枪', result: 'pistol', count: 1, need: { iron_ingot: 10 } },
     { id: 'bullet', name: '子弹', result: 'bullet', count: 5, need: { iron_ingot: 1 } },
@@ -504,7 +505,7 @@
     scheduleSave();
     renderBackpack();
     renderCrafting();
-    App.toast('合成成功：' + ITEMS[recipe.result].name + ' ×' + recipe.count + '！');
+    App.toast((recipe.decomp ? '分解成功：' : '合成成功：') + ITEMS[recipe.result].name + ' ×' + recipe.count + '！');
     return true;
   }
 
@@ -2440,7 +2441,7 @@
         '<div class="mc-recipe-left">' + needHtml + '</div>' +
         '<div class="mc-recipe-arrow">→</div>' +
         '<div class="mc-recipe-result">' + itemIcon(r.result) + '<span>' + ITEMS[r.result].name + '×' + r.count + '</span></div>' +
-        '<button class="mc-recipe-btn' + (ok ? '' : ' off') + '" data-recipe="' + r.id + '"' + (ok ? '' : ' disabled') + '>合成</button>';
+        '<button class="mc-recipe-btn' + (ok ? '' : ' off') + '" data-recipe="' + r.id + '"' + (ok ? '' : ' disabled') + '>' + (r.decomp ? '分解' : '合成') + '</button>';
       box.appendChild(row);
     });
     box.querySelectorAll('[data-recipe]').forEach(function (btn) {

@@ -493,6 +493,32 @@ async function main() {
   assert(dUse.placed === 'diamond_block', '手持钻石块点「使用」放置成功');
   assert(dUse.left === 0, '放置消耗 1 个钻石块');
   assert(dUse.equipped === null, '钻石块用完自动收起');
+  // 钻石块分解：1 个钻石块 → 9 颗钻石（工作台里有「分解」按钮）
+  const decBefore = await page.evaluate(() => (window.__mc.backpack.diamond || 0));
+  await page.evaluate(() => {
+    window.__mc.addItem('diamond_block', 1);
+    window.__mc.craft('decomp_diamond_block');
+  });
+  await sleep(300);
+  const decAfter = await page.evaluate(() => ({
+    dia: window.__mc.backpack.diamond || 0,
+    blk: window.__mc.backpack.diamond_block || 0
+  }));
+  assert(decAfter.dia === decBefore + 9, '分解钻石块得到 9 颗钻石');
+  assert(decAfter.blk === 0, '分解消耗 1 个钻石块');
+  await page.evaluate(() => {
+    window.__mc.eraseVoxel(4, 9, 8); // 清掉前面测试留下的方块
+    window.__mc.eraseVoxel(5, 9, 8);
+    window.__mc.addItem('workbench', 1);
+    window.__mc.placeAt('workbench', 6, 9, 8);
+  });
+  await page.evaluate(() => window.__mc.lookAt(6.5, 9, 8));
+  await sleep(300);
+  await page.evaluate(() => window.__mc.use());
+  await sleep(300);
+  assert((await page.locator('#mcCraftPanel:not(.hidden)').count()) === 1, '工作台面板打开');
+  assert((await page.locator('#mcRecipeList button', { hasText: '分解' }).count()) === 1, '工作台里能看到分解钻石块');
+  await page.click('#mcCraftClose');
   // 地图扩大 5 倍 + 流体 + 铁桶 + 弓箭/大炮
   assert((await page.evaluate(() => window.__mc.bounds())) === 68, '地图范围 ±68（面积约 5 倍）');
   assert((await page.evaluate(() => window.__mc.blockAt(67, 0, 0))) !== null, '远处地形已生成');
