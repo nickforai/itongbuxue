@@ -323,10 +323,10 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.locator('#mcGame canvas').count()) === 1, '3D 画布已创建');
-  assert((await page.locator('.mc-block').count()) === 18, '18 种方块可切换（含栅栏/栅栏门/梯子）');
+  assert((await page.locator('.mc-block').count()) === 19, '19 种方块可切换（含栅栏/梯子/钻石块）');
   assert((await page.locator('#mcHotbarWrap .mc-pack-btn').count()) === 1, '背包按钮在功能栏');
   assert((await page.locator('#mcHotbarFunc .mc-block').count()) === 7, '功能栏 7 个功能方块');
-  assert((await page.locator('#mcHotbarMat .mc-block').count()) === 11, '方块栏 11 个方块');
+  assert((await page.locator('#mcHotbarMat .mc-block').count()) === 12, '方块栏 12 个方块');
   assert((await page.locator('#mcUse').count()) === 1, '使用按钮存在');
   await page.click('#mcPackBtn');
   await sleep(200);
@@ -463,6 +463,16 @@ async function main() {
   });
   await sleep(300);
   assert((await page.evaluate(() => window.__mc.armor())) === 'iron_armor', '合成并穿戴铁甲');
+  // 钻石块：9 颗钻石合成 1 块，挖掉再变回 9 颗
+  const diaBefore = await page.evaluate(() => (window.__mc.backpack.diamond || 0));
+  await page.evaluate(() => { window.__mc.addItem('diamond', 9); });
+  assert((await page.evaluate(() => window.__mc.craft('diamond_block'))) === true, '9 颗钻石合成 1 个钻石块');
+  assert((await page.evaluate(() => (window.__mc.backpack.diamond_block || 0))) === 1, '背包里有钻石块');
+  assert((await page.evaluate(() => (window.__mc.backpack.diamond || 0))) === diaBefore, '合成消耗 9 颗钻石');
+  await page.evaluate(() => window.__mc.placeAt('diamond_block', 55, 30, 55));
+  await page.evaluate(() => window.__mc.eraseVoxel(55, 30, 55));
+  await sleep(300);
+  assert((await page.evaluate(() => (window.__mc.backpack.diamond || 0))) === diaBefore + 9, '挖掉钻石块得到 9 颗钻石');
   // 地图扩大 5 倍 + 流体 + 铁桶 + 弓箭/大炮
   assert((await page.evaluate(() => window.__mc.bounds())) === 68, '地图范围 ±68（面积约 5 倍）');
   assert((await page.evaluate(() => window.__mc.blockAt(67, 0, 0))) !== null, '远处地形已生成');

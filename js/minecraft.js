@@ -34,6 +34,7 @@
     iron_ore: { name: '铁矿石', color: 0xB87333, emoji: '🟠', kind: 'block' },
     gold_ore: { name: '金矿石', color: 0xF2C94C, emoji: '🪙', kind: 'block' },
     diamond_ore: { name: '钻石矿石', color: 0x66E0E8, emoji: '💎', kind: 'block' },
+    diamond_block: { name: '钻石块', color: 0x66E0E8, emoji: '💎', kind: 'block' },
     stick: { name: '木棒', color: 0xC49A5C, emoji: '🥢', kind: 'material' },
     wool: { name: '羊毛', color: 0xF5F5F5, emoji: '🐑', kind: 'material' },
     coal: { name: '煤', color: 0x2C2C2C, emoji: '⬛', kind: 'material' },
@@ -67,7 +68,7 @@
   };
 
   var HOTBAR_FUNC = ['workbench', 'furnace', 'door', 'fence_gate', 'bed', 'water', 'lava'];
-  var HOTBAR_MAT = ['grass', 'dirt', 'stone', 'plank', 'wood', 'fence', 'ladder', 'leaves', 'sand', 'brick', 'glass'];
+  var HOTBAR_MAT = ['grass', 'dirt', 'stone', 'plank', 'wood', 'fence', 'ladder', 'leaves', 'sand', 'brick', 'glass', 'diamond_block'];
   var HOTBAR = HOTBAR_FUNC.concat(HOTBAR_MAT);
 
   var RECIPES = [
@@ -84,6 +85,7 @@
     { id: 'iron_pickaxe', name: '铁镐', result: 'iron_pickaxe', count: 1, need: { iron_ingot: 3, stick: 2 } },
     { id: 'iron_armor', name: '铁甲', result: 'iron_armor', count: 1, need: { iron_ingot: 4 } },
     { id: 'diamond_armor', name: '钻石甲', result: 'diamond_armor', count: 1, need: { diamond: 4 } },
+    { id: 'diamond_block', name: '钻石块', result: 'diamond_block', count: 1, need: { diamond: 9 } },
     { id: 'bucket', name: '铁桶', result: 'bucket', count: 1, need: { iron_ingot: 3 } },
     { id: 'pistol', name: '手枪', result: 'pistol', count: 1, need: { iron_ingot: 10 } },
     { id: 'bullet', name: '子弹', result: 'bullet', count: 5, need: { iron_ingot: 1 } },
@@ -1157,14 +1159,20 @@
     } else if (type === 'diamond_ore' && equipped !== 'iron_pickaxe') {
       App.toast('钻石要用铁镐才能挖');
     } else {
-      if (type === 'coal_ore') drop = 'coal';
-      else if (type === 'iron_ore') drop = 'raw_iron';
-      else if (type === 'gold_ore') drop = 'gold';
-      else if (type === 'diamond_ore') drop = 'diamond';
       var n = 1;
-      if ((drop === 'raw_iron' || drop === 'gold' || drop === 'diamond') && equipped === 'iron_pickaxe') n += 1;
-      if (drop === 'stone' && (equipped === 'pickaxe' || equipped === 'iron_pickaxe')) n += 1;
-      if (drop === 'wood' && equipped === 'axe') n += 1;
+      if (type === 'diamond_block') {
+        // 一个钻石块 = 9 颗钻石
+        drop = 'diamond';
+        n = 9;
+      } else {
+        if (type === 'coal_ore') drop = 'coal';
+        else if (type === 'iron_ore') drop = 'raw_iron';
+        else if (type === 'gold_ore') drop = 'gold';
+        else if (type === 'diamond_ore') drop = 'diamond';
+        if ((drop === 'raw_iron' || drop === 'gold' || drop === 'diamond') && equipped === 'iron_pickaxe') n += 1;
+        if (drop === 'stone' && (equipped === 'pickaxe' || equipped === 'iron_pickaxe')) n += 1;
+        if (drop === 'wood' && equipped === 'axe') n += 1;
+      }
       addItem(drop, n);
     }
     renderBackpack();
@@ -1229,11 +1237,13 @@
     if (isFluid(type)) delete fluidLevel[k];
     removeVoxel(k, type);
     var drop = type === 'door' || type === 'door_open' ? 'door' : type === 'water_flow' ? 'water' : type === 'lava_flow' ? 'lava' : type;
-    if (drop === 'coal_ore') drop = 'coal';
+    var count = 1;
+    if (type === 'diamond_block') { drop = 'diamond'; count = 9; }
+    else if (drop === 'coal_ore') drop = 'coal';
     else if (drop === 'iron_ore') drop = 'raw_iron';
     else if (drop === 'gold_ore') drop = 'gold';
     else if (drop === 'diamond_ore') drop = 'diamond';
-    addItem(drop, 1);
+    addItem(drop, count);
     scheduleSave();
     return true;
   }
@@ -1877,11 +1887,13 @@
           if (!type || isFluid(type)) continue;
           removeVoxel(k, type);
           var drop = type === 'door' || type === 'door_open' ? 'door' : type === 'water_flow' ? 'water' : type === 'lava_flow' ? 'lava' : type;
-          if (drop === 'coal_ore') drop = 'coal';
+          var count = 1;
+          if (type === 'diamond_block') { drop = 'diamond'; count = 9; }
+          else if (drop === 'coal_ore') drop = 'coal';
           else if (drop === 'iron_ore') drop = 'raw_iron';
           else if (drop === 'gold_ore') drop = 'gold';
           else if (drop === 'diamond_ore') drop = 'diamond';
-          addItem(drop, 1);
+          addItem(drop, count);
         }
       }
     }
