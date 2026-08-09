@@ -121,6 +121,7 @@
   var changes = {};
   var backpack = {};
   var equipped = null;
+  var equippedBlock = null; // 手持的方块（点「使用」放置）
   var armor = null;
   var chestContents = {};
   var freshChests = false;
@@ -417,6 +418,7 @@
       changes = raw.changes || {};
       backpack = raw.backpack || {};
       equipped = raw.equipped || null;
+      equippedBlock = raw.equippedBlock || null;
       armor = raw.armor || null;
       mode = raw.mode || 'creative';
       savedOwned = raw.ownedMobs || [];
@@ -435,6 +437,7 @@
       changes = {};
       backpack = {};
       equipped = null;
+      equippedBlock = null;
       armor = null;
       mode = 'creative';
       savedOwned = [];
@@ -458,7 +461,7 @@
     try {
       var json = JSON.stringify({
         seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
-        chestState: chestContents, chestDate: App.todayStr(), mode: mode,
+        equippedBlock: equippedBlock, chestState: chestContents, chestDate: App.todayStr(), mode: mode,
         ownedMobs: ownedMobs.map(function (m) {
           return { type: m.type, x: m.pos.x, y: m.pos.y, z: m.pos.z };
         })
@@ -751,6 +754,15 @@
       backpack: backpack,
       mode: function () { return mode; },
       equipped: function () { return equipped; },
+      equippedBlock: function () { return equippedBlock; },
+      equipBlock: function (id) {
+        equippedBlock = equippedBlock === id ? null : id;
+        if (equippedBlock) currentType = equippedBlock;
+        scheduleSave();
+        renderBackpack();
+        updateLabel();
+        return equippedBlock;
+      },
       mobs: function () { return mobs.length; },
       hostiles: function () { return mobs.filter(function (m) { return m.type === 'zombie' || m.type === 'skeleton'; }).length; },
       setTime: function (t) { time = t; },
@@ -1342,6 +1354,26 @@
     var mv2 = hitMobAt(window.innerWidth / 2, window.innerHeight / 2);
     if (mv2 && mv2.type === 'villager') {
       openTrade();
+      return;
+    }
+    // 手持方块：点「使用」把方块放到准星位置（和木块一样放置）
+    if (equippedBlock) {
+      if ((backpack[equippedBlock] || 0) < 1) {
+        App.toast('背包里没有' + ITEMS[equippedBlock].name + '了');
+        equippedBlock = null;
+        updateLabel();
+        renderBackpack();
+        return;
+      }
+      if (placeFromBackpack(equippedBlock)) {
+        if ((backpack[equippedBlock] || 0) < 1) {
+          equippedBlock = null;
+          updateLabel();
+          renderBackpack();
+        }
+      } else {
+        App.toast('这里放不下，换个位置试试');
+      }
       return;
     }
     var t = getTarget();
@@ -2181,6 +2213,7 @@
 
   function selectItem(id) {
     if (!ITEMS[id] || ITEMS[id].kind !== 'block') { App.toast('这个不是方块'); return; }
+    equippedBlock = null; // 换快捷栏方块时收起手持方块
     currentType = id;
     renderHotbar();
     updateLabel();
@@ -2225,6 +2258,7 @@
     if (equipped === 'bow' || equipped === 'pistol') act += '（点👆发射）';
     if (equipped === 'bucket' || equipped === 'water_bucket' || equipped === 'lava_bucket') act += '（点👆使用）';
     if (equipped === 'boat') act += '（点👆放到水面/上船）';
+    if (equippedBlock) act += ' · 手持 ' + ITEMS[equippedBlock].name + '（点👆放置）';
     if (armor) act += ' · 🛡️ ' + ITEMS[armor].name;
     label.textContent = act;
   }
@@ -2259,6 +2293,10 @@
         action = equipped === id
           ? '<button class="mc-pack-act on" data-equip="' + id + '">已装备</button>'
           : '<button class="mc-pack-act" data-equip="' + id + '">装备</button>';
+      } else if (it.kind === 'block') {
+        action = equippedBlock === id
+          ? '<button class="mc-pack-act on" data-equip-block="' + id + '">已装备</button>'
+          : '<button class="mc-pack-act" data-equip-block="' + id + '">装备</button>';
       } else if (it.kind === 'armor') {
         action = armor === id
           ? '<button class="mc-pack-act on" data-armor="' + id + '">已穿戴</button>'
@@ -2279,6 +2317,17 @@
         renderBackpack();
         updateLabel();
         App.toast(equipped ? '已装备 ' + ITEMS[equipped].name : '已收起工具');
+      });
+    });
+    box.querySelectorAll('[data-equip-block]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-equip-block');
+        equippedBlock = equippedBlock === id ? null : id;
+        if (equippedBlock) currentType = equippedBlock;
+        scheduleSave();
+        renderBackpack();
+        updateLabel();
+        App.toast(equippedBlock ? '已装备 ' + ITEMS[equippedBlock].name + '（点「使用」放置）' : '已收起方块');
       });
     });
     box.querySelectorAll('[data-eat]').forEach(function (btn) {

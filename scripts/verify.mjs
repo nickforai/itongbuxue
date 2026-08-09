@@ -473,6 +473,26 @@ async function main() {
   await page.evaluate(() => window.__mc.eraseVoxel(55, 30, 55));
   await sleep(300);
   assert((await page.evaluate(() => (window.__mc.backpack.diamond || 0))) === diaBefore + 9, '挖掉钻石块得到 9 颗钻石');
+  // 钻石块装备：点「装备」后，点「使用」像木块一样放置
+  await page.evaluate(() => {
+    window.__mc.addItem('stone', 1);
+    window.__mc.placeAt('stone', 5, 9, 8);
+    window.__mc.addItem('diamond_block', 1);
+    window.__mc.equipBlock('diamond_block');
+  });
+  assert((await page.evaluate(() => window.__mc.equippedBlock())) === 'diamond_block', '钻石块可以装备');
+  await page.evaluate(() => window.__mc.lookAt(5.5, 9, 8));
+  await sleep(300);
+  await page.evaluate(() => window.__mc.use());
+  await sleep(300);
+  const dUse = await page.evaluate(() => ({
+    placed: window.__mc.blockAt(4, 9, 8),
+    left: window.__mc.backpack.diamond_block || 0,
+    equipped: window.__mc.equippedBlock()
+  }));
+  assert(dUse.placed === 'diamond_block', '手持钻石块点「使用」放置成功');
+  assert(dUse.left === 0, '放置消耗 1 个钻石块');
+  assert(dUse.equipped === null, '钻石块用完自动收起');
   // 地图扩大 5 倍 + 流体 + 铁桶 + 弓箭/大炮
   assert((await page.evaluate(() => window.__mc.bounds())) === 68, '地图范围 ±68（面积约 5 倍）');
   assert((await page.evaluate(() => window.__mc.blockAt(67, 0, 0))) !== null, '远处地形已生成');
