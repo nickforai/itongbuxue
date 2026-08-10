@@ -26,6 +26,7 @@
     lava: { name: '岩浆', color: 0xF26D21, emoji: '🌋', kind: 'block' },
     lava_flow: { name: '流动的岩浆', color: 0xD9501E, emoji: '🌋', kind: 'block' },
     obsidian: { name: '黑曜石', color: 0x2A2A3A, emoji: '🪨', kind: 'block' },
+    portal: { name: '传送门', color: 0x8B3FBF, emoji: '🌀', kind: 'block' },
     fence: { name: '栅栏', color: 0x8B5A2B, emoji: '🚧', kind: 'block' },
     ladder: { name: '梯子', color: 0xC49A5C, emoji: '🪜', kind: 'block' },
     fence_gate: { name: '栅栏门', color: 0x7A5230, emoji: '🚪', kind: 'block' },
@@ -38,7 +39,7 @@
     diamond_block: { name: '钻石块', color: 0x66E0E8, emoji: '💎', kind: 'block' },
     stick: { name: '木棒', color: 0xC49A5C, emoji: '🥢', kind: 'material' },
     wool: { name: '羊毛', color: 0xF5F5F5, emoji: '🐑', kind: 'material' },
-    coal: { name: '煤', color: 0x2C2C2C, emoji: '⬛', kind: 'material' },
+    coal: { name: '煤炭块', color: 0x2C2C2C, emoji: '⬛', kind: 'block' },
     raw_iron: { name: '粗铁', color: 0xB87333, emoji: '🟠', kind: 'material' },
     iron_ingot: { name: '铁锭', color: 0xD9D9E3, emoji: '🔩', kind: 'material' },
     gold: { name: '金', color: 0xF2C94C, emoji: '🪙', kind: 'material' },
@@ -156,6 +157,10 @@
   var onBoat = null;   // 当前乘坐的船
   var ownedMobs = [];  // 玩家圈养的动物/鱼（放出来养的，存档保留）
   var savedOwned = []; // 从存档读出的圈养动物记录
+  var portals = [];            // 黑曜石传送门框架 {x0,x1,y0,y1,z,axis, cx,cz}
+  var pendingTeleportAt = 0;   // 预定传送的时间戳（0=未在传送门里）
+  var teleportCooldownUntil = 0;
+  var sitting = null;          // 坐在哪个沙发 {x,y,z}
 
   function vkey(x, y, z) { return x + ',' + y + ',' + z; }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -172,7 +177,7 @@
 
   function isSolid(x, y, z) {
     var b = world[vkey(x, y, z)];
-    return !!b && b !== 'water' && b !== 'water_flow' && b !== 'lava' && b !== 'lava_flow' && b !== 'ladder';
+    return !!b && b !== 'water' && b !== 'water_flow' && b !== 'lava' && b !== 'lava_flow' && b !== 'ladder' && b !== 'portal';
   }
 
   function isWaterFluid(t) { return t === 'water' || t === 'water_flow'; }
@@ -590,6 +595,7 @@
     generateWorld(seed);
     if (villaBuilt) buildVilla(true); // 重新生成别墅（存档里只记了标记）
     applyChanges();
+    detectPortals(); // 重新识别存档里的黑曜石传送门
     // 箱子每日刷新：同一天保留拿取进度，新的一天重新装满
     try {
       var st = JSON.parse(localStorage.getItem(SAVE_KEY) || localStorage.getItem(MC_BACKUP_KEY) || '{}');
@@ -1107,7 +1113,13 @@
       },
       setKey: function (name, on) {
         keys[name] = !!on;
-      }
+      },
+      portalCount: function () { return portals.length; },
+      setPos: function (x, y, z) {
+        camera.position.set(x, y, z);
+        vy = 0;
+      },
+      sitting: function () { return !!sitting; }
     };
   }
 
@@ -1120,8 +1132,8 @@
 
   function materialFor(id) {
     var b = ITEMS[id];
-    if (id === 'glass' || id === 'water' || id === 'water_flow') {
-      return new THREE.MeshLambertMaterial({ color: b.color, transparent: true, opacity: id === 'glass' ? 0.35 : 0.55, depthWrite: false });
+    if (id === 'glass' || id === 'water' || id === 'water_flow' || id === 'portal') {
+      return new THREE.MeshLambertMaterial({ color: b.color, transparent: true, opacity: id === 'glass' ? 0.35 : id === 'portal' ? 0.5 : 0.55, depthWrite: false });
     }
     return new THREE.MeshLambertMaterial({ color: b.color });
   }
@@ -1247,6 +1259,155 @@
 
   function rebuildLava() {
     rebuildFluid(['lava', 'lava_flow'], 'lava', 0xFF8C2E, 0.92);
+  }
+
+  /* ---------- 黑曜石传送门：围成一个圈即成传送门，两个门互相传送 ---------- */
+  function isPortalFrame(axis, fixed, a0, a1, y0, y1) {
+    for (var a = a0; a <= a1; a++) {
+      if (world[vkey(axis === 'z' ? a : fixed, y0, axis === 'z' ? fixed : a)] !== 'obsidian') return false;
+      if (world[vkey(axis === 'z' ? a : fixed, y1, axis === 'z' ? fixed : a)] !== 'obsidian') return false;
+    }
+    for (var yy = y0; yy <= y1; yy++) {
+      if (world[vkey(axis === 'z' ? a0 : fixed, yy, axis === 'z' ? fixed : a0)] !== 'obsidian') return false;
+      if (world[vkey(axis === 'z' ? a1 : fixed, yy, axis === 'z' ? fixed : a1)] !== 'obsidian') return false;
+    }
+    for (var ax = a0 + 1; ax <= a1 - 1; ax++) {
+      for (var ay = y0 + 1; ay <= y1 - 1; ay++) {
+        var t = world[vkey(axis === 'z' ? ax : fixed, ay, axis === 'z' ? fixed : ax)];
+        if (t !== undefined && t !== 'portal') return false;
+      }
+    }
+    return true;
+  }
+
+  function detectPortals() {
+    var obsidianCells = Object.keys(world).filter(function (k) { return world[k] === 'obsidian'; });
+    var newPortals = [];
+    var newCells = {};
+    var seen = {};
+    obsidianCells.forEach(function (k) {
+      var p = k.split(',');
+      var x = +p[0], y = +p[1], z = +p[2];
+      // 以黑曜石为左下角，找 X-Y 平面的竖门（固定 z）
+      for (var x1 = x + 3; x1 <= Math.min(x + 23, BOUND); x1++) {
+        for (var y1 = y + 4; y1 <= Math.min(y + 23, 40); y1++) {
+          var sig = 'z,' + x + ',' + x1 + ',' + y + ',' + y1 + ',' + z;
+          if (seen[sig]) continue;
+          if (isPortalFrame('z', z, x, x1, y, y1)) {
+            seen[sig] = true;
+            newPortals.push({ axis: 'z', x0: x, x1: x1, y0: y, y1: y1, z: z, cx: (x + 1 + x1 - 1) / 2, cz: z });
+            for (var ax = x + 1; ax <= x1 - 1; ax++) {
+              for (var ay = y + 1; ay <= y1 - 1; ay++) newCells[vkey(ax, ay, z)] = true;
+            }
+          }
+        }
+      }
+      // 找 Z-Y 平面的竖门（固定 x）
+      for (var z1 = z + 3; z1 <= Math.min(z + 23, BOUND); z1++) {
+        for (var y2 = y + 4; y2 <= Math.min(y + 23, 40); y2++) {
+          var sig2 = 'x,' + x + ',' + z + ',' + z1 + ',' + y + ',' + y2;
+          if (seen[sig2]) continue;
+          if (isPortalFrame('x', x, z, z1, y, y2)) {
+            seen[sig2] = true;
+            newPortals.push({ axis: 'x', z0: z, z1: z1, y0: y, y1: y2, x: x, cx: x, cz: (z + 1 + z1 - 1) / 2 });
+            for (var az = z + 1; az <= z1 - 1; az++) {
+              for (var ay2 = y + 1; ay2 <= y2 - 1; ay2++) newCells[vkey(x, ay2, az)] = true;
+            }
+          }
+        }
+      }
+    });
+    // 移除不再属于传送门内部的传送门方块
+    Object.keys(world).forEach(function (kk) {
+      if (world[kk] === 'portal' && !newCells[kk]) {
+        delete world[kk];
+        changes[kk] = null;
+      }
+    });
+    // 补上新的传送门内部方块
+    Object.keys(newCells).forEach(function (kk) {
+      if (world[kk] !== 'portal') {
+        world[kk] = 'portal';
+        changes[kk] = 'portal';
+      }
+    });
+    if (scene && (Object.keys(newCells).length || portals.length !== newPortals.length)) rebuildType('portal');
+    portals = newPortals;
+    scheduleSave();
+  }
+
+  var portalDetectTimer = null;
+  function schedulePortalDetect() {
+    clearTimeout(portalDetectTimer);
+    portalDetectTimer = setTimeout(detectPortals, 300);
+  }
+
+  function frameAtCell(x, y, z) {
+    for (var i = 0; i < portals.length; i++) {
+      var f = portals[i];
+      if (f.axis === 'z' && z === f.z && x >= f.x0 + 1 && x <= f.x1 - 1 && y >= f.y0 + 1 && y <= f.y1 - 1) return i;
+      if (f.axis === 'x' && x === f.x && z >= f.z0 + 1 && z <= f.z1 - 1 && y >= f.y0 + 1 && y <= f.y1 - 1) return i;
+    }
+    return -1;
+  }
+
+  function doTeleport(fromIdx) {
+    if (portals.length < 2) return;
+    var to = portals[(fromIdx + 1) % portals.length];
+    var px = to.axis === 'z' ? to.cx : to.x + 2;
+    var pz = to.axis === 'z' ? to.z + 2 : to.cz;
+    camera.position.set(px, to.y0 + 1 + 1.6, pz);
+    vy = 0;
+    onGround = false;
+    pendingTeleportAt = 0;
+    teleportCooldownUntil = Date.now() + 2500;
+    playSound('place');
+    App.toast('🌀 传送到另一个传送门！');
+  }
+
+  function updatePortal() {
+    var now = Date.now();
+    if (now < teleportCooldownUntil) return;
+    var fx = Math.floor(camera.position.x);
+    var fy = Math.floor(camera.position.y - 1.6);
+    var fz = Math.floor(camera.position.z);
+    var idx = -1;
+    for (var yy = fy; yy <= Math.floor(camera.position.y); yy++) {
+      if (world[vkey(fx, yy, fz)] === 'portal') {
+        idx = frameAtCell(fx, yy, fz);
+        if (idx >= 0) break;
+      }
+    }
+    if (idx < 0) { pendingTeleportAt = 0; return; }
+    if (portals.length < 2) { pendingTeleportAt = 0; return; }
+    if (!pendingTeleportAt) {
+      pendingTeleportAt = now + 800;
+      App.toast('🌀 正在传送到另一个传送门…');
+    }
+    if (now >= pendingTeleportAt) doTeleport(idx);
+  }
+
+  /* ---------- 沙发：可以坐上去 ---------- */
+  function toggleSit(vx, vy, vz) {
+    if (sitting) { standUp(); return; }
+    var d = Math.hypot(vx + 0.5 - camera.position.x, vz + 0.5 - camera.position.z);
+    if (d > 3) { App.toast('离沙发远了一点，走近再坐'); return; }
+    sitting = { x: vx, y: vy, z: vz };
+    camera.position.set(vx + 0.5, vy + 1.2, vz + 0.5);
+    vy = 0;
+    onGround = false;
+    updateLabel();
+    App.toast('🛋️ 坐好啦！点「使用」或跳一下起来');
+  }
+
+  function standUp() {
+    if (!sitting) return;
+    var sx = sitting.x, sz = sitting.z;
+    sitting = null;
+    camera.position.set(sx + 0.5, groundY(sx + 0.5, sz + 0.5) + 1.6, sz + 0.5);
+    vy = 0;
+    updateLabel();
+    App.toast('站起来啦');
   }
 
   function getTarget() {
@@ -1390,6 +1551,7 @@
     delete world[k];
     changes[k] = null;
     rebuildType(type);
+    if (type === 'obsidian') schedulePortalDetect(); // 拆掉黑曜石后重新检测传送门
   }
 
   function doBreak() { var t = getTarget(); if (t) breakAt(t); }
@@ -1533,6 +1695,7 @@
       activateFluid(k);
       checkFluidNeighbors(k);
     }
+    if (type === 'obsidian') schedulePortalDetect(); // 黑曜石围成圈 → 传送门
     scheduleSave();
     playSound('place');
     return true;
@@ -1563,6 +1726,11 @@
   }
 
   function doUse() {
+    // 坐在沙发上：再点「使用」站起来
+    if (sitting) {
+      standUp();
+      return;
+    }
     // 开着船：再点「使用」就下船
     if (onBoat) {
       getOffBoat();
@@ -1631,6 +1799,7 @@
     if (type === 'workbench') { openCrafting(); return; }
     if (type === 'furnace') { openSmelt(); return; }
     if (type === 'chest') { openChest(k); return; }
+    if (type === 'sofa') { toggleSit(vx, vy, vz); return; }
     if (type === 'bed') {
       if (mode !== 'survival') { App.toast('创造模式不用睡觉哦'); return; }
       if (!isNight()) { App.toast('现在睡不着，天黑再睡吧'); return; }
@@ -2492,6 +2661,10 @@
 
   function updateLabel() {
     var label = App.el('mcLabel');
+    if (sitting) {
+      label.textContent = '🛋️ 坐在沙发上（点「使用」或跳一下起来）';
+      return;
+    }
     if (onBoat) {
       label.textContent = '⛵ 开船中（点「使用」或跳一下下船）';
       return;
@@ -2991,6 +3164,13 @@
       return;
     }
 
+    // 坐在沙发上：不能走动，点「使用」或跳一下站起来
+    if (sitting) {
+      if (upPressed || downPressed || keys[' ']) standUp();
+      updateHud();
+      return;
+    }
+
     if (mode === 'creative') {
       camera.position.add(move);
       var vy2 = (upPressed || keys[' '] ? 7 : 0) - (downPressed || keys['shift'] ? 7 : 0);
@@ -3081,6 +3261,7 @@
     updatePhysics(dt);
     updateMobs(dt);
     updateProjectiles(dt);
+    updatePortal();
 
     cameraEuler.set(pitch, yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(cameraEuler);

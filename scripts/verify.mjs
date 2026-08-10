@@ -766,6 +766,68 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.villaBuilt())) === false, '旧别墅存档已拆除（不再重建）');
   assert((await page.evaluate(() => window.__mc.chestAt('20,1,-10').length)) === 0, '旧别墅箱子内容已清理');
   assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -30))) === null, '旧别墅泳池已拆除');
+  // 煤炭是方块，可以放出来
+  await page.evaluate(() => { window.__mc.addItem('coal', 1); });
+  assert((await page.evaluate(() => window.__mc.placeAt('coal', 60, 25, 60))) === true, '煤炭可以当方块放置');
+  assert((await page.evaluate(() => window.__mc.blockAt(60, 25, 60))) === 'coal', '煤炭块已放置');
+  // 黑曜石传送门：围成一圈生成传送门，两个门互相传送
+  await page.evaluate(() => {
+    for (let x = 40; x <= 44; x++) {
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', x, 20, 55);
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', x, 24, 55);
+    }
+    for (let y = 21; y <= 23; y++) {
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', 40, y, 55);
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', 44, y, 55);
+    }
+  });
+  await sleep(900); // 等防抖检测
+  assert((await page.evaluate(() => window.__mc.portalCount())) === 1, '黑曜石围成圈生成第一个传送门');
+  assert((await page.evaluate(() => window.__mc.blockAt(41, 21, 55))) === 'portal', '传送门内部变成传送方块');
+  await page.evaluate(() => window.__mc.setPos(42.5, 22.6, 55.5));
+  await sleep(1500);
+  const portalOnly = await page.evaluate(() => window.__mc.pos());
+  assert(Math.abs(portalOnly.x - 42.5) < 0.5 && Math.abs(portalOnly.z - 55.5) < 0.5, '只有一个传送门时不会传送');
+  await page.evaluate(() => window.__mc.setPos(42.5, 22.6, 60)); // 先走出传送门，再搭第二个
+  await page.evaluate(() => {
+    for (let x = 40; x <= 44; x++) {
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', x, 20, 30);
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', x, 24, 30);
+    }
+    for (let y = 21; y <= 23; y++) {
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', 40, y, 30);
+      window.__mc.addItem('obsidian', 1);
+      window.__mc.placeAt('obsidian', 44, y, 30);
+    }
+  });
+  await sleep(900);
+  assert((await page.evaluate(() => window.__mc.portalCount())) === 2, '第二个传送门也生成');
+  await page.evaluate(() => window.__mc.setPos(42.5, 22.6, 55.5));
+  await sleep(2000);
+  const portalAfter = await page.evaluate(() => window.__mc.pos());
+  assert(Math.abs(portalAfter.z - 32) < 2 && Math.abs(portalAfter.x - 42.5) < 2, '两个传送门可以互相传送（到达第二个传送门）');
+  // 沙发可以坐
+  await page.evaluate(() => {
+    window.__mc.addItem('sofa', 1);
+    window.__mc.placeAt('sofa', 50, 25, 50);
+  });
+  await page.evaluate(() => window.__mc.setPos(49.5, 25.5, 50.5));
+  await page.evaluate(() => window.__mc.lookAt(50.5, 25.5, 50.5));
+  await sleep(300);
+  await page.evaluate(() => window.__mc.use());
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.sitting())) === true, '点击使用可以坐上沙发');
+  assert((await page.evaluate(() => window.__mc.pos())).y > 26, '坐下后视角在沙发高度');
+  await page.evaluate(() => window.__mc.use());
+  await sleep(300);
+  assert((await page.evaluate(() => window.__mc.sitting())) === false, '再点使用可以站起来');
   // 昼夜：白天不生成、夜晚标记
   await page.evaluate(() => { window.__mc.setTime(0.3); });
   await sleep(300);
