@@ -19,6 +19,7 @@
     door_open: { name: '门（开）', color: 0x7A5230, emoji: '🚪', kind: 'block' },
     workbench: { name: '工作台', color: 0xC98A3D, emoji: '🛠️', kind: 'block' },
     bed: { name: '床', color: 0xE8508A, emoji: '🛏️', kind: 'block' },
+    sofa: { name: '沙发', color: 0xD9534F, emoji: '🛋️', kind: 'block' },
     furnace: { name: '熔炉', color: 0x777777, emoji: '🔥', kind: 'block' },
     water: { name: '水', color: 0x3D9BE9, emoji: '💧', kind: 'block' },
     water_flow: { name: '流动的水', color: 0x4FB3E8, emoji: '💧', kind: 'block' },
@@ -363,21 +364,22 @@
   function buildVilla(fromLoad) {
     var x, y, z, i;
     villaChests = [];
-    // 1) 清空占地内的树/山丘/水面上的杂物（连同存档改动一起清掉），地面压平到 y=1 铺一楼地板
+    // 1) 清空占地内的树/山丘/水面上的杂物，地面压平到 y=1 铺一楼地板
+    //    注意：重进游戏时（fromLoad）保留玩家在别墅里放置的方块（changes）
     for (x = VILLA_X0; x <= VILLA_X0 + 59; x++) {
       for (z = VILLA_Z0; z <= VILLA_Z0 + 59; z++) {
         for (y = 1; y <= 40; y++) {
           var ck = vkey(x, y, z);
           delete world[ck];
-          delete changes[ck];
+          if (!fromLoad) delete changes[ck];
         }
         world[vkey(x, 1, z)] = 'diamond_block'; // 一楼地板：钻石块
       }
     }
-    // 2) 二楼/三楼/四楼地板（毛）
+    // 2) 二楼/三楼/四楼地板（木板色，和白色毛墙区分开，看得清楚）
     VILLA_FLOORS.slice(1).forEach(function (fy) {
       for (x = VILLA_X0; x <= VILLA_X0 + 59; x++) {
-        for (z = VILLA_Z0; z <= VILLA_Z0 + 59; z++) villaSet(x, fy, z, 'wool');
+        for (z = VILLA_Z0; z <= VILLA_Z0 + 59; z++) villaSet(x, fy, z, 'plank');
       }
     });
     // 3) 外墙（毛）+ 玻璃窗带
@@ -425,14 +427,14 @@
       villaSet(cx2, 12, -3, 'chest');
       villaChests.push({ key: vkey(cx2, 12, -3), items: ['raw_meat', 'raw_meat', 'big_fish'] });
     }
-    // 7) 三楼客厅：大沙发 + 电视机（毛沙发，黑曜石+玻璃电视）
+    // 7) 三楼客厅：大沙发 + 电视机（红色沙发块，黑曜石+玻璃电视）
     for (x = -20; x <= 20; x++) {
-      villaSet(x, 23, -20, 'wool');  // 沙发座
-      villaSet(x, 23, -21, 'wool');  // 沙发背
+      villaSet(x, 23, -20, 'sofa');  // 沙发座
+      villaSet(x, 23, -21, 'sofa');  // 沙发背
     }
     [[-20, -19], [20, -19]].forEach(function (arm) {
-      villaSet(arm[0], 23, arm[1], 'wool');
-      villaSet(arm[0], 24, arm[1], 'wool');
+      villaSet(arm[0], 23, arm[1], 'sofa');
+      villaSet(arm[0], 24, arm[1], 'sofa');
     });
     villaSet(0, 23, -12, 'obsidian');
     villaSet(0, 24, -12, 'obsidian');
@@ -455,7 +457,7 @@
     // 9) 梯子通道：西南角直通四楼
     for (y = 1; y <= VILLA_TOP; y++) villaSet(-28, y, -28, 'ladder');
     if (!fromLoad) {
-      ['wool', 'glass', 'water', 'chest', 'bed', 'workbench', 'furnace', 'door', 'obsidian', 'ladder', 'diamond_block'].forEach(rebuildType);
+      ['wool', 'glass', 'water', 'chest', 'bed', 'workbench', 'furnace', 'door', 'obsidian', 'ladder', 'diamond_block', 'plank', 'sofa'].forEach(rebuildType);
     }
     fillVillaChests();
   }

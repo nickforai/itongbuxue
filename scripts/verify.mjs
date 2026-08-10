@@ -696,7 +696,11 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.villaBuilt())) === true, '别墅已建造');
   assert((await page.evaluate(() => window.__mc.blockAt(-30, 1, -30))) === 'wool', '别墅外墙是毛（墙角）');
   assert((await page.evaluate(() => window.__mc.blockAt(0, 1, 0))) === 'diamond_block', '一楼地板是钻石块');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 12, 0))) === 'plank', '二楼地板是木板色');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 23, 0))) === 'plank', '三楼地板是木板色');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 34, 0))) === 'plank', '四楼地板是木板色');
   assert((await page.evaluate(() => window.__mc.blockAt(-20, 1, -6))) === 'bed', '一楼卧室有大床');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 23, -20))) === 'sofa', '三楼客厅有大沙发');
   assert((await page.evaluate(() => window.__mc.blockAt(-20, 35, -20))) === 'water', '四楼泳池装满水');
   assert((await page.evaluate(() => window.__mc.blockAt(-25, 35, -20))) === 'wool', '泳池围墙是毛');
   const villaInfo = await page.evaluate(() => {
@@ -717,6 +721,11 @@ async function main() {
   await page.evaluate((k) => {
     while (window.__mc.chestAt(k).length > 0) window.__mc.takeChest(k, 0);
   }, villaInfo.dailyKey);
+  // 在别墅二楼放一个砖块，验证重进后不会消失
+  await page.evaluate(() => {
+    window.__mc.addItem('brick', 1);
+    window.__mc.placeAt('brick', 5, 13, -20); // 二楼地板上方的空气格
+  });
   await sleep(800); // 等防抖保存落盘，再改日期
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('xx3_mc_world_v1'));
@@ -732,6 +741,7 @@ async function main() {
   await sleep(1500);
   assert((await page.evaluate((k) => window.__mc.chestAt(k).filter((x) => x === 'coal').length, villaInfo.dailyKey)) === 5, '新的一天二楼煤箱重新装满 5 个煤炭');
   assert((await page.evaluate(() => window.__mc.blockAt(-20, 35, -20))) === 'water', '重新进入游戏后别墅泳池还在');
+  assert((await page.evaluate(() => window.__mc.blockAt(5, 13, -20))) === 'brick', '重进后别墅里放置的方块还在');
   // 旧别墅迁移：以前用 64 砖块换的旧别墅存档自动拆除（背包物品保留）
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('xx3_mc_world_v1'));
