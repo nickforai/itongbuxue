@@ -202,6 +202,7 @@
     world[k] = target;
     changes[k] = target;
     rebuildType(target);
+    rebuildType('water'); // 水被转化掉后，水面网格要重新生成
     playSound('place');
   }
 
@@ -934,6 +935,10 @@
       blockAt: function (x, y, z) { return world[vkey(x, y, z)] || null; },
       villagers: function () { return mobs.filter(function (m) { return m.type === 'villager'; }).length; },
       waterCount: function () { return Object.keys(world).filter(function (k) { return world[k] === 'water'; }).length; },
+      waterSurfaceCount: function () {
+        var mesh = meshes['water'];
+        return mesh ? mesh.geometry.attributes.position.count / 4 : 0;
+      },
       chestCount: function () { return Object.keys(world).filter(function (k) { return world[k] === 'chest'; }).length; },
       findChest: function () {
         return Object.keys(world).find(function (k) { return world[k] === 'chest'; }) || null;
@@ -1126,6 +1131,11 @@
   }
 
   function rebuildType(id) {
+    // 水：不渲染整块立方体，而是只渲染每个水柱最顶端的水面（像我的世界一样平滑）
+    if (id === 'water' || id === 'water_flow') {
+      rebuildWater();
+      return;
+    }
     if (meshes[id]) {
       scene.remove(meshes[id]);
       meshList = meshList.filter(function (m) { return m !== meshes[id]; });
@@ -1159,6 +1169,65 @@
     mesh.count = coords.length;
     scene.add(mesh);
     meshes[id] = mesh;
+    meshList.push(mesh);
+  }
+
+  /* 水面：把每个水柱最顶端的水格子拼成一张半透明蓝色水面 */
+  function rebuildWater() {
+    ['water', 'water_flow'].forEach(function (mid) {
+      if (meshes[mid]) {
+        scene.remove(meshes[mid]);
+        meshList = meshList.filter(function (m) { return m !== meshes[mid]; });
+        delete meshes[mid];
+      }
+    });
+    var tops = [];
+    Object.keys(world).forEach(function (k) {
+      var t = world[k];
+      if (t !== 'water' && t !== 'water_flow') return;
+      var p = k.split(',');
+      var above = world[(+p[0]) + ',' + (+p[1] + 1) + ',' + (+p[2])];
+      if (above !== 'water' && above !== 'water_flow') tops.push([+p[0], +p[1], +p[2]]);
+    });
+    if (!tops.length) return;
+    var positions = [], normals = [], indices = [];
+    function quad(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, nx, ny, nz) {
+      var o = positions.length / 3;
+      positions.push(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz);
+      normals.push(nx, ny, nz, nx, ny, nz, nx, ny, nz, nx, ny, nz);
+      indices.push(o, o + 1, o + 2, o, o + 2, o + 3);
+    }
+    tops.forEach(function (c, i) {
+      var x = c[0], sy = c[1] + 1, z = c[2]; // 水面在格子的顶面
+      quad(x, sy, z, x + 1, sy, z, x + 1, sy, z + 1, x, sy, z + 1, 0, 1, 0); // 顶面
+      var y0 = c[1];
+      if (world[(x - 1) + ',' + y0 + ',' + z] !== 'water' && world[(x - 1) + ',' + y0 + ',' + z] !== 'water_flow') {
+        quad(x, y0, z, x, y0, z + 1, x, sy, z + 1, x, sy, z, -1, 0, 0); // 左壁
+      }
+      if (world[(x + 1) + ',' + y0 + ',' + z] !== 'water' && world[(x + 1) + ',' + y0 + ',' + z] !== 'water_flow') {
+        quad(x + 1, y0, z, x + 1, y0, z + 1, x + 1, sy, z + 1, x + 1, sy, z, 1, 0, 0); // 右壁
+      }
+      if (world[x + ',' + y0 + ',' + (z - 1)] !== 'water' && world[x + ',' + y0 + ',' + (z - 1)] !== 'water_flow') {
+        quad(x, y0, z, x + 1, y0, z, x + 1, sy, z, x, sy, z, 0, 0, -1); // 前壁
+      }
+      if (world[x + ',' + y0 + ',' + (z + 1)] !== 'water' && world[x + ',' + y0 + ',' + (z + 1)] !== 'water_flow') {
+        quad(x, y0, z + 1, x + 1, y0, z + 1, x + 1, sy, z + 1, x, sy, z + 1, 0, 0, 1); // 后壁
+      }
+    });
+    var geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geom.setIndex(indices);
+    var mat = new THREE.MeshLambertMaterial({
+      color: 0x4FB3E8,
+      transparent: true,
+      opacity: 0.66,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    var mesh = new THREE.Mesh(geom, mat);
+    scene.add(mesh);
+    meshes['water'] = mesh;
     meshList.push(mesh);
   }
 

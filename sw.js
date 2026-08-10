@@ -1,7 +1,7 @@
 /* 学习乐园 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v55';
+var CACHE = 'xx3-v56';
 
 var ASSETS = [
   './',
