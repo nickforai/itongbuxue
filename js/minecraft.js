@@ -371,7 +371,7 @@
           delete world[ck];
           delete changes[ck];
         }
-        world[vkey(x, 1, z)] = 'wool';
+        world[vkey(x, 1, z)] = 'diamond_block'; // 一楼地板：钻石块
       }
     }
     // 2) 二楼/三楼/四楼地板（毛）
@@ -455,7 +455,7 @@
     // 9) 梯子通道：西南角直通四楼
     for (y = 1; y <= VILLA_TOP; y++) villaSet(-28, y, -28, 'ladder');
     if (!fromLoad) {
-      ['wool', 'glass', 'water', 'chest', 'bed', 'workbench', 'furnace', 'door', 'obsidian', 'ladder'].forEach(rebuildType);
+      ['wool', 'glass', 'water', 'chest', 'bed', 'workbench', 'furnace', 'door', 'obsidian', 'ladder', 'diamond_block'].forEach(rebuildType);
     }
     fillVillaChests();
   }

@@ -695,7 +695,7 @@ async function main() {
   await sleep(800);
   assert((await page.evaluate(() => window.__mc.villaBuilt())) === true, '别墅已建造');
   assert((await page.evaluate(() => window.__mc.blockAt(-30, 1, -30))) === 'wool', '别墅外墙是毛（墙角）');
-  assert((await page.evaluate(() => window.__mc.blockAt(0, 1, 0))) === 'wool', '一楼地板是毛');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 1, 0))) === 'diamond_block', '一楼地板是钻石块');
   assert((await page.evaluate(() => window.__mc.blockAt(-20, 1, -6))) === 'bed', '一楼卧室有大床');
   assert((await page.evaluate(() => window.__mc.blockAt(-20, 35, -20))) === 'water', '四楼泳池装满水');
   assert((await page.evaluate(() => window.__mc.blockAt(-25, 35, -20))) === 'wool', '泳池围墙是毛');
