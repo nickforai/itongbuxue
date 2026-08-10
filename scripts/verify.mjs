@@ -446,7 +446,7 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.trade('t_plank_meat'))) === false, '材料不够时交换失败');
   await page.evaluate(() => window.__mc.openTrade());
   assert((await page.locator('#mcTradePanel:not(.hidden)').count()) === 1, '村民交换面板可打开');
-  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 12, '12 条交换规则');
+  assert((await page.locator('#mcTradeList .mc-recipe').count()) === 13, '13 条交换规则');
   await page.evaluate(() => { document.getElementById('mcTradeClose').click(); });
   await sleep(200);
   assert((await page.locator('#mcTradePanel.hidden').count()) === 1, '村民交换面板已关闭');
@@ -689,6 +689,48 @@ async function main() {
   await page.evaluate(() => window.__mc.explodeAt({ x: 45.5, y: 30.5, z: 45.5 }));
   await sleep(300);
   assert((await page.evaluate(() => window.__mc.blockAt(45, 30, 45))) === null, '子弹爆炸能采矿（炸掉方块）');
+  // 别墅：64 砖块换 100×100 四层别墅（毛+玻璃，四楼泳池，二楼箱子每天刷新）
+  await page.evaluate(() => { window.__mc.addItem('brick', 64); });
+  assert((await page.evaluate(() => window.__mc.trade('t_brick_villa'))) === true, '64 砖块换别墅成功');
+  await sleep(800);
+  assert((await page.evaluate(() => window.__mc.villaBuilt())) === true, '别墅已建造');
+  assert((await page.evaluate(() => window.__mc.blockAt(-50, 1, -50))) === 'wool', '别墅外墙是毛（墙角）');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 1, 0))) === 'wool', '一楼地板是毛');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -30))) === 'water', '四楼泳池装满水');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -9))) === 'wool', '泳池围墙是毛');
+  const villaInfo = await page.evaluate(() => {
+    const keys = window.__mc.villaChestKeys();
+    return {
+      total: keys.length,
+      coal20: window.__mc.chestAt(keys[0]),
+      dailyKey: keys[1],
+      dailyCoal: window.__mc.chestAt(keys[1]),
+      meat: window.__mc.chestAt(keys[2])
+    };
+  });
+  assert(villaInfo.total === 21, '别墅共 21 个箱子（1楼1个+2楼20个）');
+  assert(villaInfo.coal20.filter((x) => x === 'coal').length === 20, '一楼箱子装着 20 个煤炭');
+  assert(villaInfo.dailyCoal.filter((x) => x === 'coal').length === 5, '二楼 10 个箱子每天刷新 5 个煤炭');
+  assert(villaInfo.meat.includes('raw_meat') && villaInfo.meat.includes('big_fish'), '二楼 10 个箱子有生肉和大鱼');
+  // 别墅箱子每天刷新：清空一个二楼煤箱，模拟第二天后重进
+  await page.evaluate((k) => {
+    while (window.__mc.chestAt(k).length > 0) window.__mc.takeChest(k, 0);
+  }, villaInfo.dailyKey);
+  await sleep(800); // 等防抖保存落盘，再改日期
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('xx3_mc_world_v1'));
+    raw.chestDate = '2000-01-01';
+    localStorage.setItem('xx3_mc_world_v1', JSON.stringify(raw));
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1'));
+    d.mcChances = 1;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.click('#mcStartBtn');
+  await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
+  await sleep(1500);
+  assert((await page.evaluate((k) => window.__mc.chestAt(k).filter((x) => x === 'coal').length, villaInfo.dailyKey)) === 5, '新的一天二楼煤箱重新装满 5 个煤炭');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -30))) === 'water', '重新进入游戏后别墅泳池还在');
   // 昼夜：白天不生成、夜晚标记
   await page.evaluate(() => { window.__mc.setTime(0.3); });
   await sleep(300);
@@ -773,11 +815,12 @@ async function main() {
   await sleep(300);
   assert((await page.textContent('#mcBackpackList')).includes('床'), '合成床成功（3羊毛+3木板）');
   // 梯子爬墙：贴着梯子按住上，能爬过 3 格高的墙
-  await page.evaluate(() => {
+  const ladderP0 = await page.evaluate(() => window.__mc.pos());
+  await page.evaluate(([x, y, z]) => {
     window.__mc.addItem('plank', 3);
     window.__mc.trade('t_plank_ladder');
-    window.__mc.placeAt('ladder', 1, 2, 8); // 放在玩家旁边一格（梯子不挡路）
-  });
+    window.__mc.placeAt('ladder', Math.round(x) + 1, Math.floor(y - 1.6), Math.round(z)); // 玩家旁边一格、脚底高度
+  }, [ladderP0.x, ladderP0.y, ladderP0.z]);
   await sleep(300);
   const climbStart = (await page.evaluate(() => window.__mc.pos())).y;
   await page.evaluate(() => window.__mc.setKey(' ', true));
@@ -785,7 +828,7 @@ async function main() {
   const climbEnd = (await page.evaluate(() => window.__mc.pos())).y;
   await page.evaluate(() => window.__mc.setKey(' ', false));
   assert(climbEnd > climbStart + 1.8, '贴着梯子能向上爬（' + climbStart.toFixed(2) + ' → ' + climbEnd.toFixed(2) + '）');
-  assert(climbEnd < 7, '一格梯子最多爬 3 格高（' + climbEnd.toFixed(2) + '）');
+  assert(climbEnd < climbStart + 4.5, '一格梯子最多爬 3 格高（' + climbEnd.toFixed(2) + '）');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
   /* ---------- 生字 ---------- */
