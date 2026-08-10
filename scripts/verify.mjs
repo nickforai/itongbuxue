@@ -533,6 +533,7 @@ async function main() {
   assert(flowBelow === 'water_flow', '水会向下流动（实际：' + flowBelow + '）');
   assert((await page.evaluate(() => window.__mc.waterSurfaceCount())) >= 5, '水渲染成平滑水面（不再是一格一格）');
   assert((await page.evaluate(() => window.__mc.blockAt(35, 29, 35))) === 'lava_flow', '岩浆会向下流动');
+  assert((await page.evaluate(() => window.__mc.lavaSurfaceCount())) >= 1, '岩浆也渲染成平滑表面');
   await page.evaluate(() => {
     window.__mc.addItem('water', 1);
     window.__mc.addItem('lava', 1);

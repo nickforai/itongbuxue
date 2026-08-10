@@ -203,6 +203,7 @@
     changes[k] = target;
     rebuildType(target);
     rebuildType('water'); // 水被转化掉后，水面网格要重新生成
+    rebuildType('lava');  // 岩浆被转化掉后，岩浆表面网格也要重新生成
     playSound('place');
   }
 
@@ -939,6 +940,10 @@
         var mesh = meshes['water'];
         return mesh ? mesh.geometry.attributes.position.count / 4 : 0;
       },
+      lavaSurfaceCount: function () {
+        var mesh = meshes['lava'];
+        return mesh ? mesh.geometry.attributes.position.count / 4 : 0;
+      },
       chestCount: function () { return Object.keys(world).filter(function (k) { return world[k] === 'chest'; }).length; },
       findChest: function () {
         return Object.keys(world).find(function (k) { return world[k] === 'chest'; }) || null;
@@ -1136,6 +1141,11 @@
       rebuildWater();
       return;
     }
+    // 岩浆：和水一样，渲染成平滑的半透明表面
+    if (id === 'lava' || id === 'lava_flow') {
+      rebuildLava();
+      return;
+    }
     if (meshes[id]) {
       scene.remove(meshes[id]);
       meshList = meshList.filter(function (m) { return m !== meshes[id]; });
@@ -1172,9 +1182,9 @@
     meshList.push(mesh);
   }
 
-  /* 水面：把每个水柱最顶端的水格子拼成一张半透明蓝色水面 */
-  function rebuildWater() {
-    ['water', 'water_flow'].forEach(function (mid) {
+  /* 流体表面：把每个流体柱最顶端的格子拼成一张平滑的半透明表面（水/岩浆通用） */
+  function rebuildFluid(ids, meshKey, color, opacity) {
+    ids.forEach(function (mid) {
       if (meshes[mid]) {
         scene.remove(meshes[mid]);
         meshList = meshList.filter(function (m) { return m !== meshes[mid]; });
@@ -1184,10 +1194,10 @@
     var tops = [];
     Object.keys(world).forEach(function (k) {
       var t = world[k];
-      if (t !== 'water' && t !== 'water_flow') return;
+      if (ids.indexOf(t) === -1) return;
       var p = k.split(',');
       var above = world[(+p[0]) + ',' + (+p[1] + 1) + ',' + (+p[2])];
-      if (above !== 'water' && above !== 'water_flow') tops.push([+p[0], +p[1], +p[2]]);
+      if (ids.indexOf(above) === -1) tops.push([+p[0], +p[1], +p[2]]);
     });
     if (!tops.length) return;
     var positions = [], normals = [], indices = [];
@@ -1198,19 +1208,19 @@
       indices.push(o, o + 1, o + 2, o, o + 2, o + 3);
     }
     tops.forEach(function (c, i) {
-      var x = c[0], sy = c[1] + 1, z = c[2]; // 水面在格子的顶面
+      var x = c[0], sy = c[1] + 1, z = c[2]; // 表面在格子的顶面
       quad(x, sy, z, x + 1, sy, z, x + 1, sy, z + 1, x, sy, z + 1, 0, 1, 0); // 顶面
       var y0 = c[1];
-      if (world[(x - 1) + ',' + y0 + ',' + z] !== 'water' && world[(x - 1) + ',' + y0 + ',' + z] !== 'water_flow') {
+      if (ids.indexOf(world[(x - 1) + ',' + y0 + ',' + z]) === -1) {
         quad(x, y0, z, x, y0, z + 1, x, sy, z + 1, x, sy, z, -1, 0, 0); // 左壁
       }
-      if (world[(x + 1) + ',' + y0 + ',' + z] !== 'water' && world[(x + 1) + ',' + y0 + ',' + z] !== 'water_flow') {
+      if (ids.indexOf(world[(x + 1) + ',' + y0 + ',' + z]) === -1) {
         quad(x + 1, y0, z, x + 1, y0, z + 1, x + 1, sy, z + 1, x + 1, sy, z, 1, 0, 0); // 右壁
       }
-      if (world[x + ',' + y0 + ',' + (z - 1)] !== 'water' && world[x + ',' + y0 + ',' + (z - 1)] !== 'water_flow') {
+      if (ids.indexOf(world[x + ',' + y0 + ',' + (z - 1)]) === -1) {
         quad(x, y0, z, x + 1, y0, z, x + 1, sy, z, x, sy, z, 0, 0, -1); // 前壁
       }
-      if (world[x + ',' + y0 + ',' + (z + 1)] !== 'water' && world[x + ',' + y0 + ',' + (z + 1)] !== 'water_flow') {
+      if (ids.indexOf(world[x + ',' + y0 + ',' + (z + 1)]) === -1) {
         quad(x, y0, z + 1, x + 1, y0, z + 1, x + 1, sy, z + 1, x, sy, z + 1, 0, 0, 1); // 后壁
       }
     });
@@ -1219,16 +1229,24 @@
     geom.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     geom.setIndex(indices);
     var mat = new THREE.MeshLambertMaterial({
-      color: 0x4FB3E8,
+      color: color,
       transparent: true,
-      opacity: 0.66,
+      opacity: opacity,
       depthWrite: false,
       side: THREE.DoubleSide
     });
     var mesh = new THREE.Mesh(geom, mat);
     scene.add(mesh);
-    meshes['water'] = mesh;
+    meshes[meshKey] = mesh;
     meshList.push(mesh);
+  }
+
+  function rebuildWater() {
+    rebuildFluid(['water', 'water_flow'], 'water', 0x4FB3E8, 0.66);
+  }
+
+  function rebuildLava() {
+    rebuildFluid(['lava', 'lava_flow'], 'lava', 0xFF8C2E, 0.92);
   }
 
   function getTarget() {
