@@ -115,7 +115,7 @@
     { id: 't_plank_fence', name: '木板换栅栏', give: { plank: 1 }, get: { fence: 1 } },
     { id: 't_plank_fencegate', name: '木板换栅栏门', give: { plank: 2 }, get: { fence_gate: 1 } },
     { id: 't_plank_ladder', name: '木板换梯子', give: { plank: 3 }, get: { ladder: 1 } },
-    { id: 't_brick_villa', name: '砖块换别墅', give: { brick: 64 }, get: { villa_key: 1 } }
+    { id: 't_diamond_villa', name: '钻石块换别墅', give: { diamond_block: 64 }, get: { villa_key: 1 } }
   ];
 
   var SAVE_KEY = 'xx3_mc_world_v1';
@@ -126,7 +126,8 @@
   var backpack = {};
   var equipped = null;
   var equippedBlock = null; // 手持的方块（点「使用」放置）
-  var villaBuilt = false;   // 是否已用 64 砖块换到别墅
+  var villaBuilt = false;   // 是否已用 64 钻石块换到别墅
+  var villaVer = 0;         // 别墅版本：2 = 新版 60×60；旧版（砖块 100×100）存档不再重建
   var armor = null;
   var chestContents = {};
   var freshChests = false;
@@ -327,7 +328,7 @@
   }
 
   function generateVillage(rng) {
-    var vx = 58, vz = 58; // 搬到东北角，给别墅腾出地图中央 100×100 的位置
+    var vx = 58, vz = 58; // 搬到东北角，给别墅腾出地图中央 60×60 的位置
     [[0, 0], [7, 2], [-7, 3], [2, 7], [-3, -7], [8, -5], [-8, 6], [6, -8]].forEach(function (hh) {
       var bx = vx + hh[0], bz = vz + hh[1];
       var gy = Math.max(0, heightAt(bx, bz));
@@ -335,10 +336,10 @@
     });
   }
 
-  /* ---------- 别墅：64 砖块向村民换，毛+玻璃，100×100，四层 ---------- */
-  var VILLA_X0 = -50, VILLA_Z0 = -50;     // 占地 100×100（-50..49）
+  /* ---------- 别墅：64 钻石块向村民换，毛+玻璃，60×60，四层，高度拉满 ---------- */
+  var VILLA_X0 = -30, VILLA_Z0 = -30;     // 占地 60×60（-30..29），在地图中央
   var VILLA_FLOORS = [1, 12, 23, 34];     // 一~四楼地板高度
-  var VILLA_TOP = 37;                     // 外墙最高（泳池围墙顶）
+  var VILLA_TOP = 38;                     // 外墙最高（泳池围墙顶，接近建造上限 40）
   var villaChests = [];                   // 别墅箱子：{ key, items }，每天刷新
 
   function villaSet(x, y, z, type) {
@@ -349,96 +350,112 @@
     villaChests.forEach(function (c) { chestContents[c.key] = c.items.slice(); });
   }
 
+  /* 旧版别墅（64 砖块换的 100×100）的箱子坐标：存档里残留的内容要清理掉 */
+  function oldVillaChestKeys() {
+    var keys = [vkey(20, 1, -10)];
+    for (var i = 0; i < 10; i++) {
+      keys.push(vkey(46, 12, -44 + i * 9));
+      keys.push(vkey(45, 12, -44 + i * 9));
+    }
+    return keys;
+  }
+
   function buildVilla(fromLoad) {
     var x, y, z, i;
     villaChests = [];
-    // 1) 清空占地内的树/山丘/水面上的杂物，把地面压平到 y=1 并铺一楼地板
-    for (x = VILLA_X0; x <= VILLA_X0 + 99; x++) {
-      for (z = VILLA_Z0; z <= VILLA_Z0 + 99; z++) {
-        for (y = 2; y <= 40; y++) delete world[vkey(x, y, z)];
+    // 1) 清空占地内的树/山丘/水面上的杂物（连同存档改动一起清掉），地面压平到 y=1 铺一楼地板
+    for (x = VILLA_X0; x <= VILLA_X0 + 59; x++) {
+      for (z = VILLA_Z0; z <= VILLA_Z0 + 59; z++) {
+        for (y = 1; y <= 40; y++) {
+          var ck = vkey(x, y, z);
+          delete world[ck];
+          delete changes[ck];
+        }
         world[vkey(x, 1, z)] = 'wool';
       }
     }
     // 2) 二楼/三楼/四楼地板（毛）
     VILLA_FLOORS.slice(1).forEach(function (fy) {
-      for (x = VILLA_X0; x <= VILLA_X0 + 99; x++) {
-        for (z = VILLA_Z0; z <= VILLA_Z0 + 99; z++) villaSet(x, fy, z, 'wool');
+      for (x = VILLA_X0; x <= VILLA_X0 + 59; x++) {
+        for (z = VILLA_Z0; z <= VILLA_Z0 + 59; z++) villaSet(x, fy, z, 'wool');
       }
     });
     // 3) 外墙（毛）+ 玻璃窗带
     for (y = 1; y <= VILLA_TOP; y++) {
-      for (x = VILLA_X0; x <= VILLA_X0 + 99; x++) {
+      for (x = VILLA_X0; x <= VILLA_X0 + 59; x++) {
         villaSet(x, y, VILLA_Z0, 'wool');
-        villaSet(x, y, VILLA_Z0 + 99, 'wool');
+        villaSet(x, y, VILLA_Z0 + 59, 'wool');
       }
-      for (z = VILLA_Z0; z <= VILLA_Z0 + 99; z++) {
+      for (z = VILLA_Z0; z <= VILLA_Z0 + 59; z++) {
         villaSet(VILLA_X0, y, z, 'wool');
-        villaSet(VILLA_X0 + 99, y, z, 'wool');
+        villaSet(VILLA_X0 + 59, y, z, 'wool');
       }
     }
-    [[4, 5, 6], [15, 16, 17], [26, 27, 28], [35]].forEach(function (band) {
+    [[4, 5, 6], [15, 16, 17], [26, 27, 28], [35, 36]].forEach(function (band) {
       band.forEach(function (wy) {
-        for (x = VILLA_X0 + 1; x <= VILLA_X0 + 98; x++) {
+        for (x = VILLA_X0 + 1; x <= VILLA_X0 + 58; x++) {
           villaSet(x, wy, VILLA_Z0, 'glass');
-          villaSet(x, wy, VILLA_Z0 + 99, 'glass');
+          villaSet(x, wy, VILLA_Z0 + 59, 'glass');
         }
-        for (z = VILLA_Z0 + 1; z <= VILLA_Z0 + 98; z++) {
+        for (z = VILLA_Z0 + 1; z <= VILLA_Z0 + 58; z++) {
           villaSet(VILLA_X0, wy, z, 'glass');
-          villaSet(VILLA_X0 + 99, wy, z, 'glass');
+          villaSet(VILLA_X0 + 59, wy, z, 'glass');
         }
       });
     });
     // 4) 南墙三个大门（门洞 2 格高）
-    [0, -8, 8].forEach(function (dx) {
-      villaSet(dx, 1, VILLA_Z0 + 99, 'door');
-      villaSet(dx, 2, VILLA_Z0 + 99, 'door');
+    [-10, -4, 2].forEach(function (dx) {
+      villaSet(dx, 1, VILLA_Z0 + 59, 'door');
+      villaSet(dx, 2, VILLA_Z0 + 59, 'door');
     });
-    // 5) 一楼卧室：大床、工作台、8 个熔炉、装着 20 煤的箱子
-    for (x = -8; x <= -5; x++) for (z = -6; z <= -5; z++) villaSet(x, 1, z, 'bed');
-    villaSet(0, 1, -10, 'workbench');
-    for (i = 0; i < 8; i++) villaSet(10 + i, 1, -10, 'furnace');
-    villaSet(20, 1, -10, 'chest');
+    // 5) 一楼卧室：6×4 大床、工作台、8 个熔炉、装着 20 煤的箱子
+    for (x = -22; x <= -17; x++) for (z = -8; z <= -5; z++) villaSet(x, 1, z, 'bed');
+    villaSet(-8, 1, -10, 'workbench');
+    for (i = 0; i < 8; i++) villaSet(0 + i, 1, -10, 'furnace');
+    villaSet(12, 1, -10, 'chest');
     var coal20 = [];
     for (i = 0; i < 20; i++) coal20.push('coal');
-    villaChests.push({ key: vkey(20, 1, -10), items: coal20 });
-    // 6) 二楼餐厅：20 个箱子（10 个每天 5 煤，10 个每天 2 生肉 + 1 大鱼）
+    villaChests.push({ key: vkey(12, 1, -10), items: coal20 });
+    // 6) 二楼餐厅：20 个箱子（10 个每天 5 煤，10 个每天 2 生肉 + 1 大鱼），每天刷新
     for (i = 0; i < 10; i++) {
-      var cz = -45 + i * 9;
-      villaSet(46, 12, cz, 'chest');
-      villaChests.push({ key: vkey(46, 12, cz), items: ['coal', 'coal', 'coal', 'coal', 'coal'] });
-      var mz = -44 + i * 9;
-      villaSet(45, 12, mz, 'chest');
-      villaChests.push({ key: vkey(45, 12, mz), items: ['raw_meat', 'raw_meat', 'big_fish'] });
+      var cx1 = -27 + i * 6;
+      villaSet(cx1, 12, -27, 'chest');
+      villaChests.push({ key: vkey(cx1, 12, -27), items: ['coal', 'coal', 'coal', 'coal', 'coal'] });
+      var cx2 = -27 + i * 6;
+      villaSet(cx2, 12, -3, 'chest');
+      villaChests.push({ key: vkey(cx2, 12, -3), items: ['raw_meat', 'raw_meat', 'big_fish'] });
     }
-    // 7) 三楼客厅：大沙发 + 电视机
-    for (x = -5; x <= 5; x++) {
-      villaSet(x, 23, -6, 'wool');
-      villaSet(x, 23, -7, 'wool');
+    // 7) 三楼客厅：大沙发 + 电视机（毛沙发，黑曜石+玻璃电视）
+    for (x = -20; x <= 20; x++) {
+      villaSet(x, 23, -20, 'wool');  // 沙发座
+      villaSet(x, 23, -21, 'wool');  // 沙发背
     }
-    villaSet(-5, 23, -5, 'wool');
-    villaSet(5, 23, -5, 'wool');
-    villaSet(0, 23, -10, 'obsidian');
-    villaSet(0, 24, -10, 'obsidian');
-    villaSet(0, 23, -11, 'glass');
-    villaSet(0, 24, -11, 'glass');
-    // 8) 四楼泳池：围墙 + 装满水（放在北半边，避开出生点）
+    [[-20, -19], [20, -19]].forEach(function (arm) {
+      villaSet(arm[0], 23, arm[1], 'wool');
+      villaSet(arm[0], 24, arm[1], 'wool');
+    });
+    villaSet(0, 23, -12, 'obsidian');
+    villaSet(0, 24, -12, 'obsidian');
+    villaSet(0, 23, -13, 'glass');
+    villaSet(0, 24, -13, 'glass');
+    // 8) 四楼泳池：围墙 + 装满水（中间大泳池，西南角留给梯子通道）
     for (y = 34; y <= VILLA_TOP; y++) {
-      for (x = -46; x <= 45; x++) {
-        villaSet(x, y, -46, 'wool');
-        villaSet(x, y, -9, 'wool');
+      for (x = -25; x <= 24; x++) {
+        villaSet(x, y, -25, 'wool');
+        villaSet(x, y, 24, 'wool');
       }
-      for (z = -46; z <= -9; z++) {
-        villaSet(-46, y, z, 'wool');
-        villaSet(45, y, z, 'wool');
+      for (z = -25; z <= 24; z++) {
+        villaSet(-25, y, z, 'wool');
+        villaSet(24, y, z, 'wool');
       }
     }
-    for (x = -45; x <= 44; x++) {
-      for (z = -45; z <= -10; z++) villaSet(x, 35, z, 'water');
+    for (x = -24; x <= 23; x++) {
+      for (z = -24; z <= 23; z++) villaSet(x, 35, z, 'water');
     }
-    // 9) 梯子通道：西南角直通四楼（每层地板留洞）
-    for (y = 1; y <= VILLA_TOP; y++) villaSet(-48, y, -48, 'ladder');
+    // 9) 梯子通道：西南角直通四楼
+    for (y = 1; y <= VILLA_TOP; y++) villaSet(-28, y, -28, 'ladder');
     if (!fromLoad) {
-      ['wool', 'glass', 'water', 'chest', 'bed', 'workbench', 'furnace', 'door', 'obsidian'].forEach(rebuildType);
+      ['wool', 'glass', 'water', 'chest', 'bed', 'workbench', 'furnace', 'door', 'obsidian', 'ladder'].forEach(rebuildType);
     }
     fillVillaChests();
   }
@@ -540,6 +557,9 @@
       armor = raw.armor || null;
       mode = raw.mode || 'creative';
       villaBuilt = raw.villaBuilt === true;
+      villaVer = raw.villaVer || 0;
+      // 旧别墅迁移：之前用 64 砖块换的 100×100 旧别墅直接拆除（背包物品保留）
+      if (villaBuilt && villaVer < 2) villaBuilt = false;
       savedOwned = raw.ownedMobs || [];
       // 旧存档迁移：大炮/炮弹 → 手枪/子弹
       if (backpack.cannon) {
@@ -560,6 +580,7 @@
       armor = null;
       mode = 'creative';
       villaBuilt = false;
+      villaVer = 0;
       savedOwned = [];
     }
     generateWorld(seed);
@@ -570,7 +591,11 @@
       var st = JSON.parse(localStorage.getItem(SAVE_KEY) || localStorage.getItem(MC_BACKUP_KEY) || '{}');
       if (st.chestDate === App.todayStr()) {
         if (st.chestState) {
-          Object.keys(st.chestState).forEach(function (k) { chestContents[k] = st.chestState[k]; });
+          var oldVKeys = oldVillaChestKeys();
+          Object.keys(st.chestState).forEach(function (k) {
+            if (oldVKeys.indexOf(k) !== -1) return; // 旧别墅箱子已拆除，内容不再保留
+            chestContents[k] = st.chestState[k];
+          });
         }
       } else {
         freshChests = true;
@@ -583,7 +608,7 @@
       var json = JSON.stringify({
         seed: seed, changes: changes, backpack: backpack, equipped: equipped, armor: armor,
         equippedBlock: equippedBlock, chestState: chestContents, chestDate: App.todayStr(), mode: mode,
-        villaBuilt: villaBuilt,
+        villaBuilt: villaBuilt, villaVer: villaVer,
         ownedMobs: ownedMobs.map(function (m) {
           return { type: m.type, x: m.pos.x, y: m.pos.y, z: m.pos.z };
         })
@@ -668,11 +693,12 @@
     App.toast('交换成功：' + Object.keys(t.get).map(function (id) {
       return ITEMS[id].name + '×' + t.get[id];
     }).join('、') + '！');
-    if (t.id === 't_brick_villa' && !villaBuilt) {
+    if (t.id === 't_diamond_villa' && !villaBuilt) {
       buildVilla(false);
       villaBuilt = true;
+      villaVer = 2;
       scheduleSave();
-      App.toast('🏰 别墅盖好啦！100×100 四层大别墅，去地图中央看看吧！');
+      App.toast('🏰 别墅盖好啦！60×60 四层大别墅，在地图中央（x≈0、z≈0）！');
     }
     return true;
   }

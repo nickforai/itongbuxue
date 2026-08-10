@@ -689,15 +689,16 @@ async function main() {
   await page.evaluate(() => window.__mc.explodeAt({ x: 45.5, y: 30.5, z: 45.5 }));
   await sleep(300);
   assert((await page.evaluate(() => window.__mc.blockAt(45, 30, 45))) === null, '子弹爆炸能采矿（炸掉方块）');
-  // 别墅：64 砖块换 100×100 四层别墅（毛+玻璃，四楼泳池，二楼箱子每天刷新）
-  await page.evaluate(() => { window.__mc.addItem('brick', 64); });
-  assert((await page.evaluate(() => window.__mc.trade('t_brick_villa'))) === true, '64 砖块换别墅成功');
+  // 别墅：64 钻石块换 60×60 四层别墅（毛+玻璃，四楼泳池，二楼箱子每天刷新）
+  await page.evaluate(() => { window.__mc.addItem('diamond_block', 64); });
+  assert((await page.evaluate(() => window.__mc.trade('t_diamond_villa'))) === true, '64 钻石块换别墅成功');
   await sleep(800);
   assert((await page.evaluate(() => window.__mc.villaBuilt())) === true, '别墅已建造');
-  assert((await page.evaluate(() => window.__mc.blockAt(-50, 1, -50))) === 'wool', '别墅外墙是毛（墙角）');
+  assert((await page.evaluate(() => window.__mc.blockAt(-30, 1, -30))) === 'wool', '别墅外墙是毛（墙角）');
   assert((await page.evaluate(() => window.__mc.blockAt(0, 1, 0))) === 'wool', '一楼地板是毛');
-  assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -30))) === 'water', '四楼泳池装满水');
-  assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -9))) === 'wool', '泳池围墙是毛');
+  assert((await page.evaluate(() => window.__mc.blockAt(-20, 1, -6))) === 'bed', '一楼卧室有大床');
+  assert((await page.evaluate(() => window.__mc.blockAt(-20, 35, -20))) === 'water', '四楼泳池装满水');
+  assert((await page.evaluate(() => window.__mc.blockAt(-25, 35, -20))) === 'wool', '泳池围墙是毛');
   const villaInfo = await page.evaluate(() => {
     const keys = window.__mc.villaChestKeys();
     return {
@@ -730,7 +731,29 @@ async function main() {
   await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
   await sleep(1500);
   assert((await page.evaluate((k) => window.__mc.chestAt(k).filter((x) => x === 'coal').length, villaInfo.dailyKey)) === 5, '新的一天二楼煤箱重新装满 5 个煤炭');
-  assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -30))) === 'water', '重新进入游戏后别墅泳池还在');
+  assert((await page.evaluate(() => window.__mc.blockAt(-20, 35, -20))) === 'water', '重新进入游戏后别墅泳池还在');
+  // 旧别墅迁移：以前用 64 砖块换的旧别墅存档自动拆除（背包物品保留）
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('xx3_mc_world_v1'));
+    raw.villaBuilt = true;
+    delete raw.villaVer; // 模拟旧版存档（没有版本号）
+    raw.chestState = raw.chestState || {};
+    raw.chestState['20,1,-10'] = ['coal', 'coal']; // 旧别墅一楼煤箱残留
+    const today = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    raw.chestDate = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+    localStorage.setItem('xx3_mc_world_v1', JSON.stringify(raw));
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    d.mcChances = 1;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.click('#mcStartBtn');
+  await page.waitForSelector('#mcGame:not(.hidden)', { timeout: 5000 });
+  await sleep(1200);
+  assert((await page.evaluate(() => window.__mc.villaBuilt())) === false, '旧别墅存档已拆除（不再重建）');
+  assert((await page.evaluate(() => window.__mc.chestAt('20,1,-10').length)) === 0, '旧别墅箱子内容已清理');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 35, -30))) === null, '旧别墅泳池已拆除');
   // 昼夜：白天不生成、夜晚标记
   await page.evaluate(() => { window.__mc.setTime(0.3); });
   await sleep(300);
