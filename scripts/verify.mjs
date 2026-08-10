@@ -701,6 +701,8 @@ async function main() {
   assert((await page.evaluate(() => window.__mc.blockAt(0, 12, 0))) === 'plank', '二楼地板是木板色');
   assert((await page.evaluate(() => window.__mc.blockAt(0, 23, 0))) === 'plank', '三楼地板是木板色');
   assert((await page.evaluate(() => window.__mc.blockAt(0, 34, 0))) === 'plank', '四楼地板是木板色');
+  assert((await page.evaluate(() => window.__mc.blockAt(0, 39, 0))) === 'wool', '别墅楼顶铺满白色屋顶');
+  assert((await page.evaluate(() => window.__mc.blockAt(-20, 39, -20))) === 'wool', '泳池上方也有白色屋顶');
   assert((await page.evaluate(() => window.__mc.blockAt(-20, 1, -6))) === 'bed', '一楼卧室有大床');
   assert((await page.evaluate(() => window.__mc.blockAt(0, 23, -20))) === 'sofa', '三楼客厅有大沙发');
   assert((await page.evaluate(() => window.__mc.blockAt(-20, 35, -20))) === 'water', '四楼泳池装满水');

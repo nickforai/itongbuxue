@@ -461,7 +461,11 @@
     for (x = -24; x <= 23; x++) {
       for (z = -24; z <= 23; z++) villaSet(x, 35, z, 'water');
     }
-    // 9) 梯子通道：西南角直通四楼
+    // 9) 楼顶：铺满白色毛屋顶，把顶上的空气方块盖成白色方块
+    for (x = VILLA_X0; x <= VILLA_X0 + 59; x++) {
+      for (z = VILLA_Z0; z <= VILLA_Z0 + 59; z++) villaSet(x, VILLA_TOP + 1, z, 'wool');
+    }
+    // 10) 梯子通道：西南角直通四楼
     for (y = 1; y <= VILLA_TOP; y++) villaSet(-28, y, -28, 'ladder');
     if (!fromLoad) {
       ['wool', 'glass', 'water', 'chest', 'bed', 'workbench', 'furnace', 'door', 'obsidian', 'ladder', 'diamond_block', 'plank', 'sofa'].forEach(rebuildType);
