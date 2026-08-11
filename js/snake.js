@@ -57,13 +57,18 @@
   function startGame() {
     canvas = App.el('snCanvas');
     ctx = canvas.getContext('2d');
+    App.el('snLobby').classList.add('hidden');
+    App.el('snOver').classList.add('hidden');
+    App.el('snGame').classList.remove('hidden');
     var rect = canvas.parentElement.getBoundingClientRect();
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-    cell = Math.floor(Math.min(rect.width / COLS, rect.height / ROWS));
+    var cw2 = Math.max(300, Math.floor(rect.width));
+    var ch2 = Math.max(360, Math.floor(rect.height));
+    canvas.width = cw2 * dpr;
+    canvas.height = ch2 * dpr;
+    canvas.style.width = cw2 + 'px';
+    canvas.style.height = ch2 + 'px';
+    cell = Math.floor(Math.min(cw2 / COLS, ch2 / ROWS));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     snake = [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }];
@@ -76,9 +81,6 @@
     over = false;
     timeUp = false;
     placeFood();
-    App.el('snLobby').classList.add('hidden');
-    App.el('snOver').classList.add('hidden');
-    App.el('snGame').classList.remove('hidden');
     updateHud();
     startTimer();
     if (rafId) cancelAnimationFrame(rafId);

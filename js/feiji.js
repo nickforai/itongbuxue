@@ -249,6 +249,9 @@
   function startGame() {
     canvas = App.el('fjCanvas');
     ctx = canvas.getContext('2d');
+    App.el('fjLobby').classList.add('hidden');
+    App.el('fjOver').classList.add('hidden');
+    App.el('fjGame').classList.remove('hidden');
     resize();
     score = 0; sessCoins = 0; lives = 5;
     running = true; gameOver = false; timeUp = false;
@@ -259,9 +262,6 @@
       stars.push({ x: Math.random() * cw, y: Math.random() * ch, s: Math.random() * 1.6 + 0.4, v: Math.random() * 40 + 10 });
     }
     fireCooldown = 0; spawnCooldown = 0.6; invulnUntil = 0;
-    App.el('fjLobby').classList.add('hidden');
-    App.el('fjOver').classList.add('hidden');
-    App.el('fjGame').classList.remove('hidden');
     App.el('fjBlackHoleBtn').classList.toggle('hidden', plane().id !== 'rainbow');
     blackHole.active = false;
     blackHole.readyAt = 0;
