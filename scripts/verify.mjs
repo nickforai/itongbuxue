@@ -989,6 +989,24 @@ async function main() {
   assert(lz.laserActive === true && lz.laserLen > 20, '按住激光键激光伸出');
   assert(lz.score > scBefore, '激光能击落敌机得分');
   await page.evaluate(() => window.__feiji.laserOff());
+  // 钻石战机：一发三钻（威力同黄金战机）
+  await page.evaluate(() => { window.__feiji.givePlane('diamond'); window.__feiji.equipPlane('diamond'); });
+  await sleep(800); // 等自动开火打出钻石弹
+  const diaKinds = await page.evaluate(() => window.__feiji.bulletKinds());
+  assert(diaKinds.filter((k) => k === 'dia').length >= 2, '钻石战机一次发出 3 颗钻石弹');
+  // 彩虹号：黑洞摧毁一切
+  await page.evaluate(() => { window.__feiji.givePlane('rainbow'); window.__feiji.equipPlane('rainbow'); });
+  await page.evaluate(() => {
+    window.__feiji.clearBullets(); // 清掉飞行中的子弹，避免误杀测试敌机
+    window.__feiji.spawnEnemy(0.1);
+    window.__feiji.spawnEnemy(0.1);
+    window.__feiji.spawnEnemy(0.1);
+  });
+  await sleep(200);
+  assert((await page.evaluate(() => window.__feiji.state().enemies)) >= 3, '已生成 3 架敌机');
+  assert((await page.evaluate(() => window.__feiji.blackHole())) === true, '彩虹号可以召唤黑洞');
+  await sleep(900);
+  assert((await page.evaluate(() => window.__feiji.state().enemies)) === 0, '黑洞摧毁所有敌机');
   // 时间到结算
   await page.evaluate(() => window.__feiji.forceTimeUp());
   await sleep(300);

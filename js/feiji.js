@@ -11,7 +11,7 @@
     { id: 'purple', name: '紫电', emoji: '🟣', rarity: 1, color: '#b06ef5', dmg: 1, rate: 1, coins: 1 },
     { id: 'red', name: '烈焰号', emoji: '🔴', rarity: 1, color: '#ff5d5d', dmg: 2, rate: 0, coins: 1 },
     { id: 'gold', name: '黄金战机', emoji: '🟡', rarity: 2, color: '#ffd166', dmg: 1, rate: 1, coins: 3 },
-    { id: 'diamond', name: '钻石战机', emoji: '💎', rarity: 3, color: '#7df9ff', dmg: 3, rate: 1, coins: 2 },
+    { id: 'diamond', name: '钻石战机', emoji: '💎', rarity: 3, color: '#7df9ff', dmg: 1, rate: 1, coins: 2 },
     { id: 'rainbow', name: '彩虹号', emoji: '🌈', rarity: 3, color: '#ff9ff3', dmg: 2, rate: 2, coins: 2 }
   ];
   var RARITY_NAME = ['普通', '稀有', '史诗', '传说'];
@@ -262,6 +262,9 @@
     App.el('fjLobby').classList.add('hidden');
     App.el('fjOver').classList.add('hidden');
     App.el('fjGame').classList.remove('hidden');
+    App.el('fjBlackHoleBtn').classList.toggle('hidden', plane().id !== 'rainbow');
+    blackHole.active = false;
+    blackHole.readyAt = 0;
     updateHud();
     startTimer();
     if (rafId) cancelAnimationFrame(rafId);
@@ -296,12 +299,24 @@
 
   /* 激光：按住伸缩键发射，松开收回 */
   var laser = { active: false, len: 0, width: 36 };
+  var blackHole = { active: false, t: 0, readyAt: 0, x: 0, y: 0 };
   App.el('fjLaserBtn').addEventListener('pointerdown', function (e) {
     e.preventDefault();
     laser.active = true;
   });
   App.el('fjLaserBtn').addEventListener('pointerup', function () { laser.active = false; });
   App.el('fjLaserBtn').addEventListener('pointercancel', function () { laser.active = false; });
+  App.el('fjBlackHoleBtn').addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    if (plane().id !== 'rainbow') return;
+    if (Date.now() < blackHole.readyAt) { App.toast('🕳️ 黑洞还在冷却中…'); return; }
+    blackHole.active = true;
+    blackHole.t = 0;
+    blackHole.readyAt = Date.now() + 8000;
+    blackHole.x = cw / 2;
+    blackHole.y = ch / 2;
+    App.toast('🕳️ 黑洞！吞噬一切！');
+  });
 
   function loop(ts) {
     if (!running) return;
@@ -318,13 +333,24 @@
       s.y += s.v * dt;
       if (s.y > ch) { s.y = -2; s.x = Math.random() * cw; }
     });
-    // 自动开火
+    // 自动开火（钻石战机一发三钻，黄金战机单发金弹）
     fireCooldown -= dt;
     if (fireCooldown <= 0) {
       fireCooldown = fireInterval();
-      bullets.push({ x: player.x, y: player.y - 30, vy: -620, w: 6, h: 16, dmg: bulletDamage() });
-      if (save.bulletLv >= 3) bullets.push({ x: player.x - 16, y: player.y - 24, vy: -620, w: 5, h: 13, dmg: 1 });
-      if (save.bulletLv >= 5) bullets.push({ x: player.x + 16, y: player.y - 24, vy: -620, w: 5, h: 13, dmg: 1 });
+      var pid = plane().id;
+      if (pid === 'diamond') {
+        var ddmg = bulletDamage();
+        bullets.push({ x: player.x, y: player.y - 28, vx: 0, vy: -620, w: 7, h: 7, dmg: ddmg, kind: 'dia' });
+        bullets.push({ x: player.x - 12, y: player.y - 24, vx: -70, vy: -600, w: 7, h: 7, dmg: ddmg, kind: 'dia' });
+        bullets.push({ x: player.x + 12, y: player.y - 24, vx: 70, vy: -600, w: 7, h: 7, dmg: ddmg, kind: 'dia' });
+      } else {
+        var kind = pid === 'gold' ? 'gold' : 'norm';
+        var bw = pid === 'gold' ? 10 : 6;
+        var bh = pid === 'gold' ? 20 : 16;
+        bullets.push({ x: player.x, y: player.y - 30, vx: 0, vy: -620, w: bw, h: bh, dmg: bulletDamage(), kind: kind });
+        if (save.bulletLv >= 3) bullets.push({ x: player.x - 16, y: player.y - 24, vx: 0, vy: -620, w: 5, h: 13, dmg: 1, kind: kind });
+        if (save.bulletLv >= 5) bullets.push({ x: player.x + 16, y: player.y - 24, vx: 0, vy: -620, w: 5, h: 13, dmg: 1, kind: kind });
+      }
     }
     // 敌机生成
     spawnCooldown -= dt;
@@ -336,6 +362,7 @@
     for (var i = bullets.length - 1; i >= 0; i--) {
       var b = bullets[i];
       b.y += b.vy * dt;
+      b.x += (b.vx || 0) * dt;
       if (b.y < -20) bullets.splice(i, 1);
     }
     // 敌机
@@ -361,13 +388,24 @@
     var laserTarget = laser.active ? player.y : 0;
     laser.len += (laserTarget - laser.len) * Math.min(1, dt * 9);
     if (laser.len > 24) {
+      var rainbowLaser = plane().id === 'rainbow'; // 彩虹号激光摧毁一切
       for (var li = enemies.length - 1; li >= 0; li--) {
         var le = enemies[li];
         if (le.y > player.y - 30) continue;
-        if (Math.abs(le.x - player.x) < (le.w / 2) + laser.width / 2) {
-          le.hp -= laserDps() * dt;
-          le.flash = 0.08;
-          if (le.hp <= 0) destroyEnemy(li);
+        if (!rainbowLaser && Math.abs(le.x - player.x) >= (le.w / 2) + laser.width / 2) continue;
+        le.hp -= laserDps() * dt;
+        le.flash = 0.08;
+        if (le.hp <= 0) destroyEnemy(li);
+      }
+    }
+    // 彩虹号黑洞：吞噬一切
+    if (blackHole.active) {
+      blackHole.t += dt;
+      if (blackHole.t >= 0.55) {
+        blackHole.active = false;
+        for (var hi = enemies.length - 1; hi >= 0; hi--) {
+          explode(enemies[hi].x, enemies[hi].y, enemies[hi].color);
+          destroyEnemy(hi);
         }
       }
     }
@@ -450,10 +488,21 @@
     });
     g.globalAlpha = 1;
     bullets.forEach(function (b) {
-      g.fillStyle = '#ffd166';
-      g.shadowColor = '#ffd166';
-      g.shadowBlur = 8;
-      g.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+      if (b.kind === 'dia') {
+        g.fillStyle = '#7df9ff';
+        g.shadowColor = '#7df9ff';
+        g.shadowBlur = 12;
+        g.save();
+        g.translate(b.x, b.y);
+        g.rotate(Math.PI / 4);
+        g.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+        g.restore();
+      } else {
+        g.fillStyle = b.kind === 'gold' ? '#ffdf8a' : '#ffd166';
+        g.shadowColor = '#ffd166';
+        g.shadowBlur = b.kind === 'gold' ? 14 : 8;
+        g.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+      }
     });
     g.shadowBlur = 0;
     enemies.forEach(function (e) {
@@ -483,6 +532,24 @@
       g.shadowBlur = 0;
       g.fillStyle = 'rgba(255,255,255,0.85)';
       g.fillRect(player.x - 3, player.y - laser.len, 6, laser.len);
+    }
+    // 黑洞：旋转吞噬特效
+    if (blackHole.active) {
+      var bp = Math.min(1, blackHole.t / 0.55);
+      var br = 24 + bp * cw * 0.45;
+      var bg = g.createRadialGradient(blackHole.x, blackHole.y, 0, blackHole.x, blackHole.y, br);
+      bg.addColorStop(0, 'rgba(0,0,0,0.95)');
+      bg.addColorStop(0.55, 'rgba(76,29,149,0.85)');
+      bg.addColorStop(1, 'rgba(76,29,149,0)');
+      g.fillStyle = bg;
+      g.beginPath();
+      g.arc(blackHole.x, blackHole.y, br, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = 'rgba(196,181,253,0.9)';
+      g.lineWidth = 3;
+      g.beginPath();
+      g.arc(blackHole.x, blackHole.y, br * 0.55, 0, Math.PI * 2);
+      g.stroke();
     }
     if (Date.now() < invulnUntil && Math.floor(Date.now() / 100) % 2 === 0) g.globalAlpha = 0.4;
     drawPlayerPlane(plane(), player.x, player.y, player.w + 8, player.h + 8);
@@ -852,8 +919,26 @@
         running: running, score: score, lives: lives, sessCoins: sessCoins,
         enemies: enemies ? enemies.length : 0, bullets: bullets ? bullets.length : 0, best: save.best,
         equipped: save.equipped, hangar: Object.keys(save.hangar || {}).length,
-        laserActive: laser.active, laserLen: laser.len
+        laserActive: laser.active, laserLen: laser.len, blackHoleActive: blackHole.active
       };
+    },
+    givePlane: function (id) {
+      save.hangar[id] = (save.hangar[id] || 0) + 1;
+      saveNow();
+      renderLobby();
+      return true;
+    },
+    bulletKinds: function () {
+      return bullets ? bullets.map(function (b) { return b.kind || 'norm'; }) : [];
+    },
+    clearBullets: function () { bullets = []; return true; },
+    blackHole: function () {
+      if (plane().id !== 'rainbow') return false;
+      blackHole.active = true;
+      blackHole.t = 0;
+      blackHole.x = cw / 2;
+      blackHole.y = ch / 2;
+      return true;
     },
     start: startGame,
     spawnEnemy: spawnEnemy,

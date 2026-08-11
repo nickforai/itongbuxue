@@ -1703,4 +1703,10 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   box-shadow: 0 6px 22px rgba(37, 99, 235, 0.6);
   touch-action: none;
 }
+.fj-blackhole-btn {
+  right: 122px;
+  background: radial-gradient(circle at 35% 30%, #4c1d95, #0b0b1e);
+  border-color: rgba(196, 181, 253, 0.8);
+  box-shadow: 0 6px 22px rgba(76, 29, 149, 0.7);
+}
 #fjGame { position: relative; }
