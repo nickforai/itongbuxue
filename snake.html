@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=65">
+  <link rel="stylesheet" href="css/style.css?v=66">
 </head>
 <body class="snake-body">
   <div class="page snake-page">
@@ -27,7 +27,8 @@
       <div class="sn-panel">
         <h2>🐍 贪吃蛇</h2>
         <p style="color:var(--muted);font-size:.92rem;line-height:1.7;margin-bottom:14px">
-          滑动或按方向键控制小蛇，吃掉红苹果长长长，<b>5 颗星星 = 1 次机会</b>。撞墙或咬到自己就结束啦！
+          🍎苹果 1 分 · 🍕披萨 2 分 · 🍔汉堡 2 分 · 🍗炸鸡桶 40 分<br>
+          滑动或按方向键控制小蛇，<b>10 个机器人</b>陪你一起抢食物，<b>5 颗星星 = 1 次机会</b>。你被撞到就结束啦！
         </p>
         <div class="stat-grid" style="margin-bottom:16px">
           <div class="stat-cell"><div class="sv" id="snJifen">0</div><div class="sl">⭐ 星星</div></div>
@@ -43,8 +44,9 @@
     <!-- 对局 -->
     <section id="snGame" class="hidden">
       <div class="sn-hud">
-        <span id="snScore">🍎 0</span>
+        <span id="snScore">🏆 0</span>
         <span id="snLen">🐍 3</span>
+        <span id="snRobots">🤖 0</span>
         <span id="snTimer">⏰ 10:00</span>
       </div>
       <div class="sn-stage">
@@ -70,7 +72,7 @@
     </section>
   </div>
 
-  <script src="js/common.js?v=65"></script>
-  <script src="js/snake.js?v=65"></script>
+  <script src="js/common.js?v=66"></script>
+  <script src="js/snake.js?v=66"></script>
 </body>
 </html>

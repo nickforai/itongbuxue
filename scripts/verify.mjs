@@ -1034,6 +1034,7 @@ async function main() {
   await sleep(400);
   assert((await page.evaluate(() => window.__snake.state().running)) === true, '贪吃蛇开始');
   assert((await page.textContent('#snTimer')).includes(':'), '贪吃蛇限时倒计时显示');
+  await page.evaluate(() => window.__snake.setRobots(0)); // 关闭机器人，保证吃苹果测试稳定
   const sn1 = await page.evaluate(() => window.__snake.state());
   assert((await page.evaluate(() => window.__snake.forceStep())) === true, '蛇能前进');
   assert((await page.evaluate(() => window.__snake.state().x)) === sn1.x + 1, '蛇头向前移动一格');
@@ -1041,6 +1042,15 @@ async function main() {
   await page.evaluate(() => window.__snake.forceStep());
   const snEat = await page.evaluate(() => window.__snake.state());
   assert(snEat.score >= 1 && snEat.len >= sn1.len + 1, '吃到苹果变长加分');
+  // 10 个机器人陪我玩，会自己移动抢食物
+  await page.evaluate(() => window.__snake.setRobots(10));
+  await sleep(300);
+  assert((await page.evaluate(() => window.__snake.robotCount())) >= 8, '10 个机器人陪我玩（死了会自动重生）');
+  const rh1 = await page.evaluate(() => window.__snake.state().robotHeads);
+  await sleep(800);
+  const rh2 = await page.evaluate(() => window.__snake.state().robotHeads);
+  const robotMoved = rh1.some((h, i) => h && rh2[i] && (h[0] !== rh2[i][0] || h[1] !== rh2[i][1]));
+  assert(robotMoved, '机器人会自己移动抢食物');
   await page.evaluate(() => window.__snake.forceTimeUp());
   await sleep(300);
   assert((await page.locator('#snOver:not(.hidden)').count()) === 1, '时间到弹出结算');
