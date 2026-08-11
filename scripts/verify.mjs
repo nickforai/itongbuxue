@@ -1013,6 +1013,39 @@ async function main() {
   assert((await page.locator('#fjOver:not(.hidden)').count()) === 1, '时间到弹出结算');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
+  /* ---------- 贪吃蛇 ---------- */
+  console.log('\n[8d] 贪吃蛇');
+  fresh();
+  await page.goto(BASE + 'snake.html', { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    d.balance = 20;
+    d.snakeChances = 0;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+    localStorage.removeItem('xx3_snake_v1');
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert((await page.textContent('#snJifen')) === '20', '贪吃蛇显示星星 20');
+  await page.click('#snRedeemBtn');
+  await sleep(200);
+  assert((await page.textContent('#snChances')) === '1', '5 星星兑换 1 次机会');
+  assert((await page.textContent('#snJifen')) === '15', '兑换后剩 15 星星');
+  await page.click('#snStartBtn');
+  await sleep(400);
+  assert((await page.evaluate(() => window.__snake.state().running)) === true, '贪吃蛇开始');
+  assert((await page.textContent('#snTimer')).includes(':'), '贪吃蛇限时倒计时显示');
+  const sn1 = await page.evaluate(() => window.__snake.state());
+  assert((await page.evaluate(() => window.__snake.forceStep())) === true, '蛇能前进');
+  assert((await page.evaluate(() => window.__snake.state().x)) === sn1.x + 1, '蛇头向前移动一格');
+  await page.evaluate((s) => window.__snake.spawnFoodAt(s.x + 2, s.y), sn1);
+  await page.evaluate(() => window.__snake.forceStep());
+  const snEat = await page.evaluate(() => window.__snake.state());
+  assert(snEat.score >= 1 && snEat.len >= sn1.len + 1, '吃到苹果变长加分');
+  await page.evaluate(() => window.__snake.forceTimeUp());
+  await sleep(300);
+  assert((await page.locator('#snOver:not(.hidden)').count()) === 1, '时间到弹出结算');
+  assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
+
   /* ---------- 生字 ---------- */
   console.log('\n[9] 生字');
   fresh();
