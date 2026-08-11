@@ -1013,47 +1013,38 @@ async function main() {
   assert((await page.locator('#fjOver:not(.hidden)').count()) === 1, '时间到弹出结算');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
-  /* ---------- 贪吃蛇 ---------- */
-  console.log('\n[8d] 贪吃蛇');
+  /* ---------- 台球 ---------- */
+  console.log('\n[8d] 台球');
   fresh();
-  await page.goto(BASE + 'snake.html', { waitUntil: 'networkidle' });
+  await page.goto(BASE + 'pool.html', { waitUntil: 'networkidle' });
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
-    d.balance = 20;
-    d.snakeChances = 0;
+    d.balance = 60;
     localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
-    localStorage.removeItem('xx3_snake_v1');
+    localStorage.removeItem('xx3_pool_v1');
   });
   await page.reload({ waitUntil: 'networkidle' });
-  assert((await page.textContent('#snJifen')) === '20', '贪吃蛇显示星星 20');
-  await page.click('#snRedeemBtn');
-  await sleep(200);
-  assert((await page.textContent('#snChances')) === '1', '5 星星兑换 1 次机会');
-  assert((await page.textContent('#snJifen')) === '15', '兑换后剩 15 星星');
-  await page.click('#snStartBtn');
-  await sleep(400);
-  assert((await page.evaluate(() => window.__snake.state().running)) === true, '贪吃蛇开始');
-  assert((await page.textContent('#snTimer')).includes(':'), '贪吃蛇限时倒计时显示');
-  await page.evaluate(() => window.__snake.setRobots(0)); // 关闭机器人，保证吃苹果测试稳定
-  const sn1 = await page.evaluate(() => window.__snake.state());
-  assert((await page.evaluate(() => window.__snake.forceStep())) === true, '蛇能前进');
-  assert((await page.evaluate(() => window.__snake.state().x)) === sn1.x + 1, '蛇头向前移动一格');
-  await page.evaluate((s) => window.__snake.spawnFoodAt(s.x + 2, s.y), sn1);
-  await page.evaluate(() => window.__snake.forceStep());
-  const snEat = await page.evaluate(() => window.__snake.state());
-  assert(snEat.score >= 1 && snEat.len >= sn1.len + 1, '吃到苹果变长加分');
-  // 10 个机器人陪我玩，会自己移动抢食物
-  await page.evaluate(() => window.__snake.setRobots(10));
+  assert((await page.textContent('#plJifen')) === '60', '台球显示星星 60');
+  assert((await page.evaluate(() => window.__pool.buyCue('wood'))) === true, '用 5 星买木质球杆');
+  assert((await page.textContent('#plJifen')) === '55', '买球杆花掉 5 星');
+  assert((await page.evaluate(() => window.__pool.buyCue('gold'))) === true, '用 50 星买金龙球杆');
+  assert((await page.textContent('#plJifen')) === '5', '买金龙花掉 50 星');
+  assert((await page.evaluate(() => window.__pool.equipCue('gold'))) === true, '装备金龙球杆');
+  assert((await page.evaluate(() => window.__pool.state().aim)) === 4, '金龙球杆横杠等级 4');
+  await page.click('#plPlayBtn');
+  await sleep(500);
+  assert((await page.evaluate(() => window.__pool.state().balls)) === 7, '台球开局：白球 + 6 颗球');
+  await page.evaluate(() => { window.__pool.aim(1, 0); window.__pool.setPower(0); });
+  assert((await page.evaluate(() => window.__pool.shoot())) === false, '力度为 0 不能发射');
+  const cueBefore = await page.evaluate(() => window.__pool.state().cueX);
+  await page.evaluate(() => window.__pool.setPower(60));
+  assert((await page.evaluate(() => window.__pool.shoot())) === true, '有力度可以发射');
+  await sleep(600);
+  assert(Math.abs((await page.evaluate(() => window.__pool.state().cueX)) - cueBefore) > 1, '白球被打出去移动了');
+  await page.evaluate(() => window.__pool.sinkAll());
   await sleep(300);
-  assert((await page.evaluate(() => window.__snake.robotCount())) >= 8, '10 个机器人陪我玩（死了会自动重生）');
-  const rh1 = await page.evaluate(() => window.__snake.state().robotHeads);
-  await sleep(800);
-  const rh2 = await page.evaluate(() => window.__snake.state().robotHeads);
-  const robotMoved = rh1.some((h, i) => h && rh2[i] && (h[0] !== rh2[i][0] || h[1] !== rh2[i][1]));
-  assert(robotMoved, '机器人会自己移动抢食物');
-  await page.evaluate(() => window.__snake.forceTimeUp());
-  await sleep(300);
-  assert((await page.locator('#snOver:not(.hidden)').count()) === 1, '时间到弹出结算');
+  assert((await page.locator('#plOver:not(.hidden)').count()) === 1, '全清台弹出结算');
+  assert((await page.textContent('#plOverWins')) === '1', '清台次数 +1');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
   /* ---------- 生字 ---------- */

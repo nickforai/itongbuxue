@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="台球">
+  <meta name="format-detection" content="telephone=no">
+  <title>台球 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=67">
+</head>
+<body class="pool-body">
+  <div class="page pool-page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🎱 台球</h1>
+      <div class="star-pill" id="plJifenPill">⭐ 0</div>
+    </div>
+
+    <!-- 球杆商店 -->
+    <section id="plShop">
+      <div class="pl-panel">
+        <h2>🏪 球杆商店</h2>
+        <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:12px">
+          做题赚星星，买更好的球杆！球杆越好，<b>瞄准的横杠越长</b>，还能预测白球撞到的球最终滚向哪里。
+        </p>
+        <div class="pl-stats">
+          <div class="pl-stat"><span class="pl-sv" id="plJifen">0</span><span class="pl-sl">⭐ 星星</span></div>
+          <div class="pl-stat"><span class="pl-sv" id="plWins">0</span><span class="pl-sl">🏆 清台</span></div>
+        </div>
+        <div class="pl-cues" id="plCueList"></div>
+        <button class="btn btn-gold" id="plPlayBtn" disabled>🎱 开始打台球（先买一根球杆）</button>
+      </div>
+    </section>
+
+    <!-- 对局 -->
+    <section id="plGame" class="hidden">
+      <div class="pl-hud">
+        <span id="plScore">🎱 进球 0/6</span>
+        <span id="plTimer">⏰ 10:00</span>
+      </div>
+      <div class="pl-stage">
+        <canvas id="plCanvas"></canvas>
+        <div class="pl-power" id="plPower">
+          <div class="pl-power-fill" id="plPowerFill"></div>
+          <span class="pl-power-label">↓拉</span>
+        </div>
+      </div>
+      <div class="pl-tip">👆 桌面上拖动瞄准 · 右侧力度条往下拉蓄力，松开发射（拉到 0 不能发射）</div>
+    </section>
+
+    <!-- 结算 -->
+    <section id="plOver" class="hidden pl-over">
+      <div class="pl-over-box">
+        <div class="pl-over-title" id="plOverTitle">🎉 全清台！</div>
+        <div class="pl-over-line">🏆 清台 <b id="plOverWins">0</b> 次</div>
+        <button class="btn btn-gold" id="plAgainBtn">🔄 再来一局</button>
+        <button class="btn btn-ghost" id="plHomeBtn">🏠 回商店</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js?v=67"></script>
+  <script src="js/pool.js?v=67"></script>
+</body>
+</html>

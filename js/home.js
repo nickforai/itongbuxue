@@ -18,9 +18,6 @@
   document.querySelectorAll('[data-feiji-chances-key]').forEach(function (node) {
     node.textContent = '✈️ 机会 ' + (data.feijiChances || 0);
   });
-  document.querySelectorAll('[data-snake-chances-key]').forEach(function (node) {
-    node.textContent = '🐍 机会 ' + (data.snakeChances || 0);
-  });
 
   var btn = App.el('checkinBtn');
   var today = App.todayStr();

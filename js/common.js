@@ -19,7 +19,6 @@
       chances: 0,
       mcChances: 0,
       feijiChances: 0,
-      snakeChances: 0,
       games: { played: 0, won: 0 },
       learned: {},
       checkins: [],
@@ -143,22 +142,6 @@
     if ((data.feijiChances || 0) < 1) return false;
     data.feijiChances -= 1;
     data.games.feijiPlayed = (data.games.feijiPlayed || 0) + 1;
-    store.save(data);
-    return true;
-  }
-
-  function redeemSnakeChance(data) {
-    if ((data.balance || 0) < 5) return false;
-    data.balance -= 5;
-    data.snakeChances = (data.snakeChances || 0) + 1;
-    store.save(data);
-    return true;
-  }
-
-  function useSnakeChance(data) {
-    if ((data.snakeChances || 0) < 1) return false;
-    data.snakeChances -= 1;
-    data.games.snakePlayed = (data.games.snakePlayed || 0) + 1;
     store.save(data);
     return true;
   }
@@ -325,8 +308,6 @@
     useMcChance: useMcChance,
     redeemFeijiChance: redeemFeijiChance,
     useFeijiChance: useFeijiChance,
-    redeemSnakeChance: redeemSnakeChance,
-    useSnakeChance: useSnakeChance,
     totalStars: totalStars,
     logActivity: logActivity,
     toast: toast,

@@ -1785,3 +1785,115 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .sn-over-line { font-size: 1rem; margin: 8px 0; color: #bfe8d2; }
 .sn-over-line b { color: #ffd166; font-size: 1.2rem; }
 .sn-over-box .btn { margin-top: 10px; }
+
+/* ============ 台球 ============ */
+.pool-body { background: #0e1526; }
+.pool-page { padding: 12px 14px 26px; }
+.pl-panel {
+  background: linear-gradient(160deg, #1d3a2a, #15263a);
+  border: 1px solid rgba(80, 190, 130, 0.4);
+  border-radius: 16px;
+  padding: 18px;
+  color: #e8f6ee;
+  box-shadow: 0 6px 22px rgba(10, 20, 40, 0.6);
+}
+.pl-stats { display: flex; gap: 10px; margin: 12px 0; }
+.pl-stat {
+  flex: 1;
+  background: rgba(20, 40, 60, 0.6);
+  border: 1px solid rgba(120, 200, 160, 0.35);
+  border-radius: 12px;
+  padding: 8px;
+  text-align: center;
+}
+.pl-sv { font-size: 1.3rem; font-weight: 800; color: #ffd166; display: block; }
+.pl-sl { font-size: .75rem; color: #a9d8c2; }
+.pl-cue-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: rgba(20, 40, 60, 0.55);
+  border: 1px solid rgba(120, 200, 160, 0.25);
+  border-radius: 12px;
+}
+.pl-cue-row.on { border-color: #ffd166; background: rgba(50, 70, 90, 0.6); }
+.pl-cue-emoji { font-size: 1.6rem; }
+.pl-cue-info { flex: 1; }
+.pl-cue-info div:first-child { font-size: .98rem; }
+.pl-aim { color: #7dd3fc; font-size: .75rem; margin-left: 4px; }
+.pl-cue-desc { font-size: .76rem; color: #a9d8c2; margin-top: 2px; }
+.pl-cue-btn { width: auto; min-width: 76px; padding: 8px 12px; font-size: .9rem; }
+#plPlayBtn { width: 100%; margin-top: 4px; }
+.pl-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(14, 21, 38, 0.92);
+  border: 1px solid rgba(80, 190, 130, 0.35);
+  border-radius: 12px;
+  padding: 8px 12px;
+  color: #dff3e8;
+  margin-bottom: 10px;
+}
+.pl-hud .warn { color: #ff6b6b; font-weight: 800; animation: blink 0.8s infinite; }
+.pl-stage { position: relative; border-radius: 12px; overflow: hidden; }
+#plCanvas { display: block; width: 100%; height: min(68vh, 640px); touch-action: none; }
+.pl-power {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  bottom: 10px;
+  width: 34px;
+  border-radius: 18px;
+  background: rgba(10, 14, 30, 0.75);
+  border: 2px solid rgba(255, 209, 102, 0.6);
+  overflow: hidden;
+  touch-action: none;
+}
+.pl-power-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0%;
+  background: linear-gradient(#4caf50, #ffd166);
+  border-radius: 0 0 16px 16px;
+}
+.pl-power-label {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  pointer-events: none;
+}
+.pl-tip { color: #a9d8c2; font-size: .8rem; margin-top: 8px; line-height: 1.7; }
+.pl-over {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 14, 28, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.pl-over-box {
+  width: 84%;
+  max-width: 360px;
+  background: linear-gradient(160deg, #1d3a2a, #15263a);
+  border: 1px solid rgba(80, 190, 130, 0.5);
+  border-radius: 18px;
+  padding: 24px 20px;
+  text-align: center;
+  color: #e8f6ee;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);
+}
+.pl-over-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; }
+.pl-over-line { font-size: 1rem; margin: 8px 0; color: #bfe8d2; }
+.pl-over-line b { color: #ffd166; font-size: 1.2rem; }
+.pl-over-box .btn { margin-top: 10px; }
