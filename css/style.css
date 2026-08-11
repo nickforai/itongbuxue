@@ -1534,3 +1534,119 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   0% { transform: translateY(0) scale(0.6); opacity: 1; }
   100% { transform: translateY(-72vh) scale(1.5); opacity: 0; }
 }
+
+/* ============ 飞机大战 ============ */
+.fj-body { background: #12163f; }
+.fj-page { padding: 12px 14px 26px; }
+.fj-topbar { background: linear-gradient(90deg, #1c2363, #3a2f86); border-bottom: 1px solid #5a4fc0; }
+.fj-topbar h1 { color: #e8ecff; }
+.fj-topbar .back { color: #e8ecff; }
+.fj-panel {
+  background: linear-gradient(160deg, rgba(46, 52, 128, 0.92), rgba(66, 44, 140, 0.9));
+  border: 1px solid rgba(150, 140, 255, 0.35);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  color: #e8ecff;
+  box-shadow: 0 6px 22px rgba(20, 22, 80, 0.55);
+}
+.fj-hero { text-align: center; }
+.fj-title { font-size: 1.55rem; font-weight: 800; letter-spacing: 2px;
+  background: linear-gradient(90deg, #7dd3fc, #c4b5fd, #f9a8d4);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.fj-sub { color: #b6c0ff; font-size: .88rem; margin: 6px 0 14px; }
+.fj-stats { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
+.fj-stat {
+  background: rgba(20, 24, 90, 0.6);
+  border: 1px solid rgba(140, 130, 255, 0.35);
+  border-radius: 12px;
+  padding: 8px 12px;
+  min-width: 82px;
+}
+.fj-sv { font-size: 1.25rem; font-weight: 800; color: #ffd166; }
+.fj-sl { font-size: .72rem; color: #b6c0ff; margin-top: 2px; }
+.fj-idle { color: #9be8a0; font-size: .9rem; margin-bottom: 12px; }
+.fj-btn {
+  background: linear-gradient(135deg, #4a4fd8, #7b3fd4);
+  color: #fff;
+  border: 1px solid rgba(180, 170, 255, 0.5);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: .98rem;
+  cursor: pointer;
+  width: 100%;
+}
+.fj-btn:disabled { opacity: .45; }
+.fj-btn-gold { background: linear-gradient(135deg, #e6a23c, #d97706); }
+.fj-btn-big {
+  font-size: 1.25rem;
+  font-weight: 800;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(230, 162, 60, 0.45);
+}
+.fj-panel-title { font-weight: 800; margin-bottom: 10px; color: #ffd166; }
+.fj-upgrade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(150, 140, 255, 0.2);
+}
+.fj-upgrade-row:first-of-type { border-top: none; }
+.fj-up-info div:first-child { font-size: .98rem; }
+.fj-up-desc { font-size: .78rem; color: #b6c0ff; margin-top: 2px; }
+.fj-upgrade-row .fj-btn { width: auto; min-width: 118px; padding: 8px 12px; }
+.fj-rules { font-size: .85rem; line-height: 1.9; color: #c9d2ff; }
+.fj-start-wrap { margin-top: 6px; }
+
+#fjGame { display: flex; flex-direction: column; }
+#fjCanvas {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 96px);
+  min-height: 420px;
+  touch-action: none;
+  border-radius: 14px;
+}
+.fj-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  background: rgba(18, 22, 63, 0.9);
+  border: 1px solid rgba(150, 140, 255, 0.35);
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: #e8ecff;
+  font-size: .9rem;
+  margin-bottom: 8px;
+}
+.fj-hud .warn { color: #ff6b6b; font-weight: 800; animation: blink 0.8s infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
+
+.fj-over {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 40, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.fj-over-box {
+  width: 84%;
+  max-width: 360px;
+  background: linear-gradient(160deg, #232b6e, #4b2f9e);
+  border: 1px solid rgba(170, 160, 255, 0.5);
+  border-radius: 18px;
+  padding: 24px 20px;
+  text-align: center;
+  color: #e8ecff;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);
+}
+.fj-over-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; }
+.fj-over-line { font-size: 1rem; margin: 8px 0; color: #c9d2ff; }
+.fj-over-line b { color: #ffd166; font-size: 1.2rem; }
+.fj-over-box .fj-btn { margin-top: 10px; }

@@ -930,6 +930,57 @@ async function main() {
   assert(climbEnd < climbStart + 4.5, '一格梯子最多爬 3 格高（' + climbEnd.toFixed(2) + '）');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
+  /* ---------- 飞机大战 ---------- */
+  console.log('\n[8c] 飞机大战');
+  fresh();
+  await page.goto(BASE + 'feiji.html', { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1')) || {};
+    d.balance = 30;
+    d.feijiChances = 0;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+    localStorage.removeItem('xx3_feiji_v1');
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert((await page.textContent('#fjJifen')) === '30', '飞机大战显示星星 30');
+  await page.click('#fjRedeemBtn');
+  await sleep(200);
+  assert((await page.textContent('#fjChances')) === '1', '10 星星兑换 1 次机会');
+  assert((await page.textContent('#fjJifen')) === '20', '兑换后剩 20 星星');
+  // 挂机收益：离开 10 分钟，回来结算金币
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('xx3_feiji_v1')) || {};
+    s.coins = 0;
+    s.planeLv = 1;
+    s.lastPlayAt = Date.now() - 10 * 60000;
+    localStorage.setItem('xx3_feiji_v1', JSON.stringify(s));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert(Number(await page.textContent('#fjCoins')) >= 60, '挂机 10 分钟结算 +60 金币');
+  // 金币升级战机
+  await page.evaluate(() => window.__feiji.setSave({ coins: 500, planeLv: 1, bulletLv: 1 }));
+  assert((await page.evaluate(() => window.__feiji.upgradePlane())) === true, '战机升级成功');
+  assert((await page.evaluate(() => window.__feiji.state().planeLv)) === 2, '战机升到 LV.2');
+  // 开始战斗（消耗 1 次机会）
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('xx3_learning_v1'));
+    d.feijiChances = 1;
+    localStorage.setItem('xx3_learning_v1', JSON.stringify(d));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.click('#fjStartBtn');
+  await sleep(600);
+  assert((await page.evaluate(() => window.__feiji.state().running)) === true, '滑动开始战斗进入对局');
+  assert((await page.textContent('#fjTimer')).includes(':'), '飞机大战限时倒计时显示');
+  // 击落敌机得分得金币
+  const killRes = await page.evaluate(() => window.__feiji.killFirstEnemy());
+  assert(killRes.score >= 10 && killRes.sessCoins >= 1, '击落敌机得分并得金币');
+  // 时间到结算
+  await page.evaluate(() => window.__feiji.forceTimeUp());
+  await sleep(300);
+  assert((await page.locator('#fjOver:not(.hidden)').count()) === 1, '时间到弹出结算');
+  assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
+
   /* ---------- 生字 ---------- */
   console.log('\n[9] 生字');
   fresh();

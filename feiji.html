@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="飞机大战">
+  <meta name="format-detection" content="telephone=no">
+  <title>飞机大战 · 学习乐园</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=60">
+</head>
+<body class="fj-body">
+  <div class="page fj-page">
+    <div class="topbar fj-topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>✈️ 飞机大战</h1>
+      <div class="star-pill" id="fjChancePill">✈️ 0</div>
+      <div class="star-pill" id="fjJifenPill">⭐ 0</div>
+    </div>
+
+    <!-- 大厅：星星兑换 + 战机升级 + 挂机收益 -->
+    <section id="fjLobby">
+      <div class="fj-panel fj-hero">
+        <div class="fj-title">✈️ 飞机大战</div>
+        <div class="fj-sub">击落敌机 · 收集金币 · 升级战机</div>
+        <div class="fj-stats">
+          <div class="fj-stat"><div class="fj-sv" id="fjJifen">0</div><div class="fj-sl">⭐ 星星</div></div>
+          <div class="fj-stat"><div class="fj-sv" id="fjChances">0</div><div class="fj-sl">✈️ 机会</div></div>
+          <div class="fj-stat"><div class="fj-sv" id="fjCoins">0</div><div class="fj-sl">🪙 金币</div></div>
+        </div>
+        <div class="fj-idle" id="fjIdle">⏱️ 挂机收益：+6 金币/分钟</div>
+        <button class="fj-btn fj-btn-gold" id="fjRedeemBtn">🔄 兑换 1 次机会（-10 星星）</button>
+      </div>
+
+      <div class="fj-panel">
+        <div class="fj-panel-title">🔧 战机升级（金币强化）</div>
+        <div class="fj-upgrade-row">
+          <div class="fj-up-info">
+            <div>✈️ 战机等级 <b id="fjPlaneLv">LV.1</b></div>
+            <div class="fj-up-desc" id="fjPlaneDesc">更快火力 · 挂机收益提升</div>
+          </div>
+          <button class="fj-btn" id="fjPlaneBtn">升级</button>
+        </div>
+        <div class="fj-upgrade-row">
+          <div class="fj-up-info">
+            <div>🔫 子弹等级 <b id="fjBulletLv">LV.1</b></div>
+            <div class="fj-up-desc" id="fjBulletDesc">伤害更高 · 射速更快</div>
+          </div>
+          <button class="fj-btn" id="fjBulletBtn">升级</button>
+        </div>
+      </div>
+
+      <div class="fj-panel fj-rules">
+        🕹️ 手指按住拖动战机，子弹自动发射<br>
+        💥 击落敌机得金币 · ❤️ 被撞到会掉血<br>
+        ⏰ 每局 10 分钟 · 🏆 打得多分数高
+      </div>
+
+      <div class="fj-start-wrap">
+        <button class="fj-btn fj-btn-big" id="fjStartBtn">🚀 滑动开始战斗</button>
+      </div>
+    </section>
+
+    <!-- 对局 -->
+    <section id="fjGame" class="hidden">
+      <div class="fj-hud">
+        <span id="fjScore">🏆 0</span>
+        <span id="fjCoinsHud">🪙 0</span>
+        <span id="fjLives">❤️❤️❤️❤️❤️</span>
+        <span id="fjTimer">⏰ 10:00</span>
+      </div>
+      <canvas id="fjCanvas"></canvas>
+    </section>
+
+    <!-- 结算 -->
+    <section id="fjOver" class="hidden fj-over">
+      <div class="fj-over-box">
+        <div class="fj-over-title" id="fjOverTitle">🛬 战斗结束</div>
+        <div class="fj-over-line">🏆 得分：<b id="fjOverScore">0</b></div>
+        <div class="fj-over-line">🪙 金币：<b id="fjOverCoins">+0</b></div>
+        <button class="fj-btn fj-btn-big" id="fjAgainBtn">🔄 再来一局</button>
+        <button class="fj-btn" id="fjHomeBtn">🏠 回大厅</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/common.js?v=60"></script>
+  <script src="js/feiji.js?v=60"></script>
+</body>
+</html>

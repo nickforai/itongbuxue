@@ -1,7 +1,7 @@
 /* 学习乐园 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v59';
+var CACHE = 'xx3-v60';
 
 var ASSETS = [
   './',
@@ -15,6 +15,7 @@ var ASSETS = [
   './parent.html',
   './doudizhu.html',
   './minecraft.html',
+  './feiji.html',
   './manifest.json',
   './css/style.css',
   './js/common.js',
@@ -33,6 +34,7 @@ var ASSETS = [
   './js/doudizhu-core.js',
   './js/doudizhu.js',
   './js/minecraft.js',
+  './js/feiji.js',
   './js/vendor/three.min.js',
   './icons/icon-180.png',
   './icons/icon-192.png',
