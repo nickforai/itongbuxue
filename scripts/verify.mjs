@@ -974,7 +974,21 @@ async function main() {
   assert((await page.textContent('#fjTimer')).includes(':'), '飞机大战限时倒计时显示');
   // 击落敌机得分得金币
   const killRes = await page.evaluate(() => window.__feiji.killFirstEnemy());
-  assert(killRes.score >= 10 && killRes.sessCoins >= 1, '击落敌机得分并得金币');
+  assert(killRes.score >= 10 && killRes.sessCoins >= 100, '击落敌机得分并得大额金币（≥100）');
+  // 抽战机 + 装备出战
+  await page.evaluate(() => window.__feiji.setSave({ coins: 5000 }));
+  const draw1 = await page.evaluate(() => window.__feiji.drawFree());
+  assert(draw1.hangar >= 1, '抽到战机加入机库');
+  assert((await page.evaluate((id) => window.__feiji.equipPlane(id), draw1.id)) === true, '抽到的战机可以装备');
+  assert((await page.evaluate(() => window.__feiji.state().equipped)) === draw1.id, '装备的战机已出战');
+  // 激光：按住伸缩键伸出并击落敌机
+  const scBefore = await page.evaluate(() => window.__feiji.state().score);
+  await page.evaluate(() => { window.__feiji.laserOn(); window.__feiji.spawnEnemyOnPlayer(); });
+  await sleep(400);
+  const lz = await page.evaluate(() => window.__feiji.state());
+  assert(lz.laserActive === true && lz.laserLen > 20, '按住激光键激光伸出');
+  assert(lz.score > scBefore, '激光能击落敌机得分');
+  await page.evaluate(() => window.__feiji.laserOff());
   // 时间到结算
   await page.evaluate(() => window.__feiji.forceTimeUp());
   await sleep(300);

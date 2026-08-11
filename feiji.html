@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=60">
+  <link rel="stylesheet" href="css/style.css?v=61">
 </head>
 <body class="fj-body">
   <div class="page fj-page">
@@ -54,9 +54,22 @@
         </div>
       </div>
 
+      <div class="fj-panel">
+        <div class="fj-panel-title">🎰 战机征召（抽新战机）</div>
+        <div class="fj-gacha-row">
+          <button class="fj-btn" id="fjDrawBtn">单抽（500 金币）</button>
+          <button class="fj-btn" id="fjDrawTenBtn">十连抽（4500 金币）</button>
+        </div>
+        <div class="fj-draw-result" id="fjDrawResult"></div>
+        <div class="fj-hangar-title">✈️ 我的机库（点击装备，出战生效）</div>
+        <div class="fj-hangar" id="fjHangar"></div>
+        <div class="fj-deploy" id="fjDeploy">出战：🔵 小蓝鹰</div>
+      </div>
+
       <div class="fj-panel fj-rules">
         🕹️ 手指按住拖动战机，子弹自动发射<br>
-        💥 击落敌机得金币 · ❤️ 被撞到会掉血<br>
+        🔆 按住「激光」发射伸缩激光 · 💥 击落敌机得金币<br>
+        ❤️ 被撞到会掉血 · 🎰 金币可以抽新战机<br>
         ⏰ 每局 10 分钟 · 🏆 打得多分数高
       </div>
 
@@ -74,6 +87,7 @@
         <span id="fjTimer">⏰ 10:00</span>
       </div>
       <canvas id="fjCanvas"></canvas>
+      <button class="fj-laser-btn" id="fjLaserBtn">🔆 激光</button>
     </section>
 
     <!-- 结算 -->
@@ -88,7 +102,7 @@
     </section>
   </div>
 
-  <script src="js/common.js?v=60"></script>
-  <script src="js/feiji.js?v=60"></script>
+  <script src="js/common.js?v=61"></script>
+  <script src="js/feiji.js?v=61"></script>
 </body>
 </html>

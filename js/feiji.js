@@ -5,13 +5,29 @@
   var data = App.store.load();
   var FJ_SAVE = 'xx3_feiji_v1';
 
+  /* ---------- 战机图鉴（抽卡池） ---------- */
+  var PLANES = [
+    { id: 'blue', name: '小蓝鹰', emoji: '🔵', rarity: 0, color: '#48c6ef', dmg: 0, rate: 0, coins: 1 },
+    { id: 'purple', name: '紫电', emoji: '🟣', rarity: 1, color: '#b06ef5', dmg: 1, rate: 1, coins: 1 },
+    { id: 'red', name: '烈焰号', emoji: '🔴', rarity: 1, color: '#ff5d5d', dmg: 2, rate: 0, coins: 1 },
+    { id: 'gold', name: '黄金战机', emoji: '🟡', rarity: 2, color: '#ffd166', dmg: 1, rate: 1, coins: 3 },
+    { id: 'diamond', name: '钻石战机', emoji: '💎', rarity: 3, color: '#7df9ff', dmg: 3, rate: 1, coins: 2 },
+    { id: 'rainbow', name: '彩虹号', emoji: '🌈', rarity: 3, color: '#ff9ff3', dmg: 2, rate: 2, coins: 2 }
+  ];
+  var RARITY_NAME = ['普通', '稀有', '史诗', '传说'];
+  var RARITY_COLOR = ['#c9d2ff', '#7dd3fc', '#c4b5fd', '#ffd166'];
+  var DUP_REFUND = [200, 800, 2000, 5000];
+  function plane() { return PLANES.find(function (p) { return p.id === save.equipped; }) || PLANES[0]; }
+
   /* ---------- 游戏存档（金币/等级/挂机） ---------- */
   var save = {
     coins: 0,
     planeLv: 1,
     bulletLv: 1,
     best: 0,
-    lastPlayAt: Date.now()
+    lastPlayAt: Date.now(),
+    hangar: {},
+    equipped: 'blue'
   };
   try {
     var raw = JSON.parse(localStorage.getItem(FJ_SAVE) || '{}');
@@ -69,7 +85,106 @@
     start.textContent = (data.feijiChances || 0) >= 1
       ? '🚀 滑动开始战斗（还有 ' + data.feijiChances + ' 次机会）'
       : '🚀 滑动开始战斗（需要机会）';
+    App.el('fjDrawBtn').textContent = '单抽（500 金币）';
+    App.el('fjDrawTenBtn').textContent = '十连抽（4500 金币）';
+    App.el('fjDrawBtn').disabled = save.coins < 500;
+    App.el('fjDrawTenBtn').disabled = save.coins < 4500;
+    var cur = plane();
+    App.el('fjDeploy').textContent = '出战：' + cur.emoji + ' ' + cur.name;
+    var hangarBox = App.el('fjHangar');
+    hangarBox.innerHTML = '';
+    PLANES.forEach(function (p) {
+      var owned = save.hangar[p.id] || 0;
+      var row = document.createElement('div');
+      row.className = 'fj-hangar-row' + (save.equipped === p.id ? ' on' : '');
+      row.innerHTML =
+        '<span>' + p.emoji + ' ' + p.name + '</span>' +
+        '<span class="fj-rarity" style="color:' + RARITY_COLOR[p.rarity] + '">' + RARITY_NAME[p.rarity] + (owned ? ' ×' + owned : '') + '</span>' +
+        (owned
+          ? '<button class="fj-btn fj-equip-btn" data-equip="' + p.id + '">' + (save.equipped === p.id ? '已出战' : '装备') + '</button>'
+          : '<span class="fj-lock">未获得</span>');
+      hangarBox.appendChild(row);
+    });
+    hangarBox.querySelectorAll('[data-equip]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        equipPlane(btn.getAttribute('data-equip'));
+      });
+    });
   }
+
+  function showDrawResult(text) {
+    App.el('fjDrawResult').innerHTML = text;
+  }
+
+  /* ---------- 抽战机 ---------- */
+  function gachaDraw() {
+    var r = Math.random();
+    var tier = r < 0.5 ? 0 : r < 0.8 ? 1 : r < 0.95 ? 2 : 3;
+    var pool = PLANES.filter(function (p) { return p.rarity === tier; });
+    var p = pool[Math.floor(Math.random() * pool.length)];
+    if (!save.hangar[p.id]) {
+      save.hangar[p.id] = 1;
+      saveNow();
+      return { plane: p, dup: false };
+    }
+    save.hangar[p.id] += 1;
+    var refund = DUP_REFUND[p.rarity];
+    save.coins += refund;
+    saveNow();
+    return { plane: p, dup: true, refund: refund };
+  }
+
+  function gachaTen() {
+    var list = [];
+    for (var i = 0; i < 10; i++) {
+      if (i === 9) {
+        // 保底：第 10 抽至少史诗
+        var tier2 = 2 + (Math.random() < 0.3 ? 1 : 0);
+        var pool2 = PLANES.filter(function (p) { return p.rarity === tier2; });
+        var p2 = pool2[Math.floor(Math.random() * pool2.length)];
+        if (!save.hangar[p2.id]) { save.hangar[p2.id] = 1; list.push({ plane: p2, dup: false }); }
+        else { save.hangar[p2.id] += 1; save.coins += DUP_REFUND[tier2]; list.push({ plane: p2, dup: true, refund: DUP_REFUND[tier2] }); }
+      } else {
+        list.push(gachaDraw());
+      }
+    }
+    saveNow();
+    return list;
+  }
+
+  function equipPlane(id) {
+    if (!save.hangar[id]) { App.toast('还没抽到这架战机'); return false; }
+    save.equipped = id;
+    saveNow();
+    renderLobby();
+    App.toast('✈️ ' + PLANES.find(function (p) { return p.id === id; }).name + ' 出战！');
+    return true;
+  }
+
+  App.el('fjDrawBtn').addEventListener('click', function () {
+    if (save.coins < 500) { App.toast('金币不够'); return; }
+    save.coins -= 500;
+    var r = gachaDraw();
+    saveNow();
+    renderLobby();
+    showDrawResult(
+      (r.dup ? '重复获得 ' : '🎉 获得 ') + r.plane.emoji + ' ' + r.plane.name +
+      ' <span style="color:' + RARITY_COLOR[r.plane.rarity] + '">[' + RARITY_NAME[r.plane.rarity] + ']</span>' +
+      (r.dup ? '，转成 ' + r.refund + ' 金币' : '')
+    );
+  });
+
+  App.el('fjDrawTenBtn').addEventListener('click', function () {
+    if (save.coins < 4500) { App.toast('金币不够'); return; }
+    save.coins -= 4500;
+    var list = gachaTen();
+    saveNow();
+    renderLobby();
+    var html = list.map(function (r) {
+      return r.plane.emoji + ' ' + r.plane.name + '<span style="color:' + RARITY_COLOR[r.plane.rarity] + '">[' + RARITY_NAME[r.plane.rarity] + ']</span>' + (r.dup ? '(重复+' + r.refund + ')' : '');
+    }).join('　');
+    showDrawResult('🎉 十连抽：' + html);
+  });
 
   App.el('fjRedeemBtn').addEventListener('click', function () {
     data = App.store.load();
@@ -174,8 +289,19 @@
     App.el('fjLives').textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(5 - Math.max(0, lives));
   }
 
-  function bulletDamage() { return 1 + save.bulletLv; }
-  function fireInterval() { return Math.max(0.16, 0.42 - save.bulletLv * 0.05); }
+  function bulletDamage() { return 1 + save.bulletLv + plane().dmg; }
+  function fireInterval() { return Math.max(0.13, 0.42 - (save.bulletLv + plane().rate) * 0.05); }
+  function coinMult() { return plane().coins; }
+  function laserDps() { return 90 + save.bulletLv * 25 + plane().dmg * 30; }
+
+  /* 激光：按住伸缩键发射，松开收回 */
+  var laser = { active: false, len: 0, width: 36 };
+  App.el('fjLaserBtn').addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    laser.active = true;
+  });
+  App.el('fjLaserBtn').addEventListener('pointerup', function () { laser.active = false; });
+  App.el('fjLaserBtn').addEventListener('pointercancel', function () { laser.active = false; });
 
   function loop(ts) {
     if (!running) return;
@@ -231,6 +357,20 @@
         }
       }
     }
+    // 激光：伸缩 + 伤害
+    var laserTarget = laser.active ? player.y : 0;
+    laser.len += (laserTarget - laser.len) * Math.min(1, dt * 9);
+    if (laser.len > 24) {
+      for (var li = enemies.length - 1; li >= 0; li--) {
+        var le = enemies[li];
+        if (le.y > player.y - 30) continue;
+        if (Math.abs(le.x - player.x) < (le.w / 2) + laser.width / 2) {
+          le.hp -= laserDps() * dt;
+          le.flash = 0.08;
+          if (le.hp <= 0) destroyEnemy(li);
+        }
+      }
+    }
     // 敌机撞玩家
     if (Date.now() > invulnUntil) {
       for (var k = enemies.length - 1; k >= 0; k--) {
@@ -258,8 +398,8 @@
     enemies.splice(idx, 1);
     explode(e.x, e.y, e.color);
     score += e.score;
-    sessCoins += e.coins;
-    save.coins += e.coins;
+    sessCoins += e.coins * coinMult();
+    save.coins += e.coins * coinMult();
     saveNow();
     updateHud();
   }
@@ -267,9 +407,9 @@
   function spawnEnemy(type) {
     var r = type || Math.random();
     var e;
-    if (r < 0.6) e = { x: 20 + Math.random() * (cw - 40), y: -40, w: 34, h: 30, hp: 1, maxHp: 1, vy: 110 + Math.random() * 40, score: 10, coins: 1, color: '#ef476f' };
-    else if (r < 0.9) e = { x: 20 + Math.random() * (cw - 40), y: -40, w: 46, h: 40, hp: 3, maxHp: 3, vy: 80 + Math.random() * 30, score: 30, coins: 3, color: '#ff8c42' };
-    else e = { x: 20 + Math.random() * (cw - 40), y: -50, w: 62, h: 54, hp: 8, maxHp: 8, vy: 55 + Math.random() * 20, score: 80, coins: 8, color: '#9b5de5' };
+    if (r < 0.6) e = { x: 20 + Math.random() * (cw - 40), y: -40, w: 34, h: 30, hp: 1, maxHp: 1, vy: 110 + Math.random() * 40, score: 10, coins: 100, color: '#ef476f' };
+    else if (r < 0.9) e = { x: 20 + Math.random() * (cw - 40), y: -40, w: 46, h: 40, hp: 3, maxHp: 3, vy: 80 + Math.random() * 30, score: 30, coins: 300, color: '#ff8c42' };
+    else e = { x: 20 + Math.random() * (cw - 40), y: -50, w: 62, h: 54, hp: 8, maxHp: 8, vy: 55 + Math.random() * 20, score: 80, coins: 800, color: '#9b5de5' };
     enemies.push(e);
   }
 
@@ -324,9 +464,28 @@
         g.fillStyle = '#7dff8a';
         g.fillRect(e.x - e.w / 2, e.y - e.h / 2 - 8, e.w * (e.hp / e.maxHp), 4);
       }
+      if (e.flash > 0) {
+        g.globalAlpha = Math.min(1, e.flash * 8);
+        g.fillStyle = '#ffffff';
+        g.fillRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
+        g.globalAlpha = 1;
+      }
     });
+    // 激光：从机头向上伸缩的发光光束
+    if (laser.len > 4) {
+      var lg = g.createLinearGradient(0, player.y, 0, player.y - laser.len);
+      lg.addColorStop(0, 'rgba(125,249,255,0.95)');
+      lg.addColorStop(1, 'rgba(64,156,255,0.15)');
+      g.fillStyle = lg;
+      g.shadowColor = '#7df9ff';
+      g.shadowBlur = 18;
+      g.fillRect(player.x - laser.width / 2, player.y - laser.len, laser.width, laser.len);
+      g.shadowBlur = 0;
+      g.fillStyle = 'rgba(255,255,255,0.85)';
+      g.fillRect(player.x - 3, player.y - laser.len, 6, laser.len);
+    }
     if (Date.now() < invulnUntil && Math.floor(Date.now() / 100) % 2 === 0) g.globalAlpha = 0.4;
-    drawPlane(player.x, player.y, player.w, player.h, '#48c6ef', false);
+    drawPlane(player.x, player.y, player.w, player.h, plane().color, false);
     g.globalAlpha = 1;
     parts.forEach(function (pt) {
       g.globalAlpha = Math.max(0, pt.life);
@@ -432,16 +591,33 @@
       return {
         coins: save.coins, planeLv: save.planeLv, bulletLv: save.bulletLv,
         running: running, score: score, lives: lives, sessCoins: sessCoins,
-        enemies: enemies ? enemies.length : 0, bullets: bullets ? bullets.length : 0, best: save.best
+        enemies: enemies ? enemies.length : 0, bullets: bullets ? bullets.length : 0, best: save.best,
+        equipped: save.equipped, hangar: Object.keys(save.hangar || {}).length,
+        laserActive: laser.active, laserLen: laser.len
       };
     },
     start: startGame,
     spawnEnemy: spawnEnemy,
+    spawnEnemyOnPlayer: function () {
+      spawnEnemy(0.1);
+      var e = enemies[enemies.length - 1];
+      e.x = player.x;
+      e.y = player.y - 150;
+      return true;
+    },
     hitPlayer: hitPlayer,
+    laserOn: function () { laser.active = true; },
+    laserOff: function () { laser.active = false; },
+    drawFree: function () {
+      var r = gachaDraw();
+      renderLobby();
+      return { id: r.plane.id, name: r.plane.name, dup: r.dup, hangar: Object.keys(save.hangar || {}).length };
+    },
+    equipPlane: equipPlane,
     killFirstEnemy: function () {
       if (!enemies.length) spawnEnemy(0.1);
       destroyEnemy(0);
-      return { score: score, sessCoins: sessCoins, coins: save.coins };
+      return { score: score, sessCoins: sessCoins, coins: save.coins, mult: coinMult() };
     },
     forceTimeUp: function () { timeUp = true; endGame(true); },
     setSave: function (o) {
