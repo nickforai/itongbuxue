@@ -485,7 +485,7 @@
       g.fillRect(player.x - 3, player.y - laser.len, 6, laser.len);
     }
     if (Date.now() < invulnUntil && Math.floor(Date.now() / 100) % 2 === 0) g.globalAlpha = 0.4;
-    drawPlane(player.x, player.y, player.w, player.h, plane().color, false);
+    drawPlayerPlane(plane(), player.x, player.y, player.w + 8, player.h + 8);
     g.globalAlpha = 1;
     parts.forEach(function (pt) {
       g.globalAlpha = Math.max(0, pt.life);
@@ -508,6 +508,265 @@
     g.fillStyle = enemy ? '#1a1030' : '#ffd166';
     g.beginPath();
     g.arc(x, y, w * 0.16, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  /* 玩家战机：每种机型有专属造型（机头朝上） */
+  function drawPlayerPlane(p, x, y, w, h) {
+    var g = ctx;
+    var t = performance.now() / 1000;
+    g.save();
+    g.translate(x, y);
+    // 引擎尾焰（所有机型通用，烈焰号更旺）
+    var flameLen = 14 + Math.sin(t * 22) * 6 + (p.id === 'red' ? 12 : 0);
+    var fg = g.createLinearGradient(0, h * 0.32, 0, h * 0.32 + flameLen);
+    fg.addColorStop(0, 'rgba(255,225,130,0.95)');
+    fg.addColorStop(1, 'rgba(255,110,30,0)');
+    g.fillStyle = fg;
+    g.shadowColor = '#ffb347';
+    g.shadowBlur = 14;
+    g.beginPath();
+    g.moveTo(-w * 0.07, h * 0.32);
+    g.quadraticCurveTo(-w * 0.22, h * 0.32 + flameLen * 0.6, 0, h * 0.32 + flameLen);
+    g.quadraticCurveTo(w * 0.22, h * 0.32 + flameLen * 0.6, w * 0.07, h * 0.32);
+    g.fill();
+    g.shadowBlur = 0;
+
+    if (p.id === 'blue') drawBlue(x, y, w, h, t);
+    else if (p.id === 'purple') drawPurple(x, y, w, h, t);
+    else if (p.id === 'red') drawRed(x, y, w, h, t);
+    else if (p.id === 'gold') drawGold(x, y, w, h, t);
+    else if (p.id === 'diamond') drawDiamond(x, y, w, h, t);
+    else drawRainbow(x, y, w, h, t);
+    g.restore();
+  }
+
+  /* 小蓝鹰：流线型三角翼战斗机 */
+  function drawBlue(x, y, w, h, t) {
+    var g = ctx;
+    g.fillStyle = '#3fa9f5';
+    g.shadowColor = '#48c6ef';
+    g.shadowBlur = 10;
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.16, -h * 0.12);
+    g.lineTo(-w * 0.5, h * 0.18);
+    g.lineTo(-w * 0.3, h * 0.26);
+    g.lineTo(-w * 0.12, h * 0.2);
+    g.lineTo(-w * 0.05, h * 0.34);
+    g.lineTo(w * 0.05, h * 0.34);
+    g.lineTo(w * 0.12, h * 0.2);
+    g.lineTo(w * 0.3, h * 0.26);
+    g.lineTo(w * 0.5, h * 0.18);
+    g.lineTo(w * 0.16, -h * 0.12);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = '#9edcff';
+    g.beginPath();
+    g.ellipse(0, -h * 0.02, w * 0.1, h * 0.2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#0e4d8f';
+    g.beginPath();
+    g.ellipse(0, -h * 0.1, w * 0.05, h * 0.1, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#bde8ff';
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.05, -h * 0.25);
+    g.lineTo(w * 0.05, -h * 0.25);
+    g.closePath();
+    g.fill();
+  }
+
+  /* 紫电：前掠翼未来战机 */
+  function drawPurple(x, y, w, h, t) {
+    var g = ctx;
+    g.fillStyle = '#8a4ff0';
+    g.shadowColor = '#b06ef5';
+    g.shadowBlur = 12;
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.14, -h * 0.05);
+    g.lineTo(-w * 0.48, h * 0.3);
+    g.lineTo(-w * 0.16, h * 0.2);
+    g.lineTo(0, h * 0.36);
+    g.lineTo(w * 0.16, h * 0.2);
+    g.lineTo(w * 0.48, h * 0.3);
+    g.lineTo(w * 0.14, -h * 0.05);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+    g.strokeStyle = '#d9b3ff';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(-w * 0.48, h * 0.3);
+    g.lineTo(-w * 0.14, -h * 0.05);
+    g.lineTo(0, -h * 0.5);
+    g.moveTo(w * 0.48, h * 0.3);
+    g.lineTo(w * 0.14, -h * 0.05);
+    g.stroke();
+    g.fillStyle = '#fff';
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.08, -h * 0.1);
+    g.lineTo(w * 0.08, -h * 0.1);
+    g.closePath();
+    g.fill();
+    g.fillStyle = 'rgba(217,179,255,0.85)';
+    g.beginPath();
+    g.ellipse(0, h * 0.12, w * 0.05, h * 0.1, 0, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  /* 烈焰号：双引擎红色战斗机 */
+  function drawRed(x, y, w, h, t) {
+    var g = ctx;
+    g.fillStyle = '#e23b3b';
+    g.shadowColor = '#ff5d5d';
+    g.shadowBlur = 10;
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.12, -h * 0.15);
+    g.lineTo(-w * 0.42, h * 0.05);
+    g.lineTo(-w * 0.34, h * 0.18);
+    g.lineTo(-w * 0.12, h * 0.1);
+    g.lineTo(0, h * 0.28);
+    g.lineTo(w * 0.12, h * 0.1);
+    g.lineTo(w * 0.34, h * 0.18);
+    g.lineTo(w * 0.42, h * 0.05);
+    g.lineTo(w * 0.12, -h * 0.15);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+    // 双引擎喷口
+    g.fillStyle = '#3a3a4a';
+    g.fillRect(-w * 0.26, h * 0.12, w * 0.1, h * 0.1);
+    g.fillRect(w * 0.16, h * 0.12, w * 0.1, h * 0.1);
+    g.fillStyle = '#ffd166';
+    g.beginPath();
+    g.ellipse(0, -h * 0.12, w * 0.06, h * 0.11, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#ffb3b3';
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.06, -h * 0.2);
+    g.lineTo(w * 0.06, -h * 0.2);
+    g.closePath();
+    g.fill();
+  }
+
+  /* 黄金战机：圆润豪华金机 */
+  function drawGold(x, y, w, h, t) {
+    var g = ctx;
+    var gg = g.createLinearGradient(0, -h * 0.5, 0, h * 0.4);
+    gg.addColorStop(0, '#ffe08a');
+    gg.addColorStop(0.5, '#f5b942');
+    gg.addColorStop(1, '#c77f1d');
+    g.fillStyle = gg;
+    g.shadowColor = '#ffd166';
+    g.shadowBlur = 12;
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.quadraticCurveTo(-w * 0.18, -h * 0.05, -w * 0.46, h * 0.22);
+    g.quadraticCurveTo(-w * 0.2, h * 0.28, 0, h * 0.36);
+    g.quadraticCurveTo(w * 0.2, h * 0.28, w * 0.46, h * 0.22);
+    g.quadraticCurveTo(w * 0.18, -h * 0.05, 0, -h * 0.5);
+    g.fill();
+    g.shadowBlur = 0;
+    g.strokeStyle = 'rgba(255,255,255,0.6)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(-w * 0.1, -h * 0.35);
+    g.lineTo(-w * 0.24, h * 0.12);
+    g.moveTo(w * 0.1, -h * 0.35);
+    g.lineTo(w * 0.24, h * 0.12);
+    g.stroke();
+    g.fillStyle = '#8a5a12';
+    g.beginPath();
+    g.ellipse(0, -h * 0.05, w * 0.08, h * 0.16, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#fff3cf';
+    g.beginPath();
+    g.ellipse(0, -h * 0.16, w * 0.03, h * 0.07, 0, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  /* 钻石战机：水晶棱面造型 */
+  function drawDiamond(x, y, w, h, t) {
+    var g = ctx;
+    var dg = g.createLinearGradient(0, -h * 0.5, 0, h * 0.4);
+    dg.addColorStop(0, '#ffffff');
+    dg.addColorStop(0.5, '#7df9ff');
+    dg.addColorStop(1, '#2fb8d8');
+    g.fillStyle = dg;
+    g.shadowColor = '#7df9ff';
+    g.shadowBlur = 14;
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.3, -h * 0.05);
+    g.lineTo(-w * 0.14, h * 0.3);
+    g.lineTo(0, h * 0.16);
+    g.lineTo(w * 0.14, h * 0.3);
+    g.lineTo(w * 0.3, -h * 0.05);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+    g.strokeStyle = 'rgba(255,255,255,0.85)';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(0, h * 0.16);
+    g.moveTo(-w * 0.3, -h * 0.05);
+    g.lineTo(w * 0.14, h * 0.3);
+    g.moveTo(w * 0.3, -h * 0.05);
+    g.lineTo(-w * 0.14, h * 0.3);
+    g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.beginPath();
+    g.moveTo(0, -h * 0.5);
+    g.lineTo(-w * 0.07, -h * 0.2);
+    g.lineTo(w * 0.07, -h * 0.2);
+    g.closePath();
+    g.fill();
+  }
+
+  /* 彩虹号：圆滚滚的可爱小飞机 */
+  function drawRainbow(x, y, w, h, t) {
+    var g = ctx;
+    // 主翼
+    g.fillStyle = '#ff9ff3';
+    g.shadowColor = '#ff9ff3';
+    g.shadowBlur = 10;
+    g.beginPath();
+    g.moveTo(0, -h * 0.3);
+    g.quadraticCurveTo(-w * 0.5, -h * 0.1, -w * 0.42, h * 0.22);
+    g.quadraticCurveTo(-w * 0.18, h * 0.26, 0, h * 0.16);
+    g.quadraticCurveTo(w * 0.18, h * 0.26, w * 0.42, h * 0.22);
+    g.quadraticCurveTo(w * 0.5, -h * 0.1, 0, -h * 0.3);
+    g.fill();
+    g.shadowBlur = 0;
+    // 圆润机身
+    g.fillStyle = '#ffc4f2';
+    g.beginPath();
+    g.ellipse(0, 0, w * 0.2, h * 0.34, 0, 0, Math.PI * 2);
+    g.fill();
+    // 泡泡座舱
+    g.fillStyle = '#7dd3fc';
+    g.beginPath();
+    g.arc(0, -h * 0.14, w * 0.1, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.8)';
+    g.beginPath();
+    g.arc(-w * 0.035, -h * 0.17, w * 0.03, 0, Math.PI * 2);
+    g.fill();
+    // 尾翼
+    g.fillStyle = '#ff9ff3';
+    g.beginPath();
+    g.moveTo(0, h * 0.16);
+    g.lineTo(-w * 0.2, h * 0.34);
+    g.lineTo(w * 0.2, h * 0.34);
+    g.closePath();
     g.fill();
   }
 
