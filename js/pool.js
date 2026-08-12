@@ -11,25 +11,43 @@
     if (raw.owned && raw.owned.length && !raw.level) {
       save.level = Math.min(10, 1 + raw.owned.length);
     }
+    // 新版迁移：球杆扩展到 100 级后，把老等级调回中低阶继续爬
+    if (raw.level) save.level = Math.min(15, raw.level);
   } catch (e) { /* ignore */ }
   function saveNow() {
     try { localStorage.setItem(PL_SAVE, JSON.stringify(save)); } catch (e) { /* ignore */ }
   }
 
-  /* 球杆工厂：10 积分换树枝木棍，之后每升一级比上一级多 5 积分（10,15,20...55），升到顶级 */
-  var MAX_LEVEL = 10;
-  var CUE_NAMES = ['树枝木棍', '硬木球杆', '竹节球杆', '铁皮球杆', '合金球杆', '碳素球杆', '星火球杆', '月光球杆', '至尊球杆', '金龙至尊球杆'];
-  var CUE_EMOJI = ['🪵', '🥢', '🎋', '🔩', '🔩', '⚙️', '✨', '🌙', '🌟', '🐉'];
-  function levelCost(L) { return 10 + (L - 1) * 5; } // 第 L 级的价格
+  /* 球杆工厂：10 积分换树枝木棍，每升一级多 5 积分（上限 60），共 100 级，金龙至尊球杆是顶级 */
+  var MAX_LEVEL = 100;
+  var CUE_NAMES = ['树枝木棍', '硬木球杆', '竹节球杆', '铁皮球杆', '合金球杆', '碳素球杆', '星火球杆', '月光球杆', '曜石球杆', '秘银球杆'];
+  var CUE_EMOJI = ['🪵', '🥢', '🎋', '🔩', '🔩', '⚙️', '✨', '🌙', '🪨', '🥈'];
+  var DRAGON_NAMES = ['蓝龙', '红龙', '黄龙', '绿龙', '青龙', '紫龙', '银龙', '白龙', '黑龙', '天龙'];
+  var DRAGON_COLORS = ['#48b0ff', '#ff5d5d', '#ffd166', '#4ade80', '#22c55e', '#b06ef5', '#c0c0c8', '#f5f5f5', '#3a3a4a', '#67e8f9'];
+  function cueName(L) {
+    if (L >= MAX_LEVEL) return '金龙至尊球杆';
+    if (L <= 10) return CUE_NAMES[L - 1];
+    var i = L - 11;
+    return DRAGON_NAMES[i % 10] + (Math.floor(i / 10) + 1) + '代球杆';
+  }
+  function cueEmoji(L) {
+    if (L >= MAX_LEVEL) return '🐉';
+    if (L <= 10) return CUE_EMOJI[L - 1];
+    return '🐲';
+  }
+  function levelCost(L) { return Math.min(60, 10 + (L - 1) * 5); } // 第 L 级的价格
   function cue() {
     var L = save.level || 1;
+    var nm = cueName(L);
     return {
       level: L,
-      name: CUE_NAMES[L - 1],
-      emoji: CUE_EMOJI[L - 1],
+      name: nm,
+      emoji: cueEmoji(L),
       cost: levelCost(L),
-      aim: Math.min(4, Math.ceil(L / 3)),
-      acc: Math.max(0.005, 0.030 - (L - 1) * 0.0028)
+      aim: Math.min(4, Math.ceil(L / 25)),
+      acc: Math.max(0.005, 0.030 - (L - 1) * (0.025 / 99)),
+      dragon: nm.indexOf('龙') !== -1,
+      dragonColor: L >= MAX_LEVEL ? '#f2c94c' : DRAGON_COLORS[(DRAGON_NAMES.indexOf(nm.replace(/[0-9]+代球杆/, '')) + 10) % 10]
     };
   }
   function aimLen() { return [0, 80, 150, 240, 340][cue().aim] || 80; }
@@ -117,6 +135,7 @@
   var winner = null, robotTimer = null;
   var stopTimer = null, rafId = null, lastTs = 0, dragAim = null;
   var cracks = [];
+  var dragonBalls = []; // 金龙至尊球杆召唤的龙珠 {x,y,vx,vy,pocket,phase,t}
   var PALETTE = ['#ef4444', '#ff9800', '#ffd166', '#4caf50', '#2196f3', '#9c27b0', '#e91e63'];
 
   function startGame() {
@@ -144,6 +163,7 @@
       { x: playX0 + playW / 2, y: playY0 }, { x: playX0 + playW / 2, y: playY0 + playH }
     ];
     resetBalls();
+    dragonBalls = [];
     cracks = [];
     if (save.table) {
       for (var ci = 0; ci < 9; ci++) {
@@ -207,6 +227,7 @@
     if (moving) {
       var any = false;
       for (var s = 0; s < 2; s++) if (stepPhysics(dt)) any = true;
+      if (updateDragonBalls(dt)) any = true;
       if (!any) {
         moving = false;
         evaluateShot();
@@ -423,12 +444,77 @@
     var ang = Math.atan2(aimDir.y, aimDir.x) + (Math.random() * 2 - 1) * cue().acc; // 球杆越好越准
     cueBall.vx = Math.cos(ang) * power * 5;
     cueBall.vy = Math.sin(ang) * power * 5;
+    if (cue().level >= MAX_LEVEL && playerTurn) summonDragonBalls(); // 金龙至尊：玩家击球召唤 7 颗龙珠
     power = 0;
     updatePowerUI();
     pottedThisShot = [];
     scratchThisShot = false;
     moving = true;
     return true;
+  }
+
+  /* 金龙至尊球杆：召唤 7 颗龙珠，乱飞之后百分百滚进洞里 */
+  function summonDragonBalls() {
+    dragonBalls = [];
+    for (var i = 0; i < 7; i++) {
+      var tries = 0;
+      var x, y, ok;
+      do {
+        ok = true;
+        x = playX0 + BALL_R + Math.random() * (playW - BALL_R * 2);
+        y = playY0 + BALL_R + Math.random() * (playH - BALL_R * 2);
+        for (var j = 0; j < balls.length; j++) {
+          if (!balls[j].pocketed && Math.hypot(x - balls[j].x, y - balls[j].y) < BALL_R * 3) { ok = false; break; }
+        }
+        for (var k = 0; k < dragonBalls.length; k++) {
+          if (Math.hypot(x - dragonBalls[k].x, y - dragonBalls[k].y) < BALL_R * 3) { ok = false; break; }
+        }
+        tries++;
+      } while (!ok && tries < 60);
+      var pk = pockets[Math.floor(Math.random() * pockets.length)];
+      var a = Math.random() * Math.PI * 2;
+      dragonBalls.push({ x: x, y: y, vx: Math.cos(a) * 130, vy: Math.sin(a) * 130, pocket: pk, phase: 0, t: 0, potted: false });
+    }
+    App.toast('🐉 召唤 7 颗龙珠！');
+  }
+
+  function updateDragonBalls(dt) {
+    if (!dragonBalls.length) return false;
+    var any = false;
+    for (var i = dragonBalls.length - 1; i >= 0; i--) {
+      var d = dragonBalls[i];
+      d.t += dt;
+      d.phase = Math.min(1, d.t / 1.1); // 1.1 秒后开始滚向洞口
+      if (d.phase < 1) {
+        // 乱飞乱窜
+        d.x += d.vx * dt;
+        d.y += d.vy * dt;
+        d.vx *= Math.max(0, 1 - 2.2 * dt);
+        d.vy *= Math.max(0, 1 - 2.2 * dt);
+        if (d.x < playX0 + BALL_R) { d.x = playX0 + BALL_R; d.vx = Math.abs(d.vx); }
+        if (d.x > playX0 + playW - BALL_R) { d.x = playX0 + playW - BALL_R; d.vx = -Math.abs(d.vx); }
+        if (d.y < playY0 + BALL_R) { d.y = playY0 + BALL_R; d.vy = Math.abs(d.vy); }
+        if (d.y > playY0 + playH - BALL_R) { d.y = playY0 + playH - BALL_R; d.vy = -Math.abs(d.vy); }
+        any = true;
+      } else {
+        // 百分百滚进洞
+        var dx = d.pocket.x - d.x, dy = d.pocket.y - d.y;
+        var dist = Math.hypot(dx, dy);
+        if (dist < POCKET_R + BALL_R * 0.5) {
+          dragonBalls.splice(i, 1);
+          save.points += 50;
+          saveNow();
+          App.toast('💥 龙珠进洞！+50 积分');
+          if (App.el('plPointsHud')) updateHud();
+        } else {
+          var sp = 240;
+          d.x += (dx / dist) * sp * dt;
+          d.y += (dy / dist) * sp * dt;
+          any = true;
+        }
+      }
+    }
+    return any;
   }
 
   var plCanvasEl = App.el('plCanvas');
@@ -598,6 +684,22 @@
       g.lineTo(tipX, tipY);
       g.stroke();
       g.lineCap = 'butt';
+      // 龙系球杆：杆头是龙
+      if (cue().dragon) {
+        g.save();
+        g.translate(tipX, tipY);
+        g.rotate(Math.atan2(aimDir.y, aimDir.x));
+        var dc = cue().dragonColor;
+        g.fillStyle = dc;
+        g.beginPath(); g.arc(0, 0, 7, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.moveTo(6, -2); g.lineTo(13, 0); g.lineTo(6, 2); g.closePath(); g.fill();
+        g.beginPath(); g.moveTo(-3, -6); g.lineTo(-7, -13); g.lineTo(0, -8); g.closePath(); g.fill();
+        g.beginPath(); g.moveTo(3, -6); g.lineTo(7, -13); g.lineTo(0, -8); g.closePath(); g.fill();
+        g.fillStyle = '#fff';
+        g.beginPath(); g.arc(-2, 0, 1.5, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.arc(2, 0, 1.5, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
     }
     // 瞄准辅助线：白球方向 + 预测被撞球路线（参考台球游戏）
     if (!moving && !over && playerTurn && cueBall && !cueBall.pocketed) {
@@ -650,6 +752,25 @@
       g.beginPath();
       g.arc(b.x, b.y, b.r, 0, Math.PI * 2);
       g.fill();
+      if (lava && b.num > 0) {
+        // 岩浆球上的裂痕（按球号固定，不闪烁）
+        g.save();
+        g.beginPath();
+        g.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        g.clip();
+        g.strokeStyle = 'rgba(45,12,4,0.95)';
+        g.lineWidth = 1.4;
+        var s1 = seeded(b.num), s2 = seeded(b.num + 31);
+        var ax = b.x + (s1 - 0.5) * b.r * 1.2, ay = b.y + (s2 - 0.5) * b.r * 1.2;
+        for (var ci = 0; ci < 2; ci++) {
+          var ang = (s1 * 3.1 + ci * 2.2 + s2) * Math.PI;
+          g.beginPath();
+          g.moveTo(ax, ay);
+          g.lineTo(ax + Math.cos(ang) * b.r * 1.3, ay + Math.sin(ang) * b.r * 1.3);
+          g.stroke();
+        }
+        g.restore();
+      }
       if (b.group === 'stripe' && !lava) {
         g.save();
         g.beginPath();
@@ -671,6 +792,25 @@
         g.fillText(b.num, b.x, b.y + 1);
       }
     });
+    // 金龙至尊召唤的龙珠
+    dragonBalls.forEach(function (d) {
+      var dg2 = g.createRadialGradient(d.x, d.y, 1, d.x, d.y, BALL_R);
+      dg2.addColorStop(0, '#fff7d6');
+      dg2.addColorStop(0.5, '#ffd166');
+      dg2.addColorStop(1, '#c77f1d');
+      g.fillStyle = dg2;
+      g.shadowColor = '#ffd166';
+      g.shadowBlur = 14;
+      g.beginPath();
+      g.arc(d.x, d.y, BALL_R * 0.85, 0, Math.PI * 2);
+      g.fill();
+      g.shadowBlur = 0;
+    });
+  }
+
+  function seeded(n) {
+    var x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
   }
 
   function lighten(hex) {
@@ -687,12 +827,14 @@
         level: save.level, aim: cue().aim, points: save.points, wins: save.wins, table: save.table,
         balls: balls ? balls.filter(function (b) { return !b.pocketed; }).length : 0,
         cueX: cueBall ? cueBall.x : -1, cueY: cueBall ? cueBall.y : -1,
+        dragonBalls: dragonBalls ? dragonBalls.length : 0,
         moving: moving, power: power, playerTurn: playerTurn, winner: winner, over: over
       };
     },
     upgradeCue: upgradeCue,
     buyTable: buyTable,
     setPoints: function (n) { save.points = n; saveNow(); renderShop(); return save.points; },
+    setLevel: function (n) { save.level = Math.max(0, Math.min(MAX_LEVEL, n)); saveNow(); renderShop(); return save.level; },
     start: startGame,
     aim: function (x, y) {
       var d = Math.hypot(x, y) || 1;

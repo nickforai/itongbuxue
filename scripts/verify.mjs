@@ -1030,9 +1030,11 @@ async function main() {
   assert((await page.evaluate(() => window.__pool.state().level)) === 2, '球杆 Lv.2');
   assert((await page.evaluate(() => window.__pool.buyTable())) === true, '100 积分兑换岩浆球桌');
   assert((await page.evaluate(() => window.__pool.state().table)) === true, '已拥有岩浆球桌');
-  await page.evaluate(() => window.__pool.setPoints(1000));
-  for (let i = 0; i < 12; i++) await page.evaluate(() => window.__pool.upgradeCue());
-  assert((await page.evaluate(() => window.__pool.state().level)) === 10, '球杆升到顶级 Lv.10');
+  await page.evaluate(() => window.__pool.setPoints(400));
+  for (let i = 0; i < 6; i++) await page.evaluate(() => window.__pool.upgradeCue());
+  assert((await page.evaluate(() => window.__pool.state().level)) >= 6, '球杆工厂能一路升级');
+  await page.evaluate(() => window.__pool.setLevel(100));
+  assert((await page.evaluate(() => window.__pool.state().level)) === 100, '金龙至尊球杆是顶级 Lv.100');
   assert((await page.evaluate(() => window.__pool.state().aim)) === 4, '顶级球杆横杠等级 4');
   await page.click('#plPlayBtn');
   await sleep(500);
@@ -1044,10 +1046,12 @@ async function main() {
   const cueBefore = await page.evaluate(() => window.__pool.state());
   await page.evaluate(() => window.__pool.setPower(60));
   assert((await page.evaluate(() => window.__pool.shoot())) === true, '有力度可以发射');
+  assert((await page.evaluate(() => window.__pool.state().dragonBalls)) === 7, '金龙球杆召唤 7 颗龙珠');
   await sleep(600);
   const cueAfter = await page.evaluate(() => window.__pool.state());
   assert(Math.abs(cueAfter.cueX - cueBefore.cueX) + Math.abs(cueAfter.cueY - cueBefore.cueY) > 1, '白球被打出去移动了');
-  for (let i = 0; i < 30 && (await page.evaluate(() => window.__pool.state().moving)); i++) await sleep(250); // 等球慢慢滚停
+  for (let i = 0; i < 40 && ((await page.evaluate(() => window.__pool.state().moving)) || (await page.evaluate(() => window.__pool.state().dragonBalls)) > 0); i++) await sleep(250); // 等球滚停 + 龙珠进洞
+  assert((await page.evaluate(() => window.__pool.state().points)) >= ptsStart + 350, '7 颗龙珠百分百进洞 +350 积分');
   const robotState = await page.evaluate(() => window.__pool.state());
   assert(robotState.playerTurn === false || robotState.over === true, '玩家没进球后轮到机器人');
   await page.evaluate(() => window.__pool.robotShoot());
@@ -1055,7 +1059,7 @@ async function main() {
   await page.evaluate(() => window.__pool.forceWin());
   await sleep(300);
   assert((await page.locator('#plOver:not(.hidden)').count()) === 1, '全清台弹出结算');
-  assert((await page.evaluate(() => window.__pool.state().points)) === ptsStart + 1000, '赢一局 +1000 游戏积分');
+  assert((await page.evaluate(() => window.__pool.state().points)) === ptsStart + 350 + 1000, '赢一局 +1000 游戏积分（龙珠 +350）');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
   /* ---------- 生字 ---------- */
