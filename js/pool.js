@@ -1,82 +1,106 @@
-/* 台球（8球）：15颗球+白球，机器人对手，赢一局+1000游戏积分，积分买球杆，好杆命中率更高 */
+/* 台球（8球）：15颗球+白球，机器人对手，赢一局+1000游戏积分，球杆工厂升级，岩浆球桌 */
 (function () {
   'use strict';
 
   var PL_SAVE = 'xx3_pool_v1';
-  var save = { owned: [], equipped: null, points: 1000, wins: 0 };
+  var save = { level: 0, points: 10, wins: 0, table: false };
   try {
     var raw = JSON.parse(localStorage.getItem(PL_SAVE) || '{}');
     for (var k in save) if (raw[k] !== undefined) save[k] = raw[k];
+    // 旧版迁移：老存档按已买球杆数量换算工厂等级
+    if (raw.owned && raw.owned.length && !raw.level) {
+      save.level = Math.min(10, 1 + raw.owned.length);
+    }
   } catch (e) { /* ignore */ }
   function saveNow() {
     try { localStorage.setItem(PL_SAVE, JSON.stringify(save)); } catch (e) { /* ignore */ }
   }
 
-  /* 球杆：越贵命中率越高（瞄准横杠越长、出杆越准） */
-  var CUES = [
-    { id: 'wood', name: '木质球杆', emoji: '🪵', cost: 1000, aim: 1, acc: 0.030, desc: '短横杠 · 命中率一般' },
-    { id: 'alu', name: '铝合金球杆', emoji: '🔩', cost: 3000, aim: 2, acc: 0.022, desc: '中横杠 · 命中率较好' },
-    { id: 'carbon', name: '碳素球杆', emoji: '⚙️', cost: 5000, aim: 3, acc: 0.014, desc: '长横杠 · 命中率高' },
-    { id: 'gold', name: '金龙球杆', emoji: '🐉', cost: 10000, aim: 4, acc: 0.005, desc: '超长横杠 · 命中率极高' }
-  ];
-  function cue() { return CUES.find(function (c) { return c.id === save.equipped; }) || CUES[0]; }
-  function aimLen() { return [0, 90, 170, 260, 380][cue().aim] || 90; }
+  /* 球杆工厂：10 积分换树枝木棍，之后每升一级比上一级多 5 积分（10,15,20...55），升到顶级 */
+  var MAX_LEVEL = 10;
+  var CUE_NAMES = ['树枝木棍', '硬木球杆', '竹节球杆', '铁皮球杆', '合金球杆', '碳素球杆', '星火球杆', '月光球杆', '至尊球杆', '金龙至尊球杆'];
+  var CUE_EMOJI = ['🪵', '🥢', '🎋', '🔩', '🔩', '⚙️', '✨', '🌙', '🌟', '🐉'];
+  function levelCost(L) { return 10 + (L - 1) * 5; } // 第 L 级的价格
+  function cue() {
+    var L = save.level || 1;
+    return {
+      level: L,
+      name: CUE_NAMES[L - 1],
+      emoji: CUE_EMOJI[L - 1],
+      cost: levelCost(L),
+      aim: Math.min(4, Math.ceil(L / 3)),
+      acc: Math.max(0.005, 0.030 - (L - 1) * 0.0028)
+    };
+  }
+  function aimLen() { return [0, 80, 150, 240, 340][cue().aim] || 80; }
 
-  /* ---------- 商店（游戏积分买球杆） ---------- */
+  /* ---------- 球杆工厂 + 球桌商店 ---------- */
   function renderShop() {
     App.el('plJifenPill').textContent = '🎮 ' + save.points;
     App.el('plJifen').textContent = save.points;
     App.el('plWins').textContent = save.wins;
-    var box = App.el('plCueList');
-    box.innerHTML = '';
-    CUES.forEach(function (c) {
-      var owned = save.owned.indexOf(c.id) !== -1;
-      var row = document.createElement('div');
-      row.className = 'pl-cue-row' + (save.equipped === c.id ? ' on' : '');
-      row.innerHTML =
-        '<span class="pl-cue-emoji">' + c.emoji + '</span>' +
-        '<div class="pl-cue-info"><div>' + c.name + ' <span class="pl-aim">横杠' + c.aim + '</span></div>' +
-        '<div class="pl-cue-desc">' + c.desc + '</div></div>' +
-        (owned
-          ? '<button class="btn pl-cue-btn" data-equip="' + c.id + '">' + (save.equipped === c.id ? '使用中' : '装备') + '</button>'
-          : '<button class="btn btn-gold pl-cue-btn" data-buy="' + c.id + '">' + c.cost + ' 积分</button>');
-      box.appendChild(row);
-    });
-    box.querySelectorAll('[data-buy]').forEach(function (b) {
-      b.addEventListener('click', function () { buyCue(b.getAttribute('data-buy')); });
-    });
-    box.querySelectorAll('[data-equip]').forEach(function (b) {
-      b.addEventListener('click', function () { equipCue(b.getAttribute('data-equip')); });
-    });
+    var c = cue();
+    if (save.level < 1) {
+      App.el('plCueCurrent').innerHTML = '🪵 还没有球杆，先花 10 积分兑换树枝木棍';
+      App.el('plCueBarFill').style.width = '0%';
+      App.el('plProgress').textContent = 'Lv.0 / ' + MAX_LEVEL;
+      App.el('plUpgradeBtn').disabled = save.points < 10;
+      App.el('plUpgradeBtn').textContent = '🪵 兑换树枝木棍（10 积分）';
+      App.el('plPlayBtn').disabled = true;
+      App.el('plPlayBtn').textContent = '🎱 开始打台球（先兑换球杆）';
+      return;
+    }
+    App.el('plCueCurrent').innerHTML = c.emoji + ' ' + c.name + ' <span class="pl-aim">横杠' + c.aim + ' · 命中率' + Math.round((1 - c.acc / 0.03) * 100) + '%</span>';
+    App.el('plCueBarFill').style.width = Math.round((c.level / MAX_LEVEL) * 100) + '%';
+    App.el('plProgress').textContent = 'Lv.' + c.level + ' / ' + MAX_LEVEL;
+    var up = App.el('plUpgradeBtn');
+    if (c.level >= MAX_LEVEL) {
+      up.disabled = true;
+      up.textContent = '🌟 已升到顶级';
+    } else {
+      var next = CUE_NAMES[c.level];
+      up.disabled = save.points < levelCost(c.level + 1);
+      up.textContent = '升级到 ' + next + '（' + levelCost(c.level + 1) + ' 积分）';
+    }
+    var tb = App.el('plTableBtn');
+    if (save.table) {
+      tb.disabled = true;
+      tb.textContent = '🌋 已兑换岩浆球桌';
+    } else {
+      tb.disabled = save.points < 100;
+      tb.textContent = save.points >= 100 ? '🌋 100 积分兑换岩浆球桌' : '🌋 100 积分兑换岩浆球桌（积分不够）';
+    }
     var play = App.el('plPlayBtn');
-    play.disabled = save.owned.length === 0;
-    play.textContent = save.owned.length ? '🎱 开始打台球（' + cue().name + '）' : '🎱 开始打台球（先用积分买一根球杆）';
+    play.disabled = false;
+    play.textContent = '🎱 开始打台球（' + c.emoji + ' ' + c.name + '）';
   }
 
-  function buyCue(id) {
-    var c = CUES.find(function (x) { return x.id === id; });
-    if (!c || save.owned.indexOf(id) !== -1) return false;
-    if (save.points < c.cost) { App.toast('游戏积分不够 ' + c.cost + '，打赢一局 +1000 积分'); return false; }
-    save.points -= c.cost;
-    save.owned.push(id);
-    if (!save.equipped) save.equipped = id;
+  function upgradeCue() {
+    if (save.level >= MAX_LEVEL) return false;
+    var cost = levelCost(save.level + 1);
+    if (save.points < cost) { App.toast('积分不够 ' + cost + '，打赢一局 +1000 积分'); return false; }
+    save.points -= cost;
+    save.level += 1;
     saveNow();
     renderShop();
-    App.toast('✅ 买到了 ' + c.name + '！');
+    App.toast('🎱 ' + (save.level === 1 ? '兑换了 ' : '升级到 ') + cue().name + '！');
     return true;
   }
 
-  function equipCue(id) {
-    if (save.owned.indexOf(id) === -1) return false;
-    save.equipped = id;
+  function buyTable() {
+    if (save.table) return false;
+    if (save.points < 100) { App.toast('积分不够 100，打赢一局 +1000 积分'); return false; }
+    save.points -= 100;
+    save.table = true;
     saveNow();
     renderShop();
-    App.toast('🎱 使用 ' + CUES.find(function (c) { return c.id === id; }).name);
+    App.toast('🌋 兑换了岩浆球桌！');
     return true;
   }
 
+  App.el('plUpgradeBtn').addEventListener('click', upgradeCue);
+  App.el('plTableBtn').addEventListener('click', buyTable);
   App.el('plPlayBtn').addEventListener('click', function () {
-    if (save.owned.length === 0) { App.toast('先用积分买一根球杆吧'); return; }
     startGame();
   });
 
@@ -92,6 +116,7 @@
   var pottedThisShot = [], scratchThisShot = false;
   var winner = null, robotTimer = null;
   var stopTimer = null, rafId = null, lastTs = 0, dragAim = null;
+  var cracks = [];
   var PALETTE = ['#ef4444', '#ff9800', '#ffd166', '#4caf50', '#2196f3', '#9c27b0', '#e91e63'];
 
   function startGame() {
@@ -119,6 +144,24 @@
       { x: playX0 + playW / 2, y: playY0 }, { x: playX0 + playW / 2, y: playY0 + playH }
     ];
     resetBalls();
+    cracks = [];
+    if (save.table) {
+      for (var ci = 0; ci < 9; ci++) {
+        var pts = [];
+        var cx = playX0 + Math.random() * playW;
+        var cy = playY0 + Math.random() * playH;
+        pts.push({ x: cx, y: cy });
+        var seg = 4 + Math.floor(Math.random() * 3);
+        for (var si = 0; si < seg; si++) {
+          cx += (Math.random() * 2 - 1) * 55;
+          cy += (Math.random() * 2 - 1) * 55;
+          cx = Math.max(playX0 + 8, Math.min(playX0 + playW - 8, cx));
+          cy = Math.max(playY0 + 8, Math.min(playY0 + playH - 8, cy));
+          pts.push({ x: cx, y: cy });
+        }
+        cracks.push(pts);
+      }
+    }
     playerTurn = true;
     groups = { player: null, robot: null };
     winner = null;
@@ -486,16 +529,39 @@
   /* ---------- 绘制 ---------- */
   function draw() {
     var g = ctx;
-    g.fillStyle = '#8a5a2b';
+    var lava = save.table && playerTurn; // 岩浆球桌只在玩家回合显示
+    g.fillStyle = lava ? '#241f2e' : '#8a5a2b';
     g.fillRect(0, 0, cw, ch);
-    g.fillStyle = '#a9743f';
+    g.fillStyle = lava ? '#3a3145' : '#a9743f';
     g.fillRect(playX0 - 8, playY0 - 8, playW + 16, playH + 16);
-    var felt = g.createLinearGradient(0, playY0, 0, playY0 + playH);
-    felt.addColorStop(0, '#2e8b57');
-    felt.addColorStop(0.5, '#1f7a45');
-    felt.addColorStop(1, '#16603a');
-    g.fillStyle = felt;
+    if (lava) {
+      var rock = g.createLinearGradient(0, playY0, 0, playY0 + playH);
+      rock.addColorStop(0, '#3b3247');
+      rock.addColorStop(0.5, '#2c2538');
+      rock.addColorStop(1, '#1f1a2b');
+      g.fillStyle = rock;
+    } else {
+      var felt = g.createLinearGradient(0, playY0, 0, playY0 + playH);
+      felt.addColorStop(0, '#2e8b57');
+      felt.addColorStop(0.5, '#1f7a45');
+      felt.addColorStop(1, '#16603a');
+      g.fillStyle = felt;
+    }
     g.fillRect(playX0, playY0, playW, playH);
+    // 岩浆桌的发光裂痕
+    if (lava) {
+      cracks.forEach(function (pts) {
+        g.strokeStyle = '#ff6b2c';
+        g.lineWidth = 2.5;
+        g.shadowColor = '#ff8c2e';
+        g.shadowBlur = 12;
+        g.beginPath();
+        g.moveTo(pts[0].x, pts[0].y);
+        for (var ci = 1; ci < pts.length; ci++) g.lineTo(pts[ci].x, pts[ci].y);
+        g.stroke();
+        g.shadowBlur = 0;
+      });
+    }
     pockets.forEach(function (pk) {
       var pg = g.createRadialGradient(pk.x, pk.y, 2, pk.x, pk.y, POCKET_R);
       pg.addColorStop(0, '#0b0b12');
@@ -505,6 +571,34 @@
       g.arc(pk.x, pk.y, POCKET_R, 0, Math.PI * 2);
       g.fill();
     });
+    // 球杆：轮到玩家时显示打台球的棍子
+    if (!moving && !over && playerTurn && cueBall && !cueBall.pocketed) {
+      var stickLen = Math.min(playW * 0.42, 320);
+      var tailX = cueBall.x - aimDir.x * (BALL_R + 8 + stickLen);
+      var tailY = cueBall.y - aimDir.y * (BALL_R + 8 + stickLen);
+      var tipX = cueBall.x - aimDir.x * (BALL_R + 2);
+      var tipY = cueBall.y - aimDir.y * (BALL_R + 2);
+      g.strokeStyle = '#5a3a1e';
+      g.lineWidth = 11;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(tailX, tailY);
+      g.lineTo(tipX, tipY);
+      g.stroke();
+      g.strokeStyle = '#d9b36a';
+      g.lineWidth = 7;
+      g.beginPath();
+      g.moveTo(tailX, tailY);
+      g.lineTo(tipX, tipY);
+      g.stroke();
+      g.strokeStyle = '#fff8e7';
+      g.lineWidth = 5;
+      g.beginPath();
+      g.moveTo(cueBall.x - aimDir.x * (BALL_R + 2 + 34), cueBall.y - aimDir.y * (BALL_R + 2 + 34));
+      g.lineTo(tipX, tipY);
+      g.stroke();
+      g.lineCap = 'butt';
+    }
     // 瞄准辅助线：白球方向 + 预测被撞球路线（参考台球游戏）
     if (!moving && !over && playerTurn && cueBall && !cueBall.pocketed) {
       var len = aimLen();
@@ -541,14 +635,22 @@
       g.beginPath();
       g.ellipse(b.x + 2, b.y + 3, b.r, b.r * 0.8, 0, 0, Math.PI * 2);
       g.fill();
-      var bg = g.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.2, b.x, b.y, b.r);
-      bg.addColorStop(0, b.color === '#ffffff' ? '#ffffff' : lighten(b.color));
-      bg.addColorStop(1, b.color);
+      var bg;
+      if (lava) {
+        bg = g.createRadialGradient(b.x, b.y, b.r * 0.1, b.x, b.y, b.r);
+        bg.addColorStop(0, '#ffb066');
+        bg.addColorStop(0.45, '#c74e1a');
+        bg.addColorStop(1, '#4a1d0d');
+      } else {
+        bg = g.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.2, b.x, b.y, b.r);
+        bg.addColorStop(0, b.color === '#ffffff' ? '#ffffff' : lighten(b.color));
+        bg.addColorStop(1, b.color);
+      }
       g.fillStyle = bg;
       g.beginPath();
       g.arc(b.x, b.y, b.r, 0, Math.PI * 2);
       g.fill();
-      if (b.group === 'stripe') {
+      if (b.group === 'stripe' && !lava) {
         g.save();
         g.beginPath();
         g.arc(b.x, b.y, b.r, 0, Math.PI * 2);
@@ -558,11 +660,11 @@
         g.restore();
       }
       if (b.num > 0) {
-        g.fillStyle = '#fff';
+        g.fillStyle = lava ? '#ffe0b3' : '#fff';
         g.beginPath();
         g.arc(b.x, b.y, b.r * 0.44, 0, Math.PI * 2);
         g.fill();
-        g.fillStyle = '#222';
+        g.fillStyle = lava ? '#5a1d08' : '#222';
         g.font = 'bold ' + Math.floor(b.r * 0.68) + 'px sans-serif';
         g.textAlign = 'center';
         g.textBaseline = 'middle';
@@ -582,14 +684,14 @@
   window.__pool = {
     state: function () {
       return {
-        owned: save.owned.slice(), equipped: save.equipped, aim: cue().aim, points: save.points, wins: save.wins,
+        level: save.level, aim: cue().aim, points: save.points, wins: save.wins, table: save.table,
         balls: balls ? balls.filter(function (b) { return !b.pocketed; }).length : 0,
         cueX: cueBall ? cueBall.x : -1, cueY: cueBall ? cueBall.y : -1,
         moving: moving, power: power, playerTurn: playerTurn, winner: winner, over: over
       };
     },
-    buyCue: buyCue,
-    equipCue: equipCue,
+    upgradeCue: upgradeCue,
+    buyTable: buyTable,
     setPoints: function (n) { save.points = n; saveNow(); renderShop(); return save.points; },
     start: startGame,
     aim: function (x, y) {

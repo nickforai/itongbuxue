@@ -1897,3 +1897,27 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .pl-over-line { font-size: 1rem; margin: 8px 0; color: #bfe8d2; }
 .pl-over-line b { color: #ffd166; font-size: 1.2rem; }
 .pl-over-box .btn { margin-top: 10px; }
+
+.pl-factory {
+  background: rgba(20, 40, 60, 0.55);
+  border: 1px solid rgba(120, 200, 160, 0.3);
+  border-radius: 14px;
+  padding: 14px;
+}
+.pl-cue-current { font-size: 1.05rem; font-weight: 800; color: #ffd166; margin-bottom: 10px; }
+.pl-cue-bar {
+  height: 16px;
+  border-radius: 9px;
+  background: rgba(10, 20, 35, 0.8);
+  border: 1px solid rgba(120, 200, 160, 0.4);
+  overflow: hidden;
+}
+.pl-cue-bar-fill {
+  height: 100%;
+  width: 10%;
+  background: linear-gradient(90deg, #c49a5c, #ffd166, #ff9ff3);
+  transition: width 0.3s;
+}
+.pl-progress { text-align: center; color: #a9d8c2; font-size: .8rem; margin: 8px 0; }
+#plUpgradeBtn { width: 100%; }
+#plTableBtn { width: 100%; margin-bottom: 10px; }

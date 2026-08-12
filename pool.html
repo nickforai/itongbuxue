@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=69">
+  <link rel="stylesheet" href="css/style.css?v=70">
 </head>
 <body class="pool-body">
   <div class="page pool-page">
@@ -24,16 +24,28 @@
     <!-- 球杆商店 -->
     <section id="plShop">
       <div class="pl-panel">
-        <h2>🏪 球杆商店</h2>
+        <h2>🏭 球杆工厂</h2>
         <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:12px">
-          🎱 15 颗球 + 白球的 8 球台球，和<b>机器人</b>轮流打。<b>赢一局 +1000 游戏积分</b>，用积分买球杆！
-          球杆越好，瞄准辅助线越长、<b>命中率越高</b>。
+          🪵 10 积分换树枝木棍，之后<b>每升一级多 5 积分</b>（10、15、20…），一路升到顶级。
+          球杆等级越高，瞄准辅助线越长、命中率越高。<b>赢一局 +1000 游戏积分</b>。
         </p>
         <div class="pl-stats">
           <div class="pl-stat"><span class="pl-sv" id="plJifen">0</span><span class="pl-sl">🎮 游戏积分</span></div>
           <div class="pl-stat"><span class="pl-sv" id="plWins">0</span><span class="pl-sl">🏆 胜场</span></div>
         </div>
-        <div class="pl-cues" id="plCueList"></div>
+        <div class="pl-factory">
+          <div class="pl-cue-current" id="plCueCurrent">🪵 树枝木棍</div>
+          <div class="pl-cue-bar"><div class="pl-cue-bar-fill" id="plCueBarFill"></div></div>
+          <div class="pl-progress" id="plProgress">Lv.1 / 10</div>
+          <button class="btn btn-gold" id="plUpgradeBtn">升级（15 积分）</button>
+        </div>
+      </div>
+      <div class="pl-panel">
+        <h2>🪨 球桌商店</h2>
+        <p style="color:var(--muted);font-size:.85rem;line-height:1.7;margin-bottom:10px">
+          龙岩做的球桌：石头台面布满裂痕，里面透出岩浆的光，球也是岩浆球。<b>只有你击球时显示</b>，机器人回合是普通球桌。
+        </p>
+        <button class="btn btn-gold" id="plTableBtn">🌋 100 积分兑换岩浆球桌</button>
         <button class="btn btn-gold" id="plPlayBtn" disabled>🎱 开始打台球（先买一根球杆）</button>
       </div>
     </section>
@@ -68,7 +80,7 @@
     </section>
   </div>
 
-  <script src="js/common.js?v=69"></script>
-  <script src="js/pool.js?v=69"></script>
+  <script src="js/common.js?v=70"></script>
+  <script src="js/pool.js?v=70"></script>
 </body>
 </html>
