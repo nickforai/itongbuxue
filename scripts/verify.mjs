@@ -1033,6 +1033,7 @@ async function main() {
   await sleep(500);
   assert((await page.evaluate(() => window.__pool.state().balls)) === 16, '台球开局：15 颗球 + 白球');
   assert((await page.evaluate(() => window.__pool.state().playerTurn)) === true, '玩家先手');
+  const ptsStart = await page.evaluate(() => window.__pool.state().points);
   await page.evaluate(() => { window.__pool.aim(0, -1); window.__pool.setPower(0); });
   assert((await page.evaluate(() => window.__pool.shoot())) === false, '力度为 0 不能发射');
   const cueBefore = await page.evaluate(() => window.__pool.state());
@@ -1041,16 +1042,15 @@ async function main() {
   await sleep(600);
   const cueAfter = await page.evaluate(() => window.__pool.state());
   assert(Math.abs(cueAfter.cueX - cueBefore.cueX) + Math.abs(cueAfter.cueY - cueBefore.cueY) > 1, '白球被打出去移动了');
-  await sleep(1600);
+  for (let i = 0; i < 30 && (await page.evaluate(() => window.__pool.state().moving)); i++) await sleep(250); // 等球慢慢滚停
   const robotState = await page.evaluate(() => window.__pool.state());
   assert(robotState.playerTurn === false || robotState.over === true, '玩家没进球后轮到机器人');
   await page.evaluate(() => window.__pool.robotShoot());
-  await sleep(700);
-  const ptsBefore = await page.evaluate(() => window.__pool.state().points);
+  for (let i = 0; i < 30 && (await page.evaluate(() => window.__pool.state().moving)); i++) await sleep(250);
   await page.evaluate(() => window.__pool.forceWin());
   await sleep(300);
   assert((await page.locator('#plOver:not(.hidden)').count()) === 1, '全清台弹出结算');
-  assert((await page.evaluate(() => window.__pool.state().points)) === ptsBefore + 1000, '赢一局 +1000 游戏积分');
+  assert((await page.evaluate(() => window.__pool.state().points)) === ptsStart + 1000, '赢一局 +1000 游戏积分');
   assert(errors.length === 0, '无 JS 报错' + (errors.length ? ' → ' + errors[0] : ''));
 
   /* ---------- 生字 ---------- */

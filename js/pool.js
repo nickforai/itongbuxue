@@ -178,11 +178,11 @@
       if (b.pocketed) return;
       b.x += b.vx * dt;
       b.y += b.vy * dt;
-      var f = 1 - 1.8 * dt;
+      var f = 1 - 0.9 * dt; // 慢慢滚动、逐渐减速
       b.vx *= Math.max(0, f);
       b.vy *= Math.max(0, f);
-      if (Math.abs(b.vx) < 3) b.vx = 0;
-      if (Math.abs(b.vy) < 3) b.vy = 0;
+      if (Math.abs(b.vx) < 1.2) b.vx = 0; // 滚不动了才停
+      if (Math.abs(b.vy) < 1.2) b.vy = 0;
       if (b.vx || b.vy) moved = true;
       if (b.x - b.r < playX0) { b.x = playX0 + b.r; b.vx = Math.abs(b.vx) * 0.8; }
       if (b.x + b.r > playX0 + playW) { b.x = playX0 + playW - b.r; b.vx = -Math.abs(b.vx) * 0.8; }
@@ -293,34 +293,66 @@
   }
 
   /* ---------- 机器人 ---------- */
+  function raycastDir(dx, dy) {
+    var bestT = 1e9, bestBall = null;
+    balls.forEach(function (b) {
+      if (b.pocketed || b.type === 'cue') return;
+      var ox = b.x - cueBall.x, oy = b.y - cueBall.y;
+      var proj = ox * dx + oy * dy;
+      if (proj < 0) return;
+      var perp2 = ox * ox + oy * oy - proj * proj;
+      var rr = BALL_R * 2;
+      if (perp2 > rr * rr) return;
+      var t = proj - Math.sqrt(Math.max(0, rr * rr - perp2));
+      if (t < bestT) { bestT = t; bestBall = b; }
+    });
+    return { t: bestT, ball: bestBall };
+  }
+
   function pickRobotTarget() {
     var own = groups.robot;
+    var candidates = [];
     if (own && groupsCleared(own)) {
       var e8 = balls.find(function (b) { return b.num === 8 && !b.pocketed; });
-      if (e8) return e8;
+      if (e8) candidates.push(e8);
+    } else {
+      candidates = balls.filter(function (b) {
+        if (b.pocketed || b.type === 'cue' || b.num === 8) return false;
+        return own ? b.group === own : true;
+      });
     }
-    var candidates = balls.filter(function (b) {
-      if (b.pocketed || b.type === 'cue' || b.num === 8) return false;
-      return own ? b.group === own : true;
-    });
+    // 优先选“能直接打到、不会被其它球挡住”的目标
     var best = null, bd = 1e9;
     candidates.forEach(function (b) {
       var d = Math.hypot(b.x - cueBall.x, b.y - cueBall.y);
+      if (d < 1e-6) return;
+      var dx = (b.x - cueBall.x) / d, dy = (b.y - cueBall.y) / d;
+      var hit = raycastDir(dx, dy);
+      if (hit.ball && hit.ball !== b) return; // 路线被挡住
       if (d < bd) { bd = d; best = b; }
     });
+    if (!best) {
+      // 没有完全畅通的路线，选最近的球（机器人偶尔会打不进）
+      var fallback = null, fd = 1e9;
+      candidates.forEach(function (b) {
+        var d = Math.hypot(b.x - cueBall.x, b.y - cueBall.y);
+        if (d < fd) { fd = d; fallback = b; }
+      });
+      best = fallback;
+    }
     return best;
   }
 
   function robotTurn() {
-    if (over || playerTurn) return;
+    if (over || playerTurn || moving) return;
     var target = pickRobotTarget();
     if (!target) { switchTurn(); return; }
     var dx = target.x - cueBall.x, dy = target.y - cueBall.y;
     var d = Math.hypot(dx, dy) || 1;
     var ang = Math.atan2(dy, dx);
-    ang += (0.012 + d * 0.00003) * (Math.random() * 2 - 1); // 机器人有一点误差，玩家胜率略高
+    ang += (0.006 + d * 0.00002) * (Math.random() * 2 - 1); // 准度好一些，但留一点误差，玩家胜率略高
     aimDir = { x: Math.cos(ang), y: Math.sin(ang) };
-    var p = Math.max(18, Math.min(90, 26 + d * 0.13 + (Math.random() * 16 - 8)));
+    var p = Math.max(20, Math.min(88, 28 + d * 0.12 + (Math.random() * 12 - 6)));
     power = p;
     updatePowerUI();
     fireShot();
@@ -346,8 +378,8 @@
   function fireShot() {
     if (moving || over || power < 3) return false;
     var ang = Math.atan2(aimDir.y, aimDir.x) + (Math.random() * 2 - 1) * cue().acc; // 球杆越好越准
-    cueBall.vx = Math.cos(ang) * power * 8;
-    cueBall.vy = Math.sin(ang) * power * 8;
+    cueBall.vx = Math.cos(ang) * power * 5;
+    cueBall.vy = Math.sin(ang) * power * 5;
     power = 0;
     updatePowerUI();
     pottedThisShot = [];
