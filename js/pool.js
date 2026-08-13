@@ -689,41 +689,46 @@
       var tailY = cueBall.y - aimDir.y * (BALL_R + 8 + stickLen);
       var tipX = cueBall.x - aimDir.x * (BALL_R + 2);
       var tipY = cueBall.y - aimDir.y * (BALL_R + 2);
-      g.strokeStyle = '#5a3a1e';
-      g.lineWidth = 11;
-      g.lineCap = 'round';
-      g.beginPath();
-      g.moveTo(tailX, tailY);
-      g.lineTo(tipX, tipY);
-      g.stroke();
-      g.strokeStyle = '#d9b36a';
-      g.lineWidth = 7;
-      g.beginPath();
-      g.moveTo(tailX, tailY);
-      g.lineTo(tipX, tipY);
-      g.stroke();
-      g.strokeStyle = '#fff8e7';
-      g.lineWidth = 5;
-      g.beginPath();
-      g.moveTo(cueBall.x - aimDir.x * (BALL_R + 2 + 34), cueBall.y - aimDir.y * (BALL_R + 2 + 34));
-      g.lineTo(tipX, tipY);
-      g.stroke();
-      g.lineCap = 'butt';
-      // 龙系球杆：杆头是龙
-      if (cue().dragon) {
-        g.save();
-        g.translate(tipX, tipY);
-        g.rotate(Math.atan2(aimDir.y, aimDir.x));
-        var dc = cue().dragonColor;
-        g.fillStyle = dc;
-        g.beginPath(); g.arc(0, 0, 7, 0, Math.PI * 2); g.fill();
-        g.beginPath(); g.moveTo(6, -2); g.lineTo(13, 0); g.lineTo(6, 2); g.closePath(); g.fill();
-        g.beginPath(); g.moveTo(-3, -6); g.lineTo(-7, -13); g.lineTo(0, -8); g.closePath(); g.fill();
-        g.beginPath(); g.moveTo(3, -6); g.lineTo(7, -13); g.lineTo(0, -8); g.closePath(); g.fill();
-        g.fillStyle = '#fff';
-        g.beginPath(); g.arc(-2, 0, 1.5, 0, Math.PI * 2); g.fill();
-        g.beginPath(); g.arc(2, 0, 1.5, 0, Math.PI * 2); g.fill();
-        g.restore();
+      if (cue().level >= MAX_LEVEL) {
+        // 金龙至尊球杆：整根球杆就是一条金色神龙
+        drawGoldenDragonCue(tipX, tipY, tailX, tailY);
+      } else {
+        g.strokeStyle = '#5a3a1e';
+        g.lineWidth = 11;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(tailX, tailY);
+        g.lineTo(tipX, tipY);
+        g.stroke();
+        g.strokeStyle = '#d9b36a';
+        g.lineWidth = 7;
+        g.beginPath();
+        g.moveTo(tailX, tailY);
+        g.lineTo(tipX, tipY);
+        g.stroke();
+        g.strokeStyle = '#fff8e7';
+        g.lineWidth = 5;
+        g.beginPath();
+        g.moveTo(cueBall.x - aimDir.x * (BALL_R + 2 + 34), cueBall.y - aimDir.y * (BALL_R + 2 + 34));
+        g.lineTo(tipX, tipY);
+        g.stroke();
+        g.lineCap = 'butt';
+        // 龙系球杆：杆头是龙
+        if (cue().dragon) {
+          g.save();
+          g.translate(tipX, tipY);
+          g.rotate(Math.atan2(aimDir.y, aimDir.x));
+          var dc = cue().dragonColor;
+          g.fillStyle = dc;
+          g.beginPath(); g.arc(0, 0, 7, 0, Math.PI * 2); g.fill();
+          g.beginPath(); g.moveTo(6, -2); g.lineTo(13, 0); g.lineTo(6, 2); g.closePath(); g.fill();
+          g.beginPath(); g.moveTo(-3, -6); g.lineTo(-7, -13); g.lineTo(0, -8); g.closePath(); g.fill();
+          g.beginPath(); g.moveTo(3, -6); g.lineTo(7, -13); g.lineTo(0, -8); g.closePath(); g.fill();
+          g.fillStyle = '#fff';
+          g.beginPath(); g.arc(-2, 0, 1.5, 0, Math.PI * 2); g.fill();
+          g.beginPath(); g.arc(2, 0, 1.5, 0, Math.PI * 2); g.fill();
+          g.restore();
+        }
       }
     }
     // 瞄准辅助线：白球方向 + 预测被撞球路线（参考台球游戏）
@@ -836,6 +841,85 @@
   function seeded(n) {
     var x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
     return x - Math.floor(x);
+  }
+
+  /* 金龙至尊球杆：整根球杆是一条精致金色神龙 */
+  function drawGoldenDragonCue(tipX, tipY, tailX, tailY) {
+    var g = ctx;
+    var len = Math.hypot(tipX - tailX, tipY - tailY) || 1;
+    var ux = (tipX - tailX) / len, uy = (tipY - tailY) / len;
+    var px = -uy, py = ux;
+    var ang = Math.atan2(uy, ux);
+    var segs = 30;
+    var pts = [];
+    for (var i = 0; i <= segs; i++) {
+      var t = i / segs;
+      var bx = tailX + ux * t * len;
+      var by = tailY + uy * t * len;
+      var off = Math.sin(t * Math.PI * 2.4) * 7 * Math.sin(t * Math.PI);
+      pts.push({ x: bx + px * off, y: by + py * off, t: t });
+    }
+    var grad = g.createLinearGradient(tailX, tailY, tipX, tipY);
+    grad.addColorStop(0, '#a9740e');
+    grad.addColorStop(0.45, '#ffd700');
+    grad.addColorStop(0.8, '#ffe98a');
+    grad.addColorStop(1, '#fff7d0');
+    g.lineCap = 'round';
+    g.shadowColor = '#ffd700';
+    g.shadowBlur = 10;
+    for (var j = 0; j < pts.length - 1; j++) {
+      g.strokeStyle = grad;
+      g.lineWidth = 4 + pts[j].t * 11;
+      g.beginPath();
+      g.moveTo(pts[j].x, pts[j].y);
+      g.lineTo(pts[j + 1].x, pts[j + 1].y);
+      g.stroke();
+    }
+    g.shadowBlur = 0;
+    g.strokeStyle = 'rgba(122,72,10,0.5)';
+    g.lineWidth = 1.2;
+    for (var s = 2; s < pts.length - 1; s += 2) {
+      var p = pts[s];
+      g.beginPath();
+      g.arc(p.x, p.y, 2.6, ang + 1.0, ang + Math.PI - 1.0);
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(255,222,120,0.85)';
+    for (var f = 4; f < pts.length - 3; f += 3) {
+      var fp = pts[f];
+      g.beginPath();
+      g.moveTo(fp.x + px * 3, fp.y + py * 3);
+      g.lineTo(fp.x + ux * 5 + px * 6, fp.y + uy * 5 + py * 6);
+      g.lineTo(fp.x - px * 2, fp.y - py * 2);
+      g.closePath();
+      g.fill();
+    }
+    var tt = pts[0];
+    g.strokeStyle = '#e6b422';
+    g.lineWidth = 6;
+    g.beginPath();
+    g.arc(tt.x - ux * 4, tt.y - uy * 4, 11, Math.PI * 0.2, Math.PI * 1.7);
+    g.stroke();
+    g.save();
+    g.translate(tipX, tipY);
+    g.rotate(ang);
+    g.fillStyle = '#ffe98a';
+    g.shadowColor = '#ffd700';
+    g.shadowBlur = 12;
+    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(8, -3); g.lineTo(19, 0); g.lineTo(8, 3); g.closePath(); g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = '#d9a520';
+    g.beginPath(); g.moveTo(-4, -8); g.lineTo(-9, -18); g.lineTo(-1, -10); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(4, -8); g.lineTo(9, -18); g.lineTo(1, -10); g.closePath(); g.fill();
+    g.fillStyle = '#7a1f0c';
+    g.beginPath(); g.arc(-3, -2, 1.8, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(3, -2, 1.8, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(255,240,190,0.95)';
+    g.lineWidth = 1.3;
+    g.beginPath(); g.moveTo(10, 2); g.quadraticCurveTo(17, 9, 12, 15); g.stroke();
+    g.beginPath(); g.moveTo(10, -2); g.quadraticCurveTo(17, -9, 12, -15); g.stroke();
+    g.restore();
   }
 
   function lighten(hex) {
