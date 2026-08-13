@@ -88,6 +88,9 @@
       tb.disabled = save.points < 100;
       tb.textContent = save.points >= 100 ? '🌋 100 积分兑换岩浆球桌' : '🌋 100 积分兑换岩浆球桌（积分不够）';
     }
+    var inv = App.el('plInvestBtn');
+    inv.disabled = save.points < 1000;
+    inv.textContent = save.points >= 1000 ? '💸 投资：花 1000 积分，得 10,000 积分' : '💸 投资：花 1000 积分，得 10,000 积分（积分不够）';
     var play = App.el('plPlayBtn');
     play.disabled = false;
     play.textContent = '🎱 开始打台球（' + c.emoji + ' ' + c.name + '）';
@@ -116,8 +119,19 @@
     return true;
   }
 
+  function investPoints() {
+    if (save.points < 1000) { App.toast('积分不够 1000'); return false; }
+    save.points -= 1000;
+    save.points += 10000;
+    saveNow();
+    renderShop();
+    App.toast('💸 投资成功！积分 +10,000');
+    return true;
+  }
+
   App.el('plUpgradeBtn').addEventListener('click', upgradeCue);
   App.el('plTableBtn').addEventListener('click', buyTable);
+  App.el('plInvestBtn').addEventListener('click', investPoints);
   App.el('plPlayBtn').addEventListener('click', function () {
     startGame();
   });
@@ -336,7 +350,7 @@
     if (!playerTurn && !over) {
       App.toast('🤖 轮到机器人');
       if (robotTimer) clearTimeout(robotTimer);
-      robotTimer = setTimeout(robotTurn, fast ? 150 : 900);
+      robotTimer = setTimeout(robotTurn, fast ? 120 : 450);
     }
   }
 
@@ -845,6 +859,7 @@
     setFast: function (v) { fast = !!v; App.el('plFastBtn').textContent = fast ? '⚡ 加速中' : '⚡ 加速'; App.el('plFastBtn').classList.toggle('on', fast); return fast; },
     upgradeCue: upgradeCue,
     buyTable: buyTable,
+    invest: investPoints,
     setPoints: function (n) { save.points = n; saveNow(); renderShop(); return save.points; },
     setLevel: function (n) { save.level = Math.max(0, Math.min(MAX_LEVEL, n)); saveNow(); renderShop(); return save.level; },
     start: startGame,

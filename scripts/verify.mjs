@@ -1036,6 +1036,9 @@ async function main() {
   await page.evaluate(() => window.__pool.setLevel(100));
   assert((await page.evaluate(() => window.__pool.state().level)) === 100, '金龙至尊球杆是顶级 Lv.100');
   assert((await page.evaluate(() => window.__pool.state().aim)) === 4, '顶级球杆横杠等级 4');
+  await page.evaluate(() => window.__pool.setPoints(1000));
+  assert((await page.evaluate(() => window.__pool.invest())) === true, '花 1000 积分投资得 10,000 积分');
+  assert((await page.evaluate(() => window.__pool.state().points)) === 10000, '投资后积分 10,000');
   await page.click('#plPlayBtn');
   await sleep(500);
   assert((await page.evaluate(() => window.__pool.state().balls)) === 16, '台球开局：15 颗球 + 白球');
