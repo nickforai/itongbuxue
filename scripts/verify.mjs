@@ -1061,6 +1061,17 @@ async function main() {
   assert((await page.evaluate(() => window.__pool.state().points)) >= ptsStart + 350, '7 颗龙珠百分百进洞 +350 积分');
   const robotState = await page.evaluate(() => window.__pool.state());
   assert(robotState.playerTurn === false || robotState.over === true, '玩家没进球后轮到机器人');
+  // 机器人打进自己的球后必须继续出杆，不能卡住
+  assert((await page.evaluate(() => window.__pool.simulateRobotPot())) === true, '机器人进了一颗自己的球');
+  const rcX = await page.evaluate(() => window.__pool.state().cueX);
+  let robotReShot = false;
+  for (let i = 0; i < 20 && !robotReShot; i++) {
+    await sleep(200);
+    const s2 = await page.evaluate(() => window.__pool.state());
+    robotReShot = s2.moving || Math.abs(s2.cueX - rcX) > 1;
+  }
+  assert(robotReShot, '机器人打进自己的球后继续出杆，不卡住');
+  for (let i = 0; i < 30 && (await page.evaluate(() => window.__pool.state().moving)); i++) await sleep(250);
   await page.evaluate(() => window.__pool.robotShoot());
   for (let i = 0; i < 30 && (await page.evaluate(() => window.__pool.state().moving)); i++) await sleep(250);
   await page.evaluate(() => window.__pool.forceWin());

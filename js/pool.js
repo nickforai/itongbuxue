@@ -329,7 +329,11 @@
     }
     var pottedOwn = pottedThisShot.some(function (b) { return b.group === own; });
     if (pottedOwn && !scratchThisShot) {
-      // 进了自己的球，继续打
+      // 进了自己的球，继续打（机器人继续时要重新安排出杆）
+      if (!playerTurn && !over) {
+        if (robotTimer) clearTimeout(robotTimer);
+        robotTimer = setTimeout(robotTurn, fast ? 120 : 450);
+      }
     } else {
       switchTurn();
     }
@@ -847,78 +851,154 @@
   function drawGoldenDragonCue(tipX, tipY, tailX, tailY) {
     var g = ctx;
     var len = Math.hypot(tipX - tailX, tipY - tailY) || 1;
-    var ux = (tipX - tailX) / len, uy = (tipY - tailY) / len;
-    var px = -uy, py = ux;
-    var ang = Math.atan2(uy, ux);
-    var segs = 30;
-    var pts = [];
-    for (var i = 0; i <= segs; i++) {
-      var t = i / segs;
-      var bx = tailX + ux * t * len;
-      var by = tailY + uy * t * len;
-      var off = Math.sin(t * Math.PI * 2.4) * 7 * Math.sin(t * Math.PI);
-      pts.push({ x: bx + px * off, y: by + py * off, t: t });
-    }
-    var grad = g.createLinearGradient(tailX, tailY, tipX, tipY);
-    grad.addColorStop(0, '#a9740e');
-    grad.addColorStop(0.45, '#ffd700');
-    grad.addColorStop(0.8, '#ffe98a');
-    grad.addColorStop(1, '#fff7d0');
-    g.lineCap = 'round';
-    g.shadowColor = '#ffd700';
-    g.shadowBlur = 10;
-    for (var j = 0; j < pts.length - 1; j++) {
-      g.strokeStyle = grad;
-      g.lineWidth = 4 + pts[j].t * 11;
-      g.beginPath();
-      g.moveTo(pts[j].x, pts[j].y);
-      g.lineTo(pts[j + 1].x, pts[j + 1].y);
-      g.stroke();
-    }
-    g.shadowBlur = 0;
-    g.strokeStyle = 'rgba(122,72,10,0.5)';
-    g.lineWidth = 1.2;
-    for (var s = 2; s < pts.length - 1; s += 2) {
-      var p = pts[s];
-      g.beginPath();
-      g.arc(p.x, p.y, 2.6, ang + 1.0, ang + Math.PI - 1.0);
-      g.stroke();
-    }
-    g.fillStyle = 'rgba(255,222,120,0.85)';
-    for (var f = 4; f < pts.length - 3; f += 3) {
-      var fp = pts[f];
-      g.beginPath();
-      g.moveTo(fp.x + px * 3, fp.y + py * 3);
-      g.lineTo(fp.x + ux * 5 + px * 6, fp.y + uy * 5 + py * 6);
-      g.lineTo(fp.x - px * 2, fp.y - py * 2);
-      g.closePath();
-      g.fill();
-    }
-    var tt = pts[0];
-    g.strokeStyle = '#e6b422';
-    g.lineWidth = 6;
-    g.beginPath();
-    g.arc(tt.x - ux * 4, tt.y - uy * 4, 11, Math.PI * 0.2, Math.PI * 1.7);
-    g.stroke();
+    var ang = Math.atan2(tipY - tailY, tipX - tailX);
     g.save();
     g.translate(tipX, tipY);
     g.rotate(ang);
-    g.fillStyle = '#ffe98a';
+    // 龙身中心线（局部坐标：x 从 0（龙头）到 -len（龙尾），上下波浪）
+    var segs = 44;
+    var pts = [];
+    for (var i = 0; i <= segs; i++) {
+      var t = i / segs;
+      pts.push({ x: -t * len, y: Math.sin(t * Math.PI * 3) * len * 0.045 * Math.sin(t * Math.PI), t: t });
+    }
+    function bodyStroke(widths, style) {
+      g.strokeStyle = style;
+      g.lineCap = 'round';
+      for (var j = 0; j < pts.length - 1; j++) {
+        g.lineWidth = widths(pts[j].t);
+        g.beginPath();
+        g.moveTo(pts[j].x, pts[j].y);
+        g.lineTo(pts[j + 1].x, pts[j + 1].y);
+        g.stroke();
+      }
+    }
+    // 深金描边 → 金色身体（头粗尾细）
+    bodyStroke(function (t) { return 7 + (1 - t) * 15; }, 'rgba(110,64,8,0.9)');
+    var grad = g.createLinearGradient(0, 0, -len, 0);
+    grad.addColorStop(0, '#fff3bd');
+    grad.addColorStop(0.25, '#ffd700');
+    grad.addColorStop(0.7, '#e6b422');
+    grad.addColorStop(1, '#b8860b');
     g.shadowColor = '#ffd700';
-    g.shadowBlur = 12;
-    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.moveTo(8, -3); g.lineTo(19, 0); g.lineTo(8, 3); g.closePath(); g.fill();
+    g.shadowBlur = 9;
+    bodyStroke(function (t) { return 5 + (1 - t) * 13; }, grad);
     g.shadowBlur = 0;
-    g.fillStyle = '#d9a520';
-    g.beginPath(); g.moveTo(-4, -8); g.lineTo(-9, -18); g.lineTo(-1, -10); g.closePath(); g.fill();
-    g.beginPath(); g.moveTo(4, -8); g.lineTo(9, -18); g.lineTo(1, -10); g.closePath(); g.fill();
-    g.fillStyle = '#7a1f0c';
-    g.beginPath(); g.arc(-3, -2, 1.8, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(3, -2, 1.8, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = 'rgba(255,240,190,0.95)';
+    // 鳞片：交错两排小弧
+    g.strokeStyle = 'rgba(122,72,10,0.55)';
     g.lineWidth = 1.3;
-    g.beginPath(); g.moveTo(10, 2); g.quadraticCurveTo(17, 9, 12, 15); g.stroke();
-    g.beginPath(); g.moveTo(10, -2); g.quadraticCurveTo(17, -9, 12, -15); g.stroke();
+    for (var s = 2; s < pts.length - 1; s += 2) {
+      var p = pts[s];
+      var rad = 2.6 + p.t * 3;
+      g.beginPath(); g.arc(p.x, p.y - rad * 0.5, rad, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+      g.beginPath(); g.arc(p.x - 2, p.y + rad * 0.35, rad * 0.8, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+    }
+    // 金色背鳍（火焰状）
+    g.fillStyle = 'rgba(255,216,96,0.9)';
+    for (var f = 3; f < pts.length - 3; f += 3) {
+      var fp = pts[f];
+      var h = 8 + (1 - fp.t) * 8;
+      g.beginPath();
+      g.moveTo(fp.x - 2, fp.y - 2);
+      g.quadraticCurveTo(fp.x + 2, fp.y - h, fp.x + 6, fp.y - 4);
+      g.quadraticCurveTo(fp.x + 3, fp.y - h * 0.55, fp.x + 3, fp.y - 1);
+      g.closePath();
+      g.fill();
+    }
+    // 龙爪/腹鳍
+    g.strokeStyle = '#e6b422';
+    g.lineWidth = 2;
+    for (var c = 4; c < pts.length - 2; c += 5) {
+      var cp = pts[c];
+      g.beginPath(); g.moveTo(cp.x, cp.y + 2); g.quadraticCurveTo(cp.x - 3, cp.y + 9, cp.x - 7, cp.y + 11); g.stroke();
+      g.beginPath(); g.moveTo(cp.x + 2, cp.y + 2); g.quadraticCurveTo(cp.x, cp.y + 10, cp.x - 4, cp.y + 13); g.stroke();
+    }
+    // 龙尾：卷曲 + 火焰
+    var tt = pts[pts.length - 1];
+    g.strokeStyle = '#e6b422';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.arc(tt.x - 6, tt.y, 11, Math.PI * 0.15, Math.PI * 1.7);
+    g.stroke();
+    g.fillStyle = '#ff8c2e';
+    g.shadowColor = '#ff8c2e';
+    g.shadowBlur = 10;
+    g.beginPath();
+    g.moveTo(tt.x - 20, tt.y - 3);
+    g.quadraticCurveTo(tt.x - 30, tt.y, tt.x - 20, tt.y + 3);
+    g.quadraticCurveTo(tt.x - 24, tt.y, tt.x - 20, tt.y - 3);
+    g.fill();
+    g.shadowBlur = 0;
+    // 龙头：侧面朝球，精致细节
+    g.fillStyle = '#ffd700';
+    g.shadowColor = '#ffd700';
+    g.shadowBlur = 10;
+    g.beginPath(); g.ellipse(8, -2, 9, 8, 0, 0, Math.PI * 2); g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = '#ffe98a';
+    g.beginPath();
+    g.moveTo(4, -6);
+    g.quadraticCurveTo(16, -9, 25, -4);
+    g.quadraticCurveTo(27, -1, 24, 1);
+    g.quadraticCurveTo(14, 4, 5, 1);
+    g.closePath();
+    g.fill();
+    g.fillStyle = '#8a5a12';
+    g.beginPath(); g.arc(21, -3, 1.3, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#f5c542';
+    g.beginPath();
+    g.moveTo(3, 2);
+    g.quadraticCurveTo(12, 9, 20, 5);
+    g.quadraticCurveTo(15, 11, 5, 8);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = '#7a4a0c';
+    g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(8, 1); g.quadraticCurveTo(16, 3, 23, 1); g.stroke();
+    // 口中火焰
+    g.fillStyle = '#ff6b35';
+    g.beginPath();
+    g.moveTo(21, 1);
+    g.quadraticCurveTo(30, -3, 35, 1);
+    g.quadraticCurveTo(30, 5, 23, 3);
+    g.closePath();
+    g.fill();
+    // 眼睛
+    g.fillStyle = '#fff';
+    g.beginPath(); g.ellipse(9, -4, 3.4, 2.8, -0.25, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#7a1f0c';
+    g.beginPath(); g.arc(10, -4, 1.6, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(9.2, -4.9, 0.7, 0, Math.PI * 2); g.fill();
+    // 龙角（分叉）
+    g.strokeStyle = '#c99a2e';
+    g.lineWidth = 3;
+    g.lineCap = 'round';
+    g.beginPath(); g.moveTo(4, -8); g.quadraticCurveTo(0, -18, -7, -23); g.stroke();
+    g.beginPath(); g.moveTo(-1, -16); g.quadraticCurveTo(-6, -21, -12, -20); g.stroke();
+    // 耳鳍
+    g.fillStyle = '#f5c542';
+    g.beginPath();
+    g.moveTo(0, -8);
+    g.quadraticCurveTo(-6, -15, -12, -10);
+    g.quadraticCurveTo(-7, -4, 0, -3);
+    g.closePath();
+    g.fill();
+    // 鬃毛
+    g.strokeStyle = 'rgba(255,214,90,0.95)';
+    g.lineWidth = 2.4;
+    for (var m = 0; m < 4; m++) {
+      var my = -7 + m * 3;
+      g.beginPath();
+      g.moveTo(-4, my);
+      g.quadraticCurveTo(-18, my - 5, -30, my + (m % 2 ? -4 : 5));
+      g.stroke();
+    }
+    // 龙须
+    g.strokeStyle = 'rgba(255,240,200,0.95)';
+    g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(18, -3); g.quadraticCurveTo(28, -11, 35, -13); g.stroke();
+    g.beginPath(); g.moveTo(18, 3); g.quadraticCurveTo(30, 9, 39, 6); g.stroke();
     g.restore();
   }
 
@@ -955,6 +1035,16 @@
     setPower: function (p) { power = Math.max(0, Math.min(100, p)); updatePowerUI(); return power; },
     shoot: fireShot,
     robotShoot: robotTurn,
+    simulateRobotPot: function () {
+      if (playerTurn || over) return false;
+      var target = balls.find(function (b) { return !b.pocketed && b.type === 'target' && b.num !== 8; });
+      if (!target) return false;
+      target.pocketed = true;
+      pottedThisShot.push(target);
+      scratchThisShot = false;
+      evaluateShot();
+      return true;
+    },
     sinkBall: function (num) {
       var b = balls.find(function (x) { return x.num === num && !x.pocketed; });
       if (!b) return false;
