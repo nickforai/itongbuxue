@@ -1040,6 +1040,10 @@ async function main() {
   await sleep(500);
   assert((await page.evaluate(() => window.__pool.state().balls)) === 16, '台球开局：15 颗球 + 白球');
   assert((await page.evaluate(() => window.__pool.state().playerTurn)) === true, '玩家先手');
+  await page.click('#plFastBtn');
+  assert((await page.evaluate(() => window.__pool.state().fast)) === true, '加速按钮开启');
+  await page.click('#plFastBtn');
+  assert((await page.evaluate(() => window.__pool.state().fast)) === false, '再点一次关闭加速');
   const ptsStart = await page.evaluate(() => window.__pool.state().points);
   await page.evaluate(() => { window.__pool.aim(0, -1); window.__pool.setPower(0); });
   assert((await page.evaluate(() => window.__pool.shoot())) === false, '力度为 0 不能发射');

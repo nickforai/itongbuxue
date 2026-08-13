@@ -1838,6 +1838,16 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   margin-bottom: 10px;
 }
 .pl-hud .warn { color: #ff6b6b; font-weight: 800; animation: blink 0.8s infinite; }
+.pl-fast-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border: 1px solid rgba(255, 220, 140, 0.7);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: .82rem;
+  font-weight: 800;
+}
+.pl-fast-btn.on { background: linear-gradient(135deg, #ef4444, #b91c1c); }
 .pl-stage { position: relative; border-radius: 12px; overflow: hidden; }
 #plCanvas { display: block; width: 100%; height: min(68vh, 640px); touch-action: none; }
 .pl-power {

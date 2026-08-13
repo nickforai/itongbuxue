@@ -136,6 +136,7 @@
   var stopTimer = null, rafId = null, lastTs = 0, dragAim = null;
   var cracks = [];
   var dragonBalls = []; // 金龙至尊球杆召唤的龙珠 {x,y,vx,vy,pocket,phase,t}
+  var fast = false; // 加速：机器人更快、球滚得更快
   var PALETTE = ['#ef4444', '#ff9800', '#ffd166', '#4caf50', '#2196f3', '#9c27b0', '#e91e63'];
 
   function startGame() {
@@ -164,6 +165,8 @@
     ];
     resetBalls();
     dragonBalls = [];
+    fast = false;
+    App.el('plFastBtn').textContent = '⚡ 加速';
     cracks = [];
     if (save.table) {
       for (var ci = 0; ci < 9; ci++) {
@@ -222,7 +225,8 @@
   function loop(ts) {
     if (!running) return;
     rafId = requestAnimationFrame(loop);
-    var dt = Math.min((ts - lastTs) / 1000, 0.05);
+    var spd = fast ? 3 : 1;
+    var dt = Math.min((ts - lastTs) / 1000 * spd, 0.05 * spd);
     lastTs = ts;
     if (moving) {
       var any = false;
@@ -332,7 +336,7 @@
     if (!playerTurn && !over) {
       App.toast('🤖 轮到机器人');
       if (robotTimer) clearTimeout(robotTimer);
-      robotTimer = setTimeout(robotTurn, 900);
+      robotTimer = setTimeout(robotTurn, fast ? 150 : 900);
     }
   }
 
@@ -612,6 +616,13 @@
     renderShop();
   });
 
+  App.el('plFastBtn').addEventListener('click', function () {
+    fast = !fast;
+    App.el('plFastBtn').textContent = fast ? '⚡ 加速中' : '⚡ 加速';
+    App.el('plFastBtn').classList.toggle('on', fast);
+    App.toast(fast ? '⚡ 机器人加快，球也滚得更快' : '恢复正常速度');
+  });
+
   /* ---------- 绘制 ---------- */
   function draw() {
     var g = ctx;
@@ -828,9 +839,10 @@
         balls: balls ? balls.filter(function (b) { return !b.pocketed; }).length : 0,
         cueX: cueBall ? cueBall.x : -1, cueY: cueBall ? cueBall.y : -1,
         dragonBalls: dragonBalls ? dragonBalls.length : 0,
-        moving: moving, power: power, playerTurn: playerTurn, winner: winner, over: over
+        moving: moving, power: power, playerTurn: playerTurn, winner: winner, over: over, fast: fast
       };
     },
+    setFast: function (v) { fast = !!v; App.el('plFastBtn').textContent = fast ? '⚡ 加速中' : '⚡ 加速'; App.el('plFastBtn').classList.toggle('on', fast); return fast; },
     upgradeCue: upgradeCue,
     buyTable: buyTable,
     setPoints: function (n) { save.points = n; saveNow(); renderShop(); return save.points; },
