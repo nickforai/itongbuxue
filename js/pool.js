@@ -11,8 +11,8 @@
     if (raw.owned && raw.owned.length && !raw.level) {
       save.level = Math.min(10, 1 + raw.owned.length);
     }
-    // 新版迁移：球杆扩展到 100 级后，把老等级调回中低阶继续爬
-    if (raw.level) save.level = Math.min(15, raw.level);
+    // 球杆等级只做范围保护，绝不压缩：防止金龙至尊（Lv.100）重开后掉级
+    if (raw.level) save.level = Math.max(1, Math.min(100, raw.level));
   } catch (e) { /* ignore */ }
   function saveNow() {
     try { localStorage.setItem(PL_SAVE, JSON.stringify(save)); } catch (e) { /* ignore */ }
