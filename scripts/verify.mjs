@@ -669,8 +669,9 @@ async function main() {
     window.__mc.placeAt('door', 50, 30, 50);
   });
   await page.evaluate(() => window.__mc.lookAt(50, 30.5, 50));
+  await sleep(150); // 给视角朝向稳定一拍，避免动画时序抖动误判
   await page.evaluate(() => window.__mc.use());
-  await sleep(300);
+  await sleep(500);
   assert((await page.evaluate(() => window.__mc.blockAt(50, 30, 50))) === 'door_open', '门可以打开');
   await page.evaluate(() => {
     window.__mc.removeItem('arrow', 999);

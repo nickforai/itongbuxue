@@ -3,7 +3,7 @@
   'use strict';
 
   var PL_SAVE = 'xx3_pool_v1';
-  var save = { level: 0, points: 10, wins: 0, table: false };
+  var save = { level: 0, points: 10, wins: 0, table: false, maxLevel: 0 };
   try {
     var raw = JSON.parse(localStorage.getItem(PL_SAVE) || '{}');
     for (var k in save) if (raw[k] !== undefined) save[k] = raw[k];
@@ -13,6 +13,12 @@
     }
     // 球杆等级只做范围保护，绝不压缩：防止金龙至尊（Lv.100）重开后掉级
     if (raw.level) save.level = Math.max(1, Math.min(100, raw.level));
+    // 历史最高等级：老存档没有 maxLevel 时以当前等级为基准
+    save.maxLevel = Math.max(save.maxLevel, raw.maxLevel || 0, raw.level || 0);
+    // 异常掉级自动恢复：等级低于历史最高说明存档被误压，自动补回
+    if (save.maxLevel > save.level) save.level = save.maxLevel;
+    // 老存档首次加载即写回历史最高等级，确保掉级自动恢复机制生效
+    if (!raw.maxLevel) saveNow();
   } catch (e) { /* ignore */ }
   function saveNow() {
     try { localStorage.setItem(PL_SAVE, JSON.stringify(save)); } catch (e) { /* ignore */ }
@@ -102,6 +108,7 @@
     if (save.points < cost) { App.toast('积分不够 ' + cost + '，打赢一局 +1000 积分'); return false; }
     save.points -= cost;
     save.level += 1;
+    if (save.maxLevel < save.level) save.maxLevel = save.level;
     saveNow();
     renderShop();
     App.toast('🎱 ' + (save.level === 1 ? '兑换了 ' : '升级到 ') + cue().name + '！');
@@ -1025,7 +1032,11 @@
     buyTable: buyTable,
     invest: investPoints,
     setPoints: function (n) { save.points = n; saveNow(); renderShop(); return save.points; },
-    setLevel: function (n) { save.level = Math.max(0, Math.min(MAX_LEVEL, n)); saveNow(); renderShop(); return save.level; },
+    setLevel: function (n) {
+      save.level = Math.max(0, Math.min(MAX_LEVEL, n));
+      if (save.maxLevel < save.level) save.maxLevel = save.level;
+      saveNow(); renderShop(); return save.level;
+    },
     start: startGame,
     aim: function (x, y) {
       var d = Math.hypot(x, y) || 1;
