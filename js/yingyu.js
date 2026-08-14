@@ -165,6 +165,7 @@
     data = App.store.load();
     App.addStars(data, 'yingyu', reward);
     App.logActivity(data, '单词测验 ' + score + '/10');
+    App.addTask(data);
 
     qz.wrong.forEach(function (w) {
       data.wrong.yingyu.push(w);

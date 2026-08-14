@@ -7,11 +7,11 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="家长空间">
   <meta name="format-detection" content="telephone=no">
-  <title>家长空间 · 学习乐园</title>
+  <title>家长空间 · i同步学</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=36">
+  <link rel="stylesheet" href="css/style.css?v=77">
 </head>
 <body>
   <div class="page">
@@ -26,15 +26,35 @@
     </div>
 
     <div class="panel">
+      <h2>🎯 每日学习目标</h2>
+      <p class="muted-note">孩子每天完成几个练习算达标？（口算一轮、单词测验、科学问答、生字考一考、背诵一次、错题重练一轮都算 1 个）</p>
+      <div class="goal-btns" id="goalBtns"></div>
+    </div>
+
+    <div class="panel">
+      <h2>🔔 每日学习提醒</h2>
+      <p class="muted-note">到点后提醒孩子完成今日练习。需要 iPadOS 16.4 及以上，并把 i同步学「添加到主屏幕」后使用。</p>
+      <div class="remind-row">
+        <span>提醒时间</span>
+        <input type="time" id="remindTime" value="19:00">
+      </div>
+      <div class="muted-note" id="remindStatus" style="margin:10px 0 14px"></div>
+      <button class="btn btn-green" id="remindBtn">🔔 开启每日提醒</button>
+    </div>
+
+    <div class="panel">
       <h2>⭐ 星星与打卡</h2>
       <div class="stat-grid">
         <div class="stat-cell"><div class="sv" id="stTotal">0</div><div class="sl">累计星星</div></div>
         <div class="stat-cell"><div class="sv" id="stStreak">0</div><div class="sl">连续打卡（天）</div></div>
+        <div class="stat-cell"><div class="sv" id="stTodayTime">0</div><div class="sl">今日学习时长</div></div>
+        <div class="stat-cell"><div class="sv" id="stWeekTime">0</div><div class="sl">本周学习时长</div></div>
         <div class="stat-cell"><div class="sv" id="stYuwen">0</div><div class="sl">语文</div></div>
         <div class="stat-cell"><div class="sv" id="stShuxue">0</div><div class="sl">数学</div></div>
         <div class="stat-cell"><div class="sv" id="stYingyu">0</div><div class="sl">英语</div></div>
         <div class="stat-cell"><div class="sv" id="stKexue">0</div><div class="sl">科学</div></div>
         <div class="stat-cell"><div class="sv" id="stGame">0</div><div class="sl">斗地主⭐</div></div>
+        <div class="stat-cell"><div class="sv" id="stRedo">0</div><div class="sl">错题重练⭐</div></div>
         <div class="stat-cell"><div class="sv" id="stJifen">0</div><div class="sl">可用星星</div></div>
         <div class="stat-cell"><div class="sv" id="stChances">0</div><div class="sl">游戏机会</div></div>
         <div class="stat-cell"><div class="sv" id="stGames">0 / 0</div><div class="sl">斗地主胜/局</div></div>
@@ -83,7 +103,7 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=36"></script>
-  <script src="js/parent.js?v=36"></script>
+  <script src="js/common.js?v=77"></script>
+  <script src="js/parent.js?v=77"></script>
 </body>
 </html>

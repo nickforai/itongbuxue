@@ -9,6 +9,30 @@
   App.el('todayLabel').textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日 · 星期' + week[d.getDay()];
   App.el('streakBadge').textContent = '🔥 连续 ' + App.streakDays(data.checkins) + ' 天';
   App.setStarsUI();
+
+  /* 今日学习目标进度 */
+  var today = App.todayStr();
+  var goal = (data.settings && data.settings.dailyGoal) || 0;
+  var done = (data.tasks && data.tasks[today]) || 0;
+  var studySec = (data.timelog && data.timelog[today]) || 0;
+  var fill = App.el('taskProgress');
+  var count = App.el('taskCount');
+  var note = App.el('taskNote');
+  if (goal > 0) {
+    count.textContent = done + ' / ' + goal + ' 个';
+    fill.style.width = Math.min(100, Math.round(done / goal * 100)) + '%';
+    note.textContent = done >= goal
+      ? '🎉 今天的练习目标完成啦！太棒了！'
+      : '再完成 ' + (goal - done) + ' 个练习就达标啦，加油！';
+  } else {
+    count.textContent = done + ' 个';
+    fill.style.width = Math.min(100, done > 0 ? 100 : 0) + '%';
+    note.textContent = '家长可在「家长空间」设置每日学习目标';
+  }
+  if (studySec > 0) {
+    note.textContent += ' · ⏱ 今天已学 ' + App.fmtDuration(studySec);
+  }
+
   document.querySelectorAll('[data-chances-key]').forEach(function (node) {
     node.textContent = '🎮 机会 ' + data.chances;
   });

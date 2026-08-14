@@ -133,6 +133,7 @@
       // 今天已学过，复习不加星，只更新最好成绩
       rec.best = current.score;
     }
+    App.addTask(data);
     data.awarded.quizzes[key] = rec;
     current.wrong.forEach(function (w) { data.wrong.kexue.push(w); });
     if (data.wrong.kexue.length > 30) data.wrong.kexue = data.wrong.kexue.slice(-30);

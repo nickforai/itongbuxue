@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="错题重练">
+  <meta name="format-detection" content="telephone=no">
+  <title>错题重练 · i同步学</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=77">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>📕 错题重练</h1>
+      <div class="star-pill" id="starPill">⭐ 0</div>
+    </div>
+
+    <div class="panel" id="startPanel">
+      <h2>📋 待复习错题</h2>
+      <div id="wrongSummary"></div>
+      <button class="btn btn-blue" id="startBtn" style="margin-top:16px">✏️ 开始重练</button>
+      <p class="muted-note" id="redoNote" style="margin-top:12px">答对的题会自动移出错题本；答错的会继续保留，下次再练。</p>
+    </div>
+
+    <div class="panel hidden" id="quizPanel">
+      <div class="quiz-head">
+        <span id="redoProgress">第 1 / 10 题</span>
+        <span id="redoScore">答对 0 题</span>
+      </div>
+      <div class="question-text" id="redoQText" style="font-size:1.5rem;line-height:1.6"></div>
+      <div class="quiz-options" id="redoOptions"></div>
+      <div class="pad hidden" id="redoPad">
+        <button type="button" data-k="1">1</button>
+        <button type="button" data-k="2">2</button>
+        <button type="button" data-k="3">3</button>
+        <button type="button" data-k="4">4</button>
+        <button type="button" data-k="5">5</button>
+        <button type="button" data-k="6">6</button>
+        <button type="button" data-k="7">7</button>
+        <button type="button" data-k="8">8</button>
+        <button type="button" data-k="9">9</button>
+        <button type="button" data-k="0">0</button>
+        <button type="button" class="pad-del" data-k="del">⌫</button>
+        <button type="button" class="pad-ok" data-k="ok">✓</button>
+      </div>
+      <div id="redoFeedback"></div>
+    </div>
+
+    <div class="panel hidden" id="resultPanel">
+      <div class="result-box">
+        <div class="result-emoji" id="redoEmoji"></div>
+        <div class="result-score" id="redoScoreBig">0 / 0</div>
+        <div class="result-line" id="redoResultLine"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="redoAgainBtn">再来一轮</button>
+        <a class="btn btn-gold" href="index.html" style="display:block;text-align:center;line-height:1.4">回首页</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/common.js?v=77"></script>
+  <script src="js/data.js?v=37"></script>
+  <script src="js/data-char.js?v=37"></script>
+  <script src="js/wrongredo.js?v=77"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-/* 学习乐园 · 自动化功能验证（Playwright + 本机 Chrome） */
+/* i同步学 · 自动化功能验证（Playwright + 本机 Chrome） */
 import { chromium } from '/Users/nick/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs';
 
 const BASE = 'http://127.0.0.1:8642/';
@@ -35,7 +35,7 @@ async function main() {
   console.log('\n[1] 首页');
   fresh();
   await page.goto(BASE + 'index.html', { waitUntil: 'networkidle' });
-  assert((await page.title()).includes('学习乐园'), '标题正确');
+  assert((await page.title()).includes('i同步学'), '标题正确');
   assert((await page.locator('.subject-card').count()) === 4, '4 个学科卡片');
   assert((await page.locator('#checkinBtn').isVisible()), '打卡按钮可见');
   await page.click('#checkinBtn');

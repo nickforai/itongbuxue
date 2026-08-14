@@ -188,6 +188,7 @@
 
     App.addStars(data, 'shuxue', reward);
     App.logActivity(data, '口算 ' + state.level.name + ' ' + score + '/10');
+    App.addTask(data);
     App.setStarsUI();
 
     App.el('gameScreen').classList.add('hidden');

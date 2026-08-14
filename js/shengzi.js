@@ -242,6 +242,7 @@
     if (data.wrong.yuwen.length > 30) data.wrong.yuwen = data.wrong.yuwen.slice(-30);
     App.store.save(data);
     App.logActivity(data, '生字考一考 ' + qz.score + '/' + n);
+    App.addTask(data);
     App.setStarsUI();
 
     App.el('quizPanel').classList.add('hidden');

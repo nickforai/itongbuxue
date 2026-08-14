@@ -129,6 +129,126 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .btn-checkin:active { transform: scale(0.95); }
 .btn-checkin.done { background: #E8E8EF; color: var(--muted); box-shadow: none; }
 
+/* ---------- 今日学习目标卡片 ---------- */
+.task-card {
+  position: relative;
+  background: linear-gradient(135deg, #FFF3D6, #FFE6B3);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px 16px;
+  margin-bottom: 18px;
+}
+
+.task-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.task-title { font-size: 1.05rem; }
+.task-count { color: #9A6200; font-size: 1.05rem; }
+
+.progress-bar {
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #FFC94D, #FF9F1C);
+  transition: width 0.4s ease;
+}
+
+.task-note {
+  margin-top: 10px;
+  color: #7A5A20;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.task-redo-link {
+  display: inline-block;
+  margin-top: 12px;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 9px 16px;
+  font-weight: 800;
+  font-size: 0.92rem;
+  box-shadow: 0 4px 12px rgba(58, 58, 74, 0.12);
+}
+
+.task-redo-link:active { transform: scale(0.96); }
+
+.muted-note { color: var(--muted); font-size: 0.86rem; line-height: 1.5; }
+
+/* ---------- 家长空间：每日目标 ---------- */
+.goal-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.goal-btn {
+  min-width: 64px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #F0F0F6;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.goal-btn.on {
+  background: linear-gradient(135deg, #FFC94D, #FF9F1C);
+  color: #5C3500;
+  box-shadow: 0 6px 14px rgba(255, 159, 28, 0.3);
+}
+
+.goal-btn:active { transform: scale(0.94); }
+
+/* ---------- 家长空间：每日提醒 ---------- */
+.remind-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #F6F6FB;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+.remind-row input[type="time"] {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--ink);
+  border: none;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 8px 12px;
+  min-width: 130px;
+}
+
+/* ---------- 错题重练 ---------- */
+.wrong-sum-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 4px;
+  border-bottom: 1px solid #F0F0F6;
+  font-weight: 700;
+}
+
+.wrong-sum-row:last-of-type { border-bottom: none; }
+.wrong-sum-row b { color: var(--bad); }
+
 .subject-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

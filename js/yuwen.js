@@ -144,7 +144,7 @@
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { App.toast('此设备不支持录音识别'); return; }
     if (!window.isSecureContext) {
-      App.toast('语音识别需要安全连接：请用 https 网址打开学习乐园');
+      App.toast('语音识别需要安全连接：请用 https 网址打开i同步学');
       return;
     }
     App.stopSpeak();
@@ -251,6 +251,7 @@
         rec2.points = score.points;
         App.addStars(data, 'yuwen', diff);
         App.logActivity(data, '背诵《' + p.title + '》准确率' + score.accuracy + '%');
+        App.addTask(data);
         html += '<div class="rr-gain">🎉 星星 +' + diff + '，现在一共 ' + (data.balance || 0) + ' 颗</div>';
       } else {
         html += '<div class="rr-gain dim">刷新了今天的最好成绩（星星档位不变）</div>';

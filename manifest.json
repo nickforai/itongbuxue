@@ -1,7 +1,7 @@
 {
-  "name": "学习乐园（三年级）",
-  "short_name": "学习乐园",
-  "description": "三年级小朋友的学习乐园：语文、数学、英语、科学",
+  "name": "i同步学（三年级）",
+  "short_name": "i同步学",
+  "description": "三年级小朋友的 i同步学：语文、数学、英语、科学",
   "lang": "zh-CN",
   "start_url": "./index.html",
   "scope": "./",

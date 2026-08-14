@@ -164,7 +164,7 @@
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { App.toast('此设备不支持语音识别'); return; }
     if (!window.isSecureContext) {
-      App.toast('语音识别需要安全连接：请用 https 网址打开学习乐园');
+      App.toast('语音识别需要安全连接：请用 https 网址打开i同步学');
       return;
     }
     App.stopSpeak();

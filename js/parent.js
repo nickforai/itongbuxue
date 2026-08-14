@@ -12,6 +12,15 @@
   function render() {
     data = App.store.load();
 
+    App.el('stTodayTime').textContent = App.fmtDuration((data.timelog && data.timelog[App.todayStr()]) || 0);
+    var weekSec = 0;
+    for (var wi = 0; wi < 7; wi++) {
+      var wd = new Date();
+      wd.setDate(wd.getDate() - wi);
+      weekSec += (data.timelog && data.timelog[dateStr(wd)]) || 0;
+    }
+    App.el('stWeekTime').textContent = App.fmtDuration(weekSec);
+
     App.el('stTotal').textContent = App.totalStars(data);
     App.el('stStreak').textContent = App.streakDays(data.checkins);
     App.el('stYuwen').textContent = data.stars.yuwen || 0;
@@ -19,6 +28,7 @@
     App.el('stYingyu').textContent = data.stars.yingyu || 0;
     App.el('stKexue').textContent = data.stars.kexue || 0;
     App.el('stGame').textContent = data.stars.game || 0;
+    App.el('stRedo').textContent = data.stars.redo || 0;
     App.el('stJifen').textContent = data.balance || 0;
     App.el('stChances').textContent = data.chances || 0;
     App.el('stGames').textContent = (data.games.won || 0) + ' / ' + (data.games.played || 0);
@@ -62,7 +72,82 @@
     renderWrong('wrongKexue', data.wrong.kexue, function (w) {
       return w.text + '（' + w.answer + '）';
     });
+
+    renderGoalBtns();
+    renderRemind();
   }
+
+  function renderRemind() {
+    var s = data.settings || {};
+    App.el('remindTime').value = s.remindTime || '19:00';
+    var status = App.el('remindStatus');
+    var btn = App.el('remindBtn');
+    if (!App.remindSupported()) {
+      btn.disabled = true;
+      btn.textContent = '⚠️ 此设备不支持通知';
+      status.textContent = '需要 iPadOS 16.4 及以上，并把 i同步学「添加到主屏幕」后使用。';
+      return;
+    }
+    if (s.remindEnabled) {
+      btn.disabled = true;
+      btn.textContent = '✅ 已开启 · 每天 ' + (s.remindTime || '19:00') + ' 提醒';
+      status.textContent = Notification.permission === 'granted'
+        ? '提醒已开启。打开 i同步学时到点会自动弹出通知。'
+        : '已开启，但通知权限未授权，请重新点一次开启按钮。';
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = '🔔 开启每日提醒';
+    status.textContent = Notification.permission === 'granted'
+      ? '通知权限已授权，设置好时间点开启即可。'
+      : '点击开启后，iPad 会弹出「允许通知」询问，请选择允许。';
+  }
+
+  function renderGoalBtns() {
+    var goal = (data.settings && data.settings.dailyGoal) || 0;
+    var box = App.el('goalBtns');
+    box.innerHTML = '';
+    var options = [{ v: 0, label: '关闭' }];
+    for (var i = 1; i <= 6; i++) options.push({ v: i, label: i + ' 个' });
+    options.forEach(function (o) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = o.label;
+      b.className = 'goal-btn' + (o.v === goal ? ' on' : '');
+      b.addEventListener('click', function () {
+        if (!data.settings) data.settings = {};
+        data.settings.dailyGoal = o.v;
+        App.store.save(data);
+        renderGoalBtns();
+        App.toast(o.v > 0 ? '每日目标设为 ' + o.v + ' 个练习' : '已关闭每日目标');
+      });
+      box.appendChild(b);
+    });
+  }
+
+  App.el('remindTime').addEventListener('change', function () {
+    if (!data.settings) data.settings = {};
+    data.settings.remindTime = App.el('remindTime').value || '19:00';
+    App.store.save(data);
+    renderRemind();
+    App.toast('提醒时间已设为 ' + data.settings.remindTime);
+  });
+
+  App.el('remindBtn').addEventListener('click', function () {
+    if (!App.remindSupported()) { App.toast('此设备不支持通知'); return; }
+    App.requestRemindPermission().then(function (res) {
+      if (res === 'granted' || Notification.permission === 'granted') {
+        if (!data.settings) data.settings = {};
+        data.settings.remindEnabled = true;
+        data.settings.remindTime = App.el('remindTime').value || '19:00';
+        App.store.save(data);
+        renderRemind();
+        App.toast('每日提醒已开启！');
+      } else {
+        App.toast('未获得通知权限，请在设置里允许');
+      }
+    });
+  });
 
   function renderWrong(id, list, fmt) {
     var box = App.el(id);
@@ -97,7 +182,7 @@
 
   function buildArchive() {
     return JSON.stringify({
-      app: 'xuexi-le-yuan',
+      app: 'itongbuxue',
       date: new Date().toISOString(),
       learning: readRaw('xx3_learning_v1', 'xx3_learning_v1_backup'),
       minecraft: readRaw('xx3_mc_world_v1', 'xx3_mc_world_v1_backup')
