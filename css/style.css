@@ -887,6 +887,10 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   background: linear-gradient(135deg, #3D8BFD, #2E5FB0);
   box-shadow: 0 10px 24px rgba(46, 95, 176, 0.35);
 }
+.gc-chef {
+  background: linear-gradient(135deg, #FF9F1C, #E8556D);
+  box-shadow: 0 10px 24px rgba(232, 85, 109, 0.32);
+}
 .gc-left { display: flex; align-items: center; gap: 14px; }
 .gc-emoji { font-size: 2.6rem; }
 .gc-name { font-size: 1.35rem; font-weight: 800; }
@@ -2051,3 +2055,164 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .pl-progress { text-align: center; color: #a9d8c2; font-size: .8rem; margin: 8px 0; }
 #plUpgradeBtn { width: 100%; }
 #plTableBtn { width: 100%; margin-bottom: 10px; }
+
+/* ---------- 美食大厨 ---------- */
+.chef-store {
+  width: 100%;
+  border-radius: 22px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  text-align: left;
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.chef-store.locked { color: var(--muted); }
+
+.chef-store-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chef-store-emoji { font-size: 2.2rem; }
+.chef-store-name { font-size: 1.25rem; font-weight: 800; flex: 1; }
+.chef-store-progress {
+  background: rgba(255, 255, 255, 0.75);
+  color: #7A4A00;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.chef-store-lock {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.chef-store-items { font-size: 1.4rem; margin-top: 10px; letter-spacing: 4px; }
+.chef-store-desc { margin-top: 8px; font-size: 0.85rem; opacity: 0.9; font-weight: 600; }
+
+.chef-order {
+  background: #F6F6FB;
+  border-radius: 24px;
+  padding: 16px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.chef-customer-card {
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 10px 14px 8px;
+  text-align: center;
+  flex: none;
+}
+
+.chef-customer svg { display: block; margin: 0 auto; }
+
+.chef-customer-name {
+  margin-top: 4px;
+  font-weight: 800;
+  color: #7A4A00;
+  font-size: 0.95rem;
+}
+
+.chef-order-card { flex: 1; min-width: 200px; text-align: center; }
+
+.chef-order-bubble {
+  position: relative;
+  display: inline-block;
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 14px 22px;
+}
+
+.chef-order-bubble::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 10px solid transparent;
+  border-right-color: var(--card);
+}
+
+.chef-order-text {
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: block;
+}
+
+.chef-order-item {
+  display: inline-block;
+  font-size: 2.8rem;
+  padding: 6px 20px;
+  border-radius: 18px;
+  margin-top: 8px;
+  background: var(--gold);
+  box-shadow: 0 6px 16px rgba(58, 58, 74, 0.15);
+  min-width: 82px;
+}
+
+.chef-timer {
+  height: 10px;
+  border-radius: 999px;
+  background: #E8E8EF;
+  overflow: hidden;
+  flex-basis: 100%;
+}
+
+.chef-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #55C98F, #FFC94D, #FF8A5C);
+}
+
+.chef-items {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.chef-item {
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.06s, opacity 0.2s;
+}
+
+.chef-item:active { transform: scale(0.95); }
+.chef-item.dim { opacity: 0.35; }
+.chef-item.done {
+  background: linear-gradient(135deg, #D8F5E5, #B4E8CD);
+  color: #1E6B45;
+}
+.chef-item-emoji { font-size: 2.2rem; }
+.chef-item-name { font-weight: 800; font-size: 0.95rem; }
+
+.chef-lives { display: flex; justify-content: center; gap: 10px; font-size: 1.5rem; margin-bottom: 8px; }
+.chef-feedback {
+  text-align: center;
+  font-weight: 800;
+  min-height: 24px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}

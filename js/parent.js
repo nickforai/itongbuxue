@@ -29,6 +29,7 @@
     App.el('stKexue').textContent = data.stars.kexue || 0;
     App.el('stGame').textContent = data.stars.game || 0;
     App.el('stRedo').textContent = data.stars.redo || 0;
+    App.el('stChef').textContent = data.stars.chef || 0;
     App.el('stJifen').textContent = data.balance || 0;
     App.el('stChances').textContent = data.chances || 0;
     App.el('stGames').textContent = (data.games.won || 0) + ' / ' + (data.games.played || 0);

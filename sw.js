@@ -1,13 +1,14 @@
 /* i同步学 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v77';
+var CACHE = 'xx3-v78';
 
 var ASSETS = [
   './',
   './css/style.css',
   './doudizhu.html',
   './feiji.html',
+  './foodchef.html',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -29,6 +30,7 @@ var ASSETS = [
   './js/doudizhu-core.js',
   './js/doudizhu.js',
   './js/feiji.js',
+  './js/foodchef.js',
   './js/home.js',
   './js/kexue.js',
   './js/kousuan.js',

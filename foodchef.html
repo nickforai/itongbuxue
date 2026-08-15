@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="美食大厨">
+  <meta name="format-detection" content="telephone=no">
+  <title>美食大厨 · i同步学</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=78">
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🍳 美食大厨</h1>
+      <div class="star-pill" id="chefStarPill">⭐ 0</div>
+    </div>
+
+    <!-- 商店选择 -->
+    <div class="panel" id="storePanel">
+      <h2>🏪 选择商店</h2>
+      <p class="muted-note" style="margin-bottom:12px">每家店都有 100 多关，通过 <b>15 关</b> 就能解锁下一家店：汤包店 → 牛排店 → 汉堡店！</p>
+      <div id="storeList"></div>
+    </div>
+
+    <!-- 游戏中 -->
+    <div class="panel hidden" id="gamePanel">
+      <div class="quiz-head">
+        <span id="lvLabel">第 1 关</span>
+        <span id="scoreLabel">0 分</span>
+      </div>
+      <div class="chef-order" id="orderBox">
+        <div class="chef-customer-card">
+          <div class="chef-customer" id="customerFace"></div>
+          <div class="chef-customer-name" id="customerName">乐乐</div>
+        </div>
+        <div class="chef-order-card">
+          <div class="chef-order-bubble" id="orderBubble">
+            <span id="orderText">我想吃</span>
+            <span class="chef-order-item" id="orderItem">🥟</span>
+          </div>
+        </div>
+        <div class="chef-timer"><div class="chef-timer-fill" id="timerFill"></div></div>
+      </div>
+      <div class="chef-items" id="itemBtns"></div>
+      <div class="chef-lives" id="livesBox"></div>
+      <div class="chef-feedback" id="chefFeedback"></div>
+    </div>
+
+    <!-- 过关结果 -->
+    <div class="panel hidden" id="resultPanel">
+      <div class="result-box">
+        <div class="result-emoji" id="chefResultEmoji"></div>
+        <div class="result-score" id="chefResultTitle"></div>
+        <div class="result-line" id="chefResultLine"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="chefRetryBtn">再玩一次</button>
+        <button class="btn btn-gold" id="chefNextBtn">下一关 ▶</button>
+      </div>
+      <a class="btn btn-blue" href="#" id="chefBackBtn" style="display:block;text-align:center;line-height:1.4;margin-top:12px">🏪 回商店</a>
+    </div>
+
+    <!-- 解锁新店 -->
+    <div class="panel hidden" id="unlockPanel">
+      <div class="result-box">
+        <div class="result-emoji" id="unlockEmoji">🔓</div>
+        <div class="result-score" id="unlockTitle">解锁新店！</div>
+        <div class="result-line" id="unlockLine"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-blue" id="unlockGoBtn">去新店看看 ▶</button>
+        <button class="btn btn-ghost" id="unlockStayBtn">留在本店</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/common.js?v=78"></script>
+  <script src="js/foodchef.js?v=78"></script>
+</body>
+</html>

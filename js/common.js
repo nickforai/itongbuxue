@@ -14,7 +14,7 @@
 
   function defaultData() {
     return {
-      stars: { yuwen: 0, shuxue: 0, yingyu: 0, kexue: 0, game: 0, redo: 0 },
+      stars: { yuwen: 0, shuxue: 0, yingyu: 0, kexue: 0, game: 0, redo: 0, chef: 0 },
       balance: 0,
       chances: 0,
       mcChances: 0,
