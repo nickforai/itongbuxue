@@ -88,7 +88,16 @@
     var idx = -1;
     for (var i = 0; i < STORES.length; i++) if (STORES[i].id === id) idx = i;
     if (idx <= 0) return false;
-    return save.progress[STORES[idx - 1].id] >= UNLOCK_AT;
+    var prev = STORES[idx - 1].id;
+    return Math.max(save.progress[prev] || 0, servedOf(prev)) >= UNLOCK_AT;
+  }
+
+  function servedOf(id) {
+    try {
+      var key = id === 'tangbao' ? 'xx3_tangbao_v1' : id === 'niupai' ? 'xx3_niupai_v1' : 'xx3_hanbao_v1';
+      var raw = JSON.parse(localStorage.getItem(key) || '{}');
+      return raw.totalServed || 0;
+    } catch (e) { return 0; }
   }
 
   function foodLevel(storeId, itemName) {
@@ -171,6 +180,8 @@
     STORES.forEach(function (s) {
       var ok = unlocked(s.id);
       var done = save.progress[s.id] || 0;
+      var served = servedOf(s.id);
+      var shown = Math.max(done, served);
       var pts = save.points[s.id] || 0;
       var card = document.createElement('button');
       card.type = 'button';
@@ -181,13 +192,13 @@
           '<span class="chef-store-emoji">' + (ok ? s.emoji : '🔒') + '</span>' +
           '<span class="chef-store-name">' + s.name + '</span>' +
           (ok
-            ? '<span class="chef-store-progress">' + done + ' / ' + UNLOCK_AT + ' 关</span>'
+            ? '<span class="chef-store-progress">' + shown + ' / ' + UNLOCK_AT + ' 位</span>'
             : '<span class="chef-store-lock">未解锁</span>') +
         '</div>' +
         '<div class="chef-store-items">' + s.items.map(function (it) { return it.emoji; }).join(' ') + '</div>' +
         (ok
-          ? '<div class="chef-store-desc">' + (done >= UNLOCK_AT ? '已解锁下一家！当前通关 ' + done + ' 关' : '再过 ' + (UNLOCK_AT - done) + ' 关解锁下一家') + ' · 💰 积分 ' + pts + '</div>'
-          : '<div class="chef-store-desc">通过上一家 15 关后解锁</div>');
+          ? '<div class="chef-store-desc">' + (shown >= UNLOCK_AT ? '已解锁下一家！已招待 ' + shown + ' 位客人' : '再招待 ' + (UNLOCK_AT - shown) + ' 位客人解锁下一家') + ' · 每单 ' + s.base + ' 分起</div>'
+          : '<div class="chef-store-desc">招待上一家 15 位客人后解锁</div>');
       if (ok) card.addEventListener('click', function () { openStoreHome(s.id); });
       list.appendChild(card);
     });
@@ -214,7 +225,8 @@
   function renderStoreHome(store) {
     App.el('storePts').textContent = '💰 ' + (save.points[store.id] || 0) + ' 分';
     var done = save.progress[store.id] || 0;
-    App.el('storeProgress').textContent = '已通过 ' + done + ' 关 · 每道菜基础 ' + store.base + ' 分（升级食材分更高）';
+    var served = servedOf(store.id);
+    App.el('storeProgress').textContent = '已招待 ' + Math.max(done, served) + ' 位客人 · 每单基础 ' + store.base + ' 分（连击更高）· 每天最多 10 位客人';
   }
 
   /* ---------- 升级厨房 ---------- */
@@ -540,12 +552,9 @@
   App.el('startCookBtn').addEventListener('click', function () {
     var id = App.el('storeTitle').textContent.split(' ')[1] || 'tangbao';
     for (var i = 0; i < STORES.length; i++) if (STORES[i].name === id) { id = STORES[i].id; break; }
-    if (id === 'tangbao') {
-      // 汤包店使用全新「小汤包」玩法（揉面-包馅-上笼-出餐-数钱）
-      location.href = 'tangbao.html';
-      return;
-    }
-    startStore(id);
+    // 三家店统一使用做菜玩法（揉面/煎牛排/做汉堡）
+    var page = id === 'niupai' ? 'niupai.html' : id === 'hanbao' ? 'hanbao.html' : 'tangbao.html';
+    location.href = page;
   });
   App.el('upgradeBtn').addEventListener('click', function () {
     var panel = App.el('upgradePanel');

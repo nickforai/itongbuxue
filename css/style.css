@@ -2489,6 +2489,45 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 
 .tb-combo.show { opacity: 1; }
 
+.tb-daily {
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #9A6200;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  padding: 7px 16px;
+  margin: 0 auto 10px;
+  width: fit-content;
+  box-shadow: var(--shadow);
+}
+
+/* 打烊 */
+.tb-closed {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: linear-gradient(180deg, #4A3B8F, #2E2A5E);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+.tb-closed-box {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: 34px 30px;
+  max-width: 420px;
+  color: #fff;
+}
+
+.tb-closed-emoji { font-size: 4rem; }
+.tb-closed-title { font-size: 1.9rem; font-weight: 800; margin: 10px 0; }
+.tb-closed-score { font-size: 1.1rem; font-weight: 700; opacity: 0.95; }
+.tb-closed-next { margin: 14px 0 24px; font-size: 0.95rem; opacity: 0.8; }
+
 /* 舞台：左制作台 + 右排队 */
 .tb-stage { position: relative; }
 
@@ -2688,7 +2727,12 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 
 .tb-bun-ready::before {
-  content: '🥟';
+  content: none;
+}
+
+.tb-bun-ready.pig::before { content: '🐷'; }
+
+.tb-serve-emoji {
   font-size: 7rem;
   position: absolute;
   inset: 0;
@@ -2698,7 +2742,22 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.18));
 }
 
-.tb-bun-ready.pig::before { content: '🐷'; }
+.tb-bun-ready.gold .tb-serve-emoji {
+  animation: tb-gold 1.4s ease-in-out infinite;
+}
+
+.tb-bun-ready.gold .tb-serve-emoji::after {
+  content: ' ✨';
+  position: absolute;
+  top: -6px;
+  right: -12px;
+  font-size: 1.6rem;
+}
+
+@keyframes tb-gold {
+  0%, 100% { filter: drop-shadow(0 0 4px #FFD166) drop-shadow(0 10px 14px rgba(0, 0, 0, 0.18)); }
+  50% { filter: drop-shadow(0 0 16px #FFC94D) drop-shadow(0 10px 14px rgba(0, 0, 0, 0.18)); }
+}
 
 @keyframes tb-ready-bob {
   0%, 100% { transform: translateY(0); }
@@ -2706,6 +2765,102 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 
 .tb-bun.flying { position: absolute; z-index: 20; }
+
+/* 牛排 / 汉堡的工作台食材 */
+.tb-dough.steak {
+  border-radius: 44% 44% 50% 50%;
+  background: radial-gradient(circle at 34% 26%, #E97B6B, #C65342 62%, #A84032);
+  box-shadow: inset -10px -12px 22px rgba(80, 20, 10, 0.22), 0 14px 26px rgba(0, 0, 0, 0.18);
+  width: 170px;
+  height: 118px;
+  transition: transform 0.15s ease, background 0.4s ease;
+}
+
+.tb-dough.steak.hot {
+  background: radial-gradient(circle at 34% 26%, #8B4A2B, #6B3720 62%, #55301B);
+}
+
+.tb-dough.patty {
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 26%, #C77B4E, #A55A33 62%, #8A4A28);
+  box-shadow: inset -10px -12px 22px rgba(60, 25, 5, 0.25), 0 14px 26px rgba(0, 0, 0, 0.18);
+}
+
+.tb-dough.steak .tb-knead-count,
+.tb-dough.patty .tb-knead-count {
+  background: #3A1E0E;
+  color: #FFD9A8;
+}
+
+.tb-dough.steak::after {
+  content: '🥩';
+  font-size: 4.2rem;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tb-dough.patty::after {
+  content: '🥩';
+  font-size: 4.4rem;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: saturate(0.8);
+}
+
+.tb-dough.round.steak::after,
+.tb-dough.round.patty::after { content: '✅'; }
+
+.tb-badge {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: #7A4A00;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* 煎锅 / 烤架 */
+.tb-steamer.skillet .tb-steamer-body {
+  height: 84px;
+  background: radial-gradient(circle at 50% 40%, #5A5A66, #33333D 75%);
+  border-radius: 50%;
+  border: 6px solid #2A2A33;
+  box-shadow: inset 0 8px 18px rgba(0, 0, 0, 0.5), 0 12px 22px rgba(0, 0, 0, 0.18);
+}
+
+.tb-steamer.skillet .tb-steamer-lid { display: none; }
+.tb-steamer.skillet .tb-cook-content { bottom: 38px; }
+
+.tb-steamer.grill .tb-steamer-body {
+  height: 78px;
+  background: linear-gradient(180deg, #3D3D46, #26262E);
+  border-radius: 14px;
+  box-shadow: inset 0 8px 16px rgba(0, 0, 0, 0.45), 0 12px 22px rgba(0, 0, 0, 0.18);
+}
+
+.tb-steamer.grill .tb-steamer-lid { display: none; }
+.tb-steamer.grill .tb-cook-content { bottom: 34px; }
+
+.tb-cook-content {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 80px;
+  font-size: 3rem;
+  z-index: 2;
+}
 
 /* 排队区 */
 .tb-queue-title {
