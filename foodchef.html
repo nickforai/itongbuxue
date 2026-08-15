@@ -24,11 +24,29 @@
     <!-- 商店选择 -->
     <div class="panel" id="storePanel">
       <h2>🏪 选择商店</h2>
-      <p class="muted-note" style="margin-bottom:12px">每家店都有 100 多关，通过 <b>15 关</b> 就能解锁下一家店：汤包店 → 牛排店 → 汉堡店！</p>
+      <p class="muted-note" style="margin-bottom:12px">每家店都有 100 多关，通过 <b>15 关</b> 解锁下一家：汤包店 → 牛排店 → 汉堡店。店越高级，每道菜的分越高！</p>
       <div id="storeList"></div>
     </div>
 
-    <!-- 游戏中 -->
+    <!-- 店主页：开始做菜 / 升级厨房 -->
+    <div class="panel hidden" id="storeHome">
+      <h2 id="storeTitle"></h2>
+      <div class="chef-store-home">
+        <div class="chef-pts" id="storePts">💰 0 分</div>
+        <div class="muted-note" id="storeProgress" style="margin:8px 0 14px"></div>
+        <div class="btn-row">
+          <button class="btn btn-gold" id="startCookBtn">🍳 开始做菜</button>
+          <button class="btn btn-blue" id="upgradeBtn">⬆️ 升级厨房</button>
+        </div>
+      </div>
+      <div class="hidden" id="upgradePanel" style="margin-top:16px">
+        <h2 style="margin-bottom:4px">⬆️ 升级食材</h2>
+        <p class="muted-note" style="margin-bottom:10px">每样食材可升级 <b>3 次</b>（共 4 级），等级越高，做出来给客人的分越高。</p>
+        <div id="upgradeList"></div>
+      </div>
+    </div>
+
+    <!-- 做菜中 -->
     <div class="panel hidden" id="gamePanel">
       <div class="quiz-head">
         <span id="lvLabel">第 1 关</span>
@@ -40,13 +58,15 @@
           <div class="chef-customer-name" id="customerName">乐乐</div>
         </div>
         <div class="chef-order-card">
-          <div class="chef-order-bubble" id="orderBubble">
-            <span id="orderText">我想吃</span>
-            <span class="chef-order-item" id="orderItem">🥟</span>
-          </div>
+          <div class="chef-order-title">🧾 客人点了</div>
+          <div class="chef-order-list" id="orderList"></div>
         </div>
         <div class="chef-timer"><div class="chef-timer-fill" id="timerFill"></div></div>
       </div>
+
+      <div class="chef-tray-title">🍽️ 出餐台（做好后点一下端给客人）</div>
+      <div class="chef-tray" id="tray"></div>
+
       <div class="chef-items" id="itemBtns"></div>
       <div class="chef-lives" id="livesBox"></div>
       <div class="chef-feedback" id="chefFeedback"></div>
@@ -63,7 +83,7 @@
         <button class="btn btn-ghost" id="chefRetryBtn">再玩一次</button>
         <button class="btn btn-gold" id="chefNextBtn">下一关 ▶</button>
       </div>
-      <a class="btn btn-blue" href="#" id="chefBackBtn" style="display:block;text-align:center;line-height:1.4;margin-top:12px">🏪 回商店</a>
+      <button class="btn btn-blue" id="chefBackBtn" style="display:block;margin-top:12px">🏪 回商店</button>
     </div>
 
     <!-- 解锁新店 -->

@@ -2127,43 +2127,111 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   font-size: 0.95rem;
 }
 
-.chef-order-card { flex: 1; min-width: 200px; text-align: center; }
+.chef-order-card { flex: 1; min-width: 230px; text-align: center; }
 
-.chef-order-bubble {
-  position: relative;
-  display: inline-block;
+.chef-order-title {
+  font-weight: 800;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.chef-order-list {
   background: var(--card);
   border-radius: 20px;
   box-shadow: var(--shadow);
-  padding: 14px 22px;
+  padding: 10px 14px;
+  text-align: left;
 }
 
-.chef-order-bubble::before {
-  content: '';
-  position: absolute;
-  left: -10px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 10px solid transparent;
-  border-right-color: var(--card);
-}
-
-.chef-order-text {
-  color: var(--muted);
-  font-size: 0.95rem;
+.chef-order-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  border-bottom: 1px solid #F0F0F6;
   font-weight: 700;
-  display: block;
 }
 
-.chef-order-item {
-  display: inline-block;
-  font-size: 2.8rem;
-  padding: 6px 20px;
+.chef-order-line:last-child { border-bottom: none; }
+.chef-order-line.done { opacity: 0.45; }
+.chef-order-line.done .chef-order-check { color: var(--ok); }
+.chef-order-emoji { font-size: 1.4rem; }
+.chef-order-name { flex: 1; }
+.chef-order-check { color: var(--muted); font-weight: 800; }
+.chef-dish-tag, .chef-cup-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.chef-dish-tag { background: #FFF1D6; color: #9A6200; }
+.chef-cup-tag { background: #E1F0FF; color: #2E5FB0; }
+
+.chef-tray-title {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 2px 0 8px;
+}
+
+.chef-tray {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.chef-tray-empty {
+  grid-column: 1 / -1;
+  background: #F6F6FB;
   border-radius: 18px;
-  margin-top: 8px;
-  background: var(--gold);
-  box-shadow: 0 6px 16px rgba(58, 58, 74, 0.15);
-  min-width: 82px;
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.chef-tray-cell {
+  position: relative;
+  border-radius: 18px;
+  padding: 12px 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.06s;
+}
+
+.chef-tray-cell:active { transform: scale(0.95); }
+.chef-tray-cell.dish { background: #FFF3E0; box-shadow: 0 6px 14px rgba(255, 159, 28, 0.22); }
+.chef-tray-cell.cup { background: #E8F3FF; box-shadow: 0 6px 14px rgba(61, 123, 253, 0.22); }
+
+.chef-tray-discard {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(58, 58, 74, 0.12);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.chef-tray-emoji { font-size: 2rem; }
+.chef-tray-name { font-weight: 800; font-size: 0.85rem; }
+.chef-tray-type { font-size: 0.65rem; color: var(--muted); font-weight: 700; }
+
+.chef-item-meta {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .chef-timer {
@@ -2207,6 +2275,33 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 .chef-item-emoji { font-size: 2.2rem; }
 .chef-item-name { font-weight: 800; font-size: 0.95rem; }
+
+.chef-store-home .chef-pts {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #9A6200;
+}
+
+.chef-upgrade-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #F0F0F6;
+}
+
+.chef-upgrade-row:last-child { border-bottom: none; }
+.chef-upgrade-item { font-weight: 800; min-width: 118px; }
+.chef-upgrade-stars { color: #FF9F1C; letter-spacing: 1px; font-size: 0.95rem; }
+.chef-upgrade-stars .dim { color: #D8D8E2; }
+.chef-upgrade-score { color: var(--muted); font-size: 0.8rem; font-weight: 700; flex: 1; }
+.chef-upgrade-btn {
+  width: auto;
+  flex: none;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  border-radius: 14px;
+}
 
 .chef-lives { display: flex; justify-content: center; gap: 10px; font-size: 1.5rem; margin-bottom: 8px; }
 .chef-feedback {
