@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="小汤包">
+  <meta name="format-detection" content="telephone=no">
+  <title>小汤包 · i同步学</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=79">
+</head>
+<body>
+  <div class="page tangbao-page">
+
+    <!-- 开始营业：门帘 -->
+    <div class="tb-open" id="tbOpen">
+      <div class="tb-curtain tb-curtain-left"></div>
+      <div class="tb-curtain tb-curtain-right"></div>
+      <div class="tb-open-box">
+        <div class="tb-sign" id="tbOpenSign">🥟 小汤包</div>
+        <div class="tb-open-desc">揉面 → 包馅 → 上笼 → 端给客人</div>
+        <button class="tb-open-btn" id="tbOpenBtn">🏮 开始营业</button>
+      </div>
+    </div>
+
+    <div class="tb-top">
+      <a class="back" href="foodchef.html" aria-label="返回美食大厨">←</a>
+      <div class="tb-sign-mini" id="tbSign">🥟 小汤包</div>
+      <div class="tb-score" id="tbScoreBox">🪙 <span id="tbScoreNum">0</span></div>
+    </div>
+
+    <div class="tb-combo" id="tbCombo"></div>
+
+    <div class="tb-stage">
+      <div class="tb-kitchen">
+        <div class="tb-work">
+          <div class="tb-hint" id="tbHint">👨‍🍳 客人来了，快揉面做汤包！</div>
+          <div class="tb-work-area" id="tbWorkArea"></div>
+        </div>
+        <div class="tb-queue-title">🧑‍🤝‍🧑 排队等汤包</div>
+        <div class="tb-queue" id="tbQueue"></div>
+      </div>
+    </div>
+
+    <div class="tb-bottom">
+      <button class="tb-btn" id="btnKnead">🖐️<span>揉面</span></button>
+      <button class="tb-btn" id="btnFill">🥩<span>加肉馅</span></button>
+      <button class="tb-btn" id="btnSteam">🔥<span>上蒸笼</span></button>
+    </div>
+  </div>
+
+  <script src="js/common.js?v=79"></script>
+  <script src="js/tangbao.js?v=79"></script>
+</body>
+</html>

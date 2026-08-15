@@ -540,6 +540,11 @@
   App.el('startCookBtn').addEventListener('click', function () {
     var id = App.el('storeTitle').textContent.split(' ')[1] || 'tangbao';
     for (var i = 0; i < STORES.length; i++) if (STORES[i].name === id) { id = STORES[i].id; break; }
+    if (id === 'tangbao') {
+      // 汤包店使用全新「小汤包」玩法（揉面-包馅-上笼-出餐-数钱）
+      location.href = 'tangbao.html';
+      return;
+    }
     startStore(id);
   });
   App.el('upgradeBtn').addEventListener('click', function () {

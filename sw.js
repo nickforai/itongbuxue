@@ -1,7 +1,7 @@
 /* i同步学 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v78';
+var CACHE = 'xx3-v79';
 
 var ASSETS = [
   './',
@@ -38,6 +38,7 @@ var ASSETS = [
   './js/parent.js',
   './js/pool.js',
   './js/shengzi.js',
+  './js/tangbao.js',
   './js/vendor/hanzi-data/一.json',
   './js/vendor/hanzi-data/三.json',
   './js/vendor/hanzi-data/丑.json',
@@ -195,6 +196,7 @@ var ASSETS = [
   './parent.html',
   './pool.html',
   './shengzi.html',
+  './tangbao.html',
   './wrongredo.html',
   './yingyu.html',
   './yuedu.html',
