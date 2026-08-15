@@ -10,6 +10,8 @@
   var PATIENCE_MS = 120000; // 每位客人最多等 2 分钟
   var TRAY_MAX = 4;        // 出餐台最多 4 个位置（盘子/杯子）
   var MAX_LV = 4;          // 每样食材升级 3 次 = 4 级
+  var MAX_STORE_LV = 4;    // 厨房可升级 3 次
+  var UP_COSTS = [0, 1000, 2500, 5000]; // 升到 Lv2/3/4 的费用
 
   var STORES = [
     {
@@ -106,6 +108,16 @@
       var raw = JSON.parse(localStorage.getItem(key) || '{}');
       return raw.score || 0;
     } catch (e) { return 0; }
+  }
+
+  function cookSaveOf(id) {
+    var key = id === 'tangbao' ? 'xx3_tangbao_v1' : id === 'niupai' ? 'xx3_niupai_v1' : 'xx3_hanbao_v1';
+    try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return {}; }
+  }
+
+  function writeCookSave(id, obj) {
+    var key = id === 'tangbao' ? 'xx3_tangbao_v1' : id === 'niupai' ? 'xx3_niupai_v1' : 'xx3_hanbao_v1';
+    try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) { /* ignore */ }
   }
 
   function cookBase(id) {
@@ -237,7 +249,48 @@
     App.el('storePts').textContent = '💰 ' + scoreOf(store.id).toLocaleString() + ' 分';
     var done = save.progress[store.id] || 0;
     var served = servedOf(store.id);
-    App.el('storeProgress').textContent = '已招待 ' + Math.max(done, served) + ' 位客人 · 每单基础 ' + cookBase(store.id) + ' 分（连击更高）· 每天最多 10 位客人';
+    var lv = Math.max(1, Math.min(MAX_STORE_LV, cookSaveOf(store.id).storeLv || 1));
+    App.el('storeProgress').textContent = '已招待 ' + Math.max(done, served) + ' 位客人 · 厨房 Lv.' + lv + ' · 每单 ' + (cookBase(store.id) + (lv - 1) * 50) + ' 分起 · 每天最多 10 位客人';
+    App.el('upgradePanel').classList.add('hidden');
+  }
+
+  /* ---------- 升级厨房（店铺升级，每级每单 +50 分） ---------- */
+  function renderUpgrade(store) {
+    var s = cookSaveOf(store.id);
+    var lv = Math.max(1, Math.min(MAX_STORE_LV, s.storeLv || 1));
+    var pts = s.score || 0;
+    App.el('upgradeDesc').textContent = '店铺 Lv.' + lv + ' / Lv.' + MAX_STORE_LV + ' · 当前每单 ' + (cookBase(store.id) + (lv - 1) * 50) + ' 分，升一级每单 +50 分（连击同步 +100）';
+    var list = App.el('upgradeList');
+    list.innerHTML = '';
+    if (lv >= MAX_STORE_LV) {
+      list.innerHTML =
+        '<div class="chef-upgrade-row"><span class="chef-upgrade-item">🌟 厨房已满级</span>' +
+        '<span class="chef-upgrade-score">每单 ' + (cookBase(store.id) + (MAX_STORE_LV - 1) * 50) + ' 分</span></div>';
+      return;
+    }
+    var cost = UP_COSTS[lv];
+    var row = document.createElement('div');
+    row.className = 'chef-upgrade-row';
+    row.innerHTML =
+      '<span class="chef-upgrade-item">🏪 升级到 Lv.' + (lv + 1) + '</span>' +
+      '<span class="chef-upgrade-score">每单 ' + (cookBase(store.id) + lv * 50) + ' 分 · 需 ' + cost + ' 分</span>';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-gold chef-upgrade-btn';
+    btn.textContent = pts >= cost ? '升级' : '积分不够';
+    btn.disabled = pts < cost;
+    btn.addEventListener('click', function () {
+      var s2 = cookSaveOf(store.id);
+      if ((s2.score || 0) < cost) { App.toast('积分不够，多招待几位客人吧'); return; }
+      s2.score -= cost;
+      s2.storeLv = Math.min(MAX_STORE_LV, (s2.storeLv || 1) + 1);
+      writeCookSave(store.id, s2);
+      renderUpgrade(store);
+      renderStoreHome(store);
+      App.toast('厨房升级到 Lv.' + s2.storeLv + '，每单多赚 50 分！');
+    });
+    row.appendChild(btn);
+    list.appendChild(row);
   }
 
   /* ---------- 对局 ---------- */
@@ -529,6 +582,14 @@
     // 三家店统一使用做菜玩法（揉面/煎牛排/做汉堡）
     var page = id === 'niupai' ? 'niupai.html' : id === 'hanbao' ? 'hanbao.html' : 'tangbao.html';
     location.href = page;
+  });
+
+  App.el('upgradeBtn').addEventListener('click', function () {
+    var panel = App.el('upgradePanel');
+    var id = App.el('storeTitle').textContent.split(' ')[1] || 'tangbao';
+    for (var j = 0; j < STORES.length; j++) if (STORES[j].name === id) { id = STORES[j].id; break; }
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) renderUpgrade(storeById(id));
   });
   App.el('tray').addEventListener('click', function (e) {
     var del = e.target.closest('.chef-tray-discard');

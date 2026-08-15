@@ -53,12 +53,13 @@
   };
 
   var cfg = CONFIGS[STORE] || CONFIGS.tangbao;
-  var save = { score: 0, totalServed: 0, daily: {} };
+  var save = { score: 0, totalServed: 0, daily: {}, storeLv: 1 };
   try {
     var raw = JSON.parse(localStorage.getItem(cfg.saveKey) || '{}');
     if (typeof raw.score === 'number') save.score = raw.score;
     if (typeof raw.totalServed === 'number') save.totalServed = raw.totalServed;
     if (raw.daily && typeof raw.daily === 'object') save.daily = raw.daily;
+    if (typeof raw.storeLv === 'number') save.storeLv = raw.storeLv;
   } catch (e) { /* ignore */ }
 
   function todayStr() {
@@ -72,6 +73,8 @@
   }
 
   var DAILY_LIMIT = 10;
+  var MAX_STORE_LV = 4;   // 店铺可升级 3 次
+  var UPGRADE_COSTS = [0, 1000, 2500, 5000]; // 升到 Lv2/Lv3/Lv4 的费用
   var STEP = { TAP: 'tap', ONCE1: 'once1', ONCE2: 'once2', COOK: 'cook', SERVE: 'serve' };
   var step = STEP.TAP;
   var tapCount = 0;
@@ -154,6 +157,14 @@
 
   function skin() {
     return save.score >= cfg.skinAt ? 'gold' : 'normal';
+  }
+
+  function storeLv() {
+    return Math.max(1, Math.min(MAX_STORE_LV, save.storeLv || 1));
+  }
+
+  function baseGain() {
+    return cfg.base + (storeLv() - 1) * 50;
   }
 
   function renderCombo() {
@@ -329,7 +340,7 @@
     var now = Date.now();
     combo = (now - lastServeAt <= COMBO_WINDOW) ? combo + 1 : 1;
     lastServeAt = now;
-    var gain = combo > COMBO_AFTER ? cfg.comboBonus : cfg.base;
+    var gain = combo > COMBO_AFTER ? baseGain() + 100 : baseGain();
     renderCombo();
     if (combo > COMBO_AFTER) {
       floatText('太棒了！', 'center', '#FF6B6B');

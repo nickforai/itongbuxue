@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=81">
+  <link rel="stylesheet" href="css/style.css?v=82">
 </head>
 <body>
   <div class="page">
@@ -36,7 +36,13 @@
         <div class="muted-note" id="storeProgress" style="margin:8px 0 14px"></div>
         <div class="btn-row">
           <button class="btn btn-gold" id="startCookBtn">🍳 开始做菜</button>
+          <button class="btn btn-blue" id="upgradeBtn">⬆️ 升级厨房</button>
         </div>
+      </div>
+      <div class="hidden" id="upgradePanel" style="margin-top:16px">
+        <h2 style="margin-bottom:4px">⬆️ 升级厨房</h2>
+        <p class="muted-note" id="upgradeDesc" style="margin-bottom:10px"></p>
+        <div id="upgradeList"></div>
       </div>
     </div>
 
@@ -97,7 +103,7 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=81"></script>
-  <script src="js/foodchef.js?v=81"></script>
+  <script src="js/common.js?v=82"></script>
+  <script src="js/foodchef.js?v=82"></script>
 </body>
 </html>
