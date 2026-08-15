@@ -100,6 +100,18 @@
     } catch (e) { return 0; }
   }
 
+  function scoreOf(id) {
+    try {
+      var key = id === 'tangbao' ? 'xx3_tangbao_v1' : id === 'niupai' ? 'xx3_niupai_v1' : 'xx3_hanbao_v1';
+      var raw = JSON.parse(localStorage.getItem(key) || '{}');
+      return raw.score || 0;
+    } catch (e) { return 0; }
+  }
+
+  function cookBase(id) {
+    return id === 'tangbao' ? 500 : id === 'niupai' ? 600 : 700;
+  }
+
   function foodLevel(storeId, itemName) {
     var lv = save.foodLv[storeId + ':' + itemName] || 1;
     return Math.max(1, Math.min(MAX_LV, lv));
@@ -182,7 +194,7 @@
       var done = save.progress[s.id] || 0;
       var served = servedOf(s.id);
       var shown = Math.max(done, served);
-      var pts = save.points[s.id] || 0;
+      var pts = scoreOf(s.id);
       var card = document.createElement('button');
       card.type = 'button';
       card.className = 'chef-store' + (ok ? '' : ' locked');
@@ -197,7 +209,7 @@
         '</div>' +
         '<div class="chef-store-items">' + s.items.map(function (it) { return it.emoji; }).join(' ') + '</div>' +
         (ok
-          ? '<div class="chef-store-desc">' + (shown >= UNLOCK_AT ? '已解锁下一家！已招待 ' + shown + ' 位客人' : '再招待 ' + (UNLOCK_AT - shown) + ' 位客人解锁下一家') + ' · 每单 ' + s.base + ' 分起</div>'
+          ? '<div class="chef-store-desc">' + (shown >= UNLOCK_AT ? '已解锁下一家！已招待 ' + shown + ' 位客人' : '再招待 ' + (UNLOCK_AT - shown) + ' 位客人解锁下一家') + ' · 每单 ' + cookBase(s.id) + ' 分起</div>'
           : '<div class="chef-store-desc">招待上一家 15 位客人后解锁</div>');
       if (ok) card.addEventListener('click', function () { openStoreHome(s.id); });
       list.appendChild(card);
@@ -218,52 +230,14 @@
     App.el('unlockPanel').classList.add('hidden');
     App.el('storeHome').classList.remove('hidden');
     App.el('storeTitle').textContent = store.emoji + ' ' + store.name;
-    App.el('upgradePanel').classList.add('hidden');
     renderStoreHome(store);
   }
 
   function renderStoreHome(store) {
-    App.el('storePts').textContent = '💰 ' + (save.points[store.id] || 0) + ' 分';
+    App.el('storePts').textContent = '💰 ' + scoreOf(store.id).toLocaleString() + ' 分';
     var done = save.progress[store.id] || 0;
     var served = servedOf(store.id);
-    App.el('storeProgress').textContent = '已招待 ' + Math.max(done, served) + ' 位客人 · 每单基础 ' + store.base + ' 分（连击更高）· 每天最多 10 位客人';
-  }
-
-  /* ---------- 升级厨房 ---------- */
-  function renderUpgrade(store) {
-    var box = App.el('upgradeList');
-    box.innerHTML = '';
-    store.items.forEach(function (it) {
-      var lv = foodLevel(store.id, it.name);
-      var pts = save.points[store.id] || 0;
-      var row = document.createElement('div');
-      row.className = 'chef-upgrade-row';
-      row.innerHTML =
-        '<span class="chef-upgrade-item">' + it.emoji + ' ' + it.name + '</span>' +
-        '<span class="chef-upgrade-stars">' + '★'.repeat(lv) + '<span class="dim">' + '★'.repeat(MAX_LV - lv) + '</span></span>' +
-        '<span class="chef-upgrade-score">Lv.' + lv + ' · ' + itemScore(store, it) + ' 分</span>';
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-gold chef-upgrade-btn';
-      if (lv >= MAX_LV) {
-        btn.textContent = '已满级 🌟';
-        btn.disabled = true;
-      } else {
-        var cost = upgradeCost(store, lv);
-        btn.textContent = '升级 ' + cost + ' 分';
-        btn.disabled = pts < cost;
-        btn.addEventListener('click', function () {
-          if ((save.points[store.id] || 0) < cost) { App.toast('积分不够，多玩几关赚积分吧'); return; }
-          save.points[store.id] -= cost;
-          save.foodLv[store.id + ':' + it.name] = lv + 1;
-          saveNow();
-          renderUpgrade(store);
-          App.toast(it.name + ' 升到 Lv.' + (lv + 1) + '，得分更高了！');
-        });
-      }
-      row.appendChild(btn);
-      box.appendChild(row);
-    });
+    App.el('storeProgress').textContent = '已招待 ' + Math.max(done, served) + ' 位客人 · 每单基础 ' + cookBase(store.id) + ' 分（连击更高）· 每天最多 10 位客人';
   }
 
   /* ---------- 对局 ---------- */
@@ -555,14 +529,6 @@
     // 三家店统一使用做菜玩法（揉面/煎牛排/做汉堡）
     var page = id === 'niupai' ? 'niupai.html' : id === 'hanbao' ? 'hanbao.html' : 'tangbao.html';
     location.href = page;
-  });
-  App.el('upgradeBtn').addEventListener('click', function () {
-    var panel = App.el('upgradePanel');
-    var id = App.el('storeTitle').textContent.split(' ')[1] || 'tangbao';
-    for (var j = 0; j < STORES.length; j++) if (STORES[j].name === id) { id = STORES[j].id; break; }
-    var store = storeById(id);
-    panel.classList.toggle('hidden');
-    if (!panel.classList.contains('hidden')) renderUpgrade(store);
   });
   App.el('tray').addEventListener('click', function (e) {
     var del = e.target.closest('.chef-tray-discard');
