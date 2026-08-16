@@ -2348,6 +2348,20 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   padding-bottom: calc(180px + env(safe-area-inset-bottom));
 }
 
+/* 点单模式（汉堡店）：不显示三步按钮，商品按钮在制作区 */
+body[data-store="hanbao"] .tb-bottom { display: none; }
+body[data-store="hanbao"] .tb-work-area {
+  flex-direction: column;
+  gap: 12px;
+  justify-content: flex-start;
+}
+body[data-store="hanbao"] .chef-tray {
+  width: 100%;
+}
+body[data-store="hanbao"] .chef-items {
+  width: 100%;
+}
+
 /* 开始营业：门帘 */
 .tb-open {
   position: fixed;

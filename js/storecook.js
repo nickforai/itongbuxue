@@ -10,6 +10,7 @@
   var CONFIGS = {
     tangbao: {
       id: 'tangbao', name: '汤包店', saveKey: 'xx3_tangbao_v1',
+      mode: 'craft',
       sign: '🥟 小汤包', kingSign: '👑 超级汤包王',
       base: 500, comboBonus: 600, skinAt: 5000, titleAt: 10000,
       skinName: '猪猪包', workClass: 'dough', cookClass: 'steamer',
@@ -24,6 +25,7 @@
     },
     niupai: {
       id: 'niupai', name: '牛排店', saveKey: 'xx3_niupai_v1',
+      mode: 'craft',
       sign: '🥩 小牛排', kingSign: '👑 超级牛排王',
       base: 600, comboBonus: 700, skinAt: 5000, titleAt: 10000,
       skinName: '黄金牛排', workClass: 'steak', cookClass: 'skillet',
@@ -38,10 +40,19 @@
     },
     hanbao: {
       id: 'hanbao', name: '汉堡店', saveKey: 'xx3_hanbao_v1',
+      mode: 'order',
       sign: '🍔 小汉堡', kingSign: '👑 超级汉堡王',
       base: 700, comboBonus: 800, skinAt: 5000, titleAt: 10000,
       skinName: '双层巨无霸', workClass: 'patty', cookClass: 'grill',
       serveEmoji: '🍔', skinEmoji: '🍔',
+      items: [
+        { emoji: '🍔', name: '汉堡', t: 2000, cup: false },
+        { emoji: '🍟', name: '薯条', t: 2000, cup: false },
+        { emoji: '🍗', name: '炸鸡', t: 2000, cup: false },
+        { emoji: '🥤', name: '可乐', t: 2000, cup: true },
+        { emoji: '🍊', name: '橙汁', t: 2000, cup: true },
+        { emoji: '🍦', name: '冰淇淋', t: 1000, cup: true }
+      ],
       steps: [
         { btn: '🫓', btnName: '压肉饼', hint: '肉饼上烤架啦！点 5 次把它压圆', onceHint: '肉饼压好啦，点「加配菜」！', doneBadge: '✅ 肉饼压圆' },
         { btn: '🥬', btnName: '加配菜', hint: '配菜铺好啦，点「盖面包」！', onceHint: '✅ 配菜铺好', doneBadge: '✅ 配菜铺好' },
@@ -102,6 +113,21 @@
   ];
   var queue = [];
   var customerIdx = 0;
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* 点单模式（汉堡店）：顾客点 1-3 样，手动制作并端过去 */
+  var custOrder = [];
+  var tray = [];
+  var traySeq = 0;
+  var TRAY_MAX_ORDER = 4;
 
   /* ---------- 音效 ---------- */
   var audioCtx = null;
@@ -208,6 +234,7 @@
     var area = App.el('storeWorkArea');
     var hint = App.el('storeHint');
     area.innerHTML = '';
+    if (cfg.mode === 'order') { renderOrderWork(area, hint); return; }
     if (step === STEP.TAP) {
       hint.textContent = '👨‍🍳 ' + cfg.steps[0].hint;
       var main = document.createElement('div');
@@ -247,6 +274,107 @@
       area.appendChild(ready);
     }
     renderButtons();
+  }
+
+  function renderOrderWork(area, hint) {
+    hint.textContent = '🧾 客人点了：' + (custOrder.length ? custOrder.map(function (it) { return it.emoji + it.name; }).join(' ') : '') + '（点下面做好再点一下端过去）';
+    // 出餐台
+    var trayBox = document.createElement('div');
+    trayBox.className = 'chef-tray';
+    trayBox.addEventListener('click', function (e) {
+      var del = e.target.closest('.chef-tray-discard');
+      if (del) {
+        var id = Number(del.getAttribute('data-id'));
+        for (var i = 0; i < tray.length; i++) {
+          if (tray[i].id === id) { tray.splice(i, 1); break; }
+        }
+        renderWork();
+        e.stopPropagation();
+      }
+    });
+    if (!tray.length) {
+      trayBox.innerHTML = '<div class="chef-tray-empty">出餐台空空的，先做客人点的吧</div>';
+    } else {
+      tray.forEach(function (slot) {
+        var cell = document.createElement('div');
+        cell.className = 'chef-tray-cell ' + (slot.item.cup ? 'cup' : 'dish');
+        cell.innerHTML =
+          '<button type="button" class="chef-tray-discard" data-id="' + slot.id + '">✕</button>' +
+          '<span class="chef-tray-emoji">' + slot.item.emoji + '</span>' +
+          '<span class="chef-tray-name">' + slot.item.name + '</span>' +
+          '<span class="chef-tray-type">' + (slot.item.cup ? '🥤 杯装' : '🍽️ 盘装') + '</span>';
+        cell.addEventListener('click', function () { giveItem(slot); });
+        trayBox.appendChild(cell);
+      });
+    }
+    area.appendChild(trayBox);
+    // 商品按钮
+    var itemsBox = document.createElement('div');
+    itemsBox.className = 'chef-items';
+    cfg.items.forEach(function (it) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chef-item';
+      b.dataset.name = it.name;
+      b.innerHTML =
+        '<span class="chef-item-emoji">' + it.emoji + '</span>' +
+        '<span class="chef-item-name">' + it.name + '</span>' +
+        '<span class="chef-item-meta">' + (it.cup ? '🥤杯' : '🍽️盘') + ' · 做 ' + (it.t / 1000) + ' 秒</span>';
+      b.addEventListener('click', function () { pickItemOrder(b, it); });
+      itemsBox.appendChild(b);
+    });
+    area.appendChild(itemsBox);
+  }
+
+  function pickItemOrder(btn, it) {
+    if (!open || closed) return;
+    if (!custOrder.length) { App.toast('客人还在排队，等客人来了再做吧'); return; }
+    if (btn.classList.contains('making') || btn.classList.contains('done')) return;
+    if (tray.length >= TRAY_MAX_ORDER) { App.toast('出餐台满了，先端给客人或点 ✕ 收回来'); return; }
+    btn.classList.add('making');
+    var nameEl = btn.querySelector('.chef-item-name');
+    nameEl.textContent = '正在做…';
+    var t0 = Date.now();
+    var ms = it.t;
+    var iv = setInterval(function () {
+      if (Date.now() - t0 >= ms) {
+        clearInterval(iv);
+        btn.classList.remove('making');
+        btn.classList.add('done');
+        nameEl.textContent = '✓ ' + it.name;
+        setTimeout(function () {
+          btn.classList.remove('done');
+          nameEl.textContent = it.name;
+        }, 900);
+        tray.push({ id: ++traySeq, item: it });
+        sfx('pop');
+        renderWork();
+        App.el('storeHint').textContent = it.name + ' 做好啦，点一下端给客人！';
+      }
+    }, 100);
+  }
+
+  function giveItem(slot) {
+    if (!open || closed) return;
+    var idx = -1;
+    for (var i = 0; i < custOrder.length; i++) {
+      if (custOrder[i].name === slot.item.name) { idx = i; break; }
+    }
+    if (idx < 0) {
+      App.el('storeHint').textContent = '✗ 客人不想要「' + slot.item.name + '」，点 ✕ 收回来吧';
+      return;
+    }
+    custOrder.splice(idx, 1);
+    tray.splice(tray.indexOf(slot), 1);
+    if (!custOrder.length) {
+      var first = document.querySelector('.tb-customer.front');
+      if (first) first.classList.add('eating');
+      App.el('storeHint').textContent = '🎉 客人吃到啦，满意地走了！';
+      setTimeout(function () { finishServe(first); }, 700);
+    } else {
+      App.el('storeHint').textContent = '✓ 端过去了！客人还想要：' + custOrder.map(function (it) { return it.emoji + it.name; }).join(' ');
+      renderWork();
+    }
   }
 
   function workEmoji(done) {
@@ -369,8 +497,15 @@
         showClosed();
         return;
       }
-      step = STEP.TAP;
-      tapCount = 0;
+      if (cfg.mode === 'order') {
+        // 新客人点单：1-3 样
+        var n = 1 + Math.floor(Math.random() * 3);
+        custOrder = shuffle(cfg.items).slice(0, n);
+        tray = [];
+      } else {
+        step = STEP.TAP;
+        tapCount = 0;
+      }
       renderWork();
     }, 700);
   }
@@ -458,6 +593,11 @@
       customerIdx++;
       queue.push({ emoji: c.emoji, name: c.name, zzz: false, start: Date.now() });
     }
+    if (cfg.mode === 'order') {
+      var n = 1 + Math.floor(Math.random() * 3);
+      custOrder = shuffle(cfg.items).slice(0, n);
+      tray = [];
+    }
     renderQueue();
     renderWork();
     renderCombo();
@@ -520,6 +660,31 @@
       save.totalServed = Math.max(save.totalServed, n);
       saveNow();
       renderScore();
+    },
+    /* 点单模式接口 */
+    orderNames: function () { return custOrder.map(function (it) { return it.name; }); },
+    trayNames: function () { return tray.map(function (t) { return t.item.name; }); },
+    pick: function (name) {
+      var btns = document.querySelectorAll('.chef-item');
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].dataset.name === name) { btns[i].click(); return true; }
+      }
+      return false;
+    },
+    give: function (name) {
+      var cells = document.querySelectorAll('.chef-tray-cell');
+      for (var i = 0; i < cells.length; i++) {
+        if (cells[i].querySelector('.chef-tray-name').textContent === name) { cells[i].click(); return true; }
+      }
+      return false;
+    },
+    discard: function (name) {
+      var btns = document.querySelectorAll('.chef-tray-discard');
+      for (var i = 0; i < btns.length; i++) {
+        var cell = btns[i].closest('.chef-tray-cell');
+        if (cell && cell.querySelector('.chef-tray-name').textContent === name) { btns[i].click(); return true; }
+      }
+      return false;
     }
   };
 })();
