@@ -1,7 +1,7 @@
 /* i同步学 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v85';
+var CACHE = 'xx3-v86';
 
 var ASSETS = [
   './',
