@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="宠物乐园">
+  <meta name="format-detection" content="telephone=no">
+  <title>宠物乐园 · i同步学</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=84">
+</head>
+<body>
+  <div class="page pet-page">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="返回首页">←</a>
+      <h1>🐹 宠物乐园</h1>
+      <div class="pet-build-group">
+        <button class="pet-build-btn" id="buildBtn">🖌️ 画笔</button>
+        <button class="pet-build-btn ok hidden" id="okBtn">✅ OK</button>
+      </div>
+    </div>
+
+    <div class="pet-stage" id="petStage">
+      <div class="pet-floor-tag top">🏢 上层</div>
+      <div class="pet-floor-tag bottom">🏢 下层</div>
+      <div class="pet-grid" id="petGrid"></div>
+    </div>
+
+    <div class="pet-palette hidden" id="petPalette"></div>
+    <div class="pet-tip" id="petTip">🖌️ 点「画笔」进入建造模式，布置笼子、管道、跑轮、饭盒和小球</div>
+  </div>
+
+  <script src="js/common.js?v=84"></script>
+  <script src="js/pet.js?v=84"></script>
+</body>
+</html>

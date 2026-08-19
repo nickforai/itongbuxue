@@ -16,7 +16,7 @@ PAGES = [
     "./yuedu.html", "./yingyu.html", "./kexue.html", "./parent.html",
     "./wrongredo.html", "./doudizhu.html", "./minecraft.html", "./feiji.html",
     "./pool.html", "./foodchef.html", "./tangbao.html", "./niupai.html",
-    "./hanbao.html", "./manifest.json",
+    "./hanbao.html", "./pet.html", "./manifest.json",
 ]
 
 ROOT_FILES = [
@@ -41,6 +41,7 @@ ROOT_FILES = [
     "./js/pool.js",
     "./js/foodchef.js",
     "./js/storecook.js",
+    "./js/pet.js",
     "./js/vendor/hanzi-writer.min.js",
     "./js/vendor/three.min.js",
 ]

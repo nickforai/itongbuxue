@@ -1,7 +1,7 @@
 /* i同步学 · Service Worker（离线缓存） */
 'use strict';
 
-var CACHE = 'xx3-v83';
+var CACHE = 'xx3-v84';
 
 var ASSETS = [
   './',
@@ -37,6 +37,7 @@ var ASSETS = [
   './js/kousuan.js',
   './js/minecraft.js',
   './js/parent.js',
+  './js/pet.js',
   './js/pool.js',
   './js/shengzi.js',
   './js/storecook.js',
@@ -196,6 +197,7 @@ var ASSETS = [
   './minecraft.html',
   './niupai.html',
   './parent.html',
+  './pet.html',
   './pool.html',
   './shengzi.html',
   './tangbao.html',

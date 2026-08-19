@@ -891,6 +891,10 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   background: linear-gradient(135deg, #FF9F1C, #E8556D);
   box-shadow: 0 10px 24px rgba(232, 85, 109, 0.32);
 }
+.gc-pet {
+  background: linear-gradient(135deg, #F2A65A, #B0637A);
+  box-shadow: 0 10px 24px rgba(176, 99, 122, 0.32);
+}
 .gc-left { display: flex; align-items: center; gap: 14px; }
 .gc-emoji { font-size: 2.6rem; }
 .gc-name { font-size: 1.35rem; font-weight: 800; }
@@ -3030,6 +3034,361 @@ body[data-store="hanbao"] .chef-items {
 }
 
 .tb-btn:active { transform: scale(0.94); }
+
+/* ---------- 宠物乐园 ---------- */
+.pet-page {
+  max-width: 900px;
+  padding-bottom: calc(170px + env(safe-area-inset-bottom));
+}
+
+.pet-build-group { display: flex; gap: 8px; }
+
+.pet-build-btn {
+  background: linear-gradient(135deg, #B78CF8, #9B6BF5);
+  color: #fff;
+  border-radius: 14px;
+  padding: 9px 14px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  box-shadow: 0 6px 14px rgba(155, 107, 245, 0.32);
+}
+
+.pet-build-btn.ok {
+  background: linear-gradient(135deg, #55C98F, #2FB56E);
+  box-shadow: 0 6px 14px rgba(47, 181, 110, 0.32);
+}
+
+.pet-build-btn:active { transform: scale(0.94); }
+
+.pet-stage {
+  position: relative;
+  background: linear-gradient(180deg, #FDEBD2 0%, #F7E2C4 46%, #EAD3AE 46%, #DDBF92 100%);
+  border-radius: 26px;
+  padding: 40px 10px 12px;
+  box-shadow: inset 0 0 0 6px #C9A87C, var(--shadow);
+  margin-bottom: 14px;
+}
+
+.pet-floor-tag {
+  position: absolute;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #9A6200;
+  z-index: 3;
+}
+
+.pet-floor-tag.top { top: 10px; }
+.pet-floor-tag.bottom { bottom: 10px; }
+
+.pet-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+}
+
+.pet-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  min-height: 42px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pet-cell.editable {
+  background: rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 0 0 1.5px rgba(155, 107, 245, 0.55);
+  cursor: pointer;
+}
+
+.pet-cell.editable:hover { background: rgba(183, 140, 248, 0.35); }
+.pet-cell.occupied { background: transparent; }
+
+/* 大笼子（2x2） */
+.pet-cage {
+  position: absolute;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 4px #E8E2D6, inset 0 0 0 5px #B9B0A0, 0 6px 14px rgba(90, 70, 40, 0.25);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.pet-cage::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 8px;
+  background: repeating-linear-gradient(90deg, transparent 0 9px, rgba(120, 105, 85, 0.45) 9px 11px);
+  pointer-events: none;
+}
+
+.pet-cage::after {
+  content: '🏠';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.3em;
+  opacity: 0.5;
+}
+
+.pet-cell.item-2x2 .pet-cage {
+  width: calc(200% + 2px);
+  height: calc(200% + 2px);
+  top: 0;
+  left: 0;
+}
+
+.pet-cage.big::after { font-size: 1.8em; }
+.pet-cage.small { inset: 2px; border-radius: 10px; }
+.pet-cage.small::after { font-size: 1em; }
+
+/* 透明管道 */
+.pet-pipe {
+  position: absolute;
+  inset: 12% 4%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(180, 220, 255, 0.45), rgba(140, 190, 255, 0.65));
+  box-shadow: inset 0 0 0 5px rgba(90, 150, 230, 0.55), 0 3px 8px rgba(60, 110, 180, 0.3);
+  z-index: 1;
+}
+
+.pet-pipe::before {
+  content: '';
+  position: absolute;
+  top: 18%;
+  left: 14%;
+  width: 34%;
+  height: 26%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* 跑轮 */
+.pet-wheel {
+  position: absolute;
+  inset: 2px;
+  z-index: 1;
+}
+
+.pet-wheel-ring {
+  position: absolute;
+  left: 50%;
+  top: 12%;
+  width: 62%;
+  height: 62%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 5px solid #D8C9AC;
+  box-shadow: inset 0 0 0 3px #F0E6D2, 0 4px 8px rgba(90, 70, 40, 0.25);
+  animation: pet-wheel-spin 2.4s linear infinite;
+}
+
+@keyframes pet-wheel-spin {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to { transform: translateX(-50%) rotate(360deg); }
+}
+
+.pet-wheel-spoke {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 100%;
+  background: #D8C9AC;
+  transform-origin: 50% 0;
+}
+
+.pet-wheel-spoke.s1 { transform: translateX(-50%) rotate(0deg); }
+.pet-wheel-spoke.s2 { transform: translateX(-50%) rotate(45deg); }
+.pet-wheel-spoke.s3 { transform: translateX(-50%) rotate(90deg); }
+.pet-wheel-spoke.s4 { transform: translateX(-50%) rotate(135deg); }
+
+.pet-wheel-stand {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  width: 46%;
+  height: 14%;
+  transform: translateX(-50%);
+  background: #C9A87C;
+  border-radius: 6px;
+}
+
+/* 饭盒 */
+.pet-bowl {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  width: 82%;
+  height: 48%;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(180deg, #F2A65A, #D9813A);
+  box-shadow: inset 0 -6px 10px rgba(120, 60, 10, 0.3), 0 4px 8px rgba(90, 70, 40, 0.2);
+  z-index: 1;
+}
+
+.pet-bowl.bowl2 {
+  width: 60%;
+  height: 38%;
+}
+
+.pet-food {
+  position: absolute;
+  top: 22%;
+  left: 28%;
+  width: 12%;
+  height: 18%;
+  border-radius: 50%;
+  background: #B5763A;
+}
+
+.pet-food.f2 { left: 58%; background: #8F5A26; }
+
+/* 玩耍球 */
+.pet-ball {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), rgba(190, 225, 255, 0.35) 45%, rgba(120, 175, 235, 0.55));
+  box-shadow: inset -6px -8px 14px rgba(60, 110, 180, 0.35), 0 5px 10px rgba(60, 110, 180, 0.3);
+  z-index: 1;
+}
+
+.pet-ball::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #3A6EA5;
+  box-shadow: 0 -10px 0 #3A6EA5, 10px 0 0 #3A6EA5, -10px 0 0 #3A6EA5, 0 10px 0 #3A6EA5;
+}
+
+/* 仓鼠 */
+.pet-hamster {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 82%;
+  z-index: 5;
+  cursor: pointer;
+  filter: drop-shadow(0 3px 4px rgba(60, 40, 20, 0.25));
+}
+
+.pet-hamster .ham-body { width: 100%; height: auto; display: block; }
+
+.pet-hamster.flip { transform: translateX(-50%) scaleX(-1); }
+
+.pet-hamster.walk .ham-body { animation: pet-hop 0.5s ease-in-out infinite; }
+@keyframes pet-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.pet-hamster.jump { animation: pet-jump 0.45s ease; }
+@keyframes pet-jump {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  40% { transform: translateX(-50%) translateY(-16px) scale(1.08); }
+}
+
+.pet-hamster.wheel .ham-body { animation: pet-wheel-run 0.22s linear infinite; }
+@keyframes pet-wheel-run {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-3px) rotate(3deg); }
+}
+
+.pet-hamster.eat .ham-body { animation: pet-eat 0.5s ease-in-out infinite; }
+@keyframes pet-eat {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-9deg) translateY(2px); }
+}
+
+.pet-hamster.ball .ham-body { animation: pet-spin 0.5s linear infinite; }
+@keyframes pet-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pet-squeak {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 10px;
+  padding: 3px 9px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #B0637A;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+  animation: pet-bubble 0.9s ease forwards;
+}
+
+@keyframes pet-bubble {
+  0% { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 建造面板 */
+.pet-palette {
+  background: var(--card);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pet-pal-item {
+  background: #F0F0F6;
+  border-radius: 14px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 76px;
+  flex: 1 0 76px;
+}
+
+.pet-pal-item.on {
+  background: linear-gradient(135deg, #FFC94D, #FF9F1C);
+  color: #5C3500;
+  box-shadow: 0 6px 14px rgba(255, 159, 28, 0.35);
+}
+
+.pet-pal-emoji { font-size: 1.4rem; }
+.pet-pal-ham { width: 44px; height: 28px; display: block; }
+.pet-pal-ham svg { width: 100%; height: 100%; }
+
+.pet-tip {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 8px;
+}
 
 .chef-lives { display: flex; justify-content: center; gap: 10px; font-size: 1.5rem; margin-bottom: 8px; }
 .chef-feedback {
