@@ -3390,6 +3390,84 @@ body[data-store="hanbao"] .chef-items {
   margin-top: 8px;
 }
 
+/* 宠物互动条 */
+.pet-interact {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 248, 231, 0), #FFF0D6 34%);
+  padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+}
+
+.pet-feed-btn {
+  background: linear-gradient(135deg, #7FD8A4, #4BB97E);
+  color: #fff;
+  border-radius: 999px;
+  padding: 13px 30px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(75, 185, 126, 0.35);
+}
+
+.pet-feed-btn.on {
+  background: linear-gradient(135deg, #FFC94D, #FF9F1C);
+  color: #5C3500;
+  box-shadow: 0 8px 18px rgba(255, 159, 28, 0.4);
+}
+
+.pet-feed-btn:active { transform: scale(0.95); }
+
+.pet-interact-tip {
+  font-size: 0.78rem;
+  color: #9A6200;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 地面食物 */
+.pet-food-ground {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  font-size: 0.8em;
+  z-index: 6;
+  animation: pet-food-bob 1.4s ease-in-out infinite;
+}
+
+@keyframes pet-food-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-2px); }
+}
+
+/* 拖拽跟随 */
+.pet-drag-ghost {
+  position: fixed;
+  width: 62px;
+  height: 42px;
+  z-index: 99;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(60, 40, 20, 0.35));
+  transform: scale(1.15);
+}
+
+.pet-drag-ghost svg { width: 100%; height: 100%; }
+
+/* 掉落食物 */
+.pet-falling-food {
+  position: fixed;
+  z-index: 98;
+  font-size: 1.6rem;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(90, 60, 20, 0.3));
+}
+
 .chef-lives { display: flex; justify-content: center; gap: 10px; font-size: 1.5rem; margin-bottom: 8px; }
 .chef-feedback {
   text-align: center;

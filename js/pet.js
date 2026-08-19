@@ -31,6 +31,8 @@
   ];
   var ITEM_BY_T = {};
   ITEMS.forEach(function (it) { ITEM_BY_T[it.t] = it; });
+  // 地面食物（由喂食生成，不出现在建造栏；不占通行）
+  ITEM_BY_T.food = { t: 'food', name: '食物', emoji: '🥜', w: 1, h: 1 };
 
   var HAM_COLORS = [
     { c: 'gray', name: '灰色仓鼠', body: '#B9BAC4', belly: '#EFEFF4', face: '#B9BAC4' },
@@ -41,10 +43,13 @@
   HAM_COLORS.forEach(function (h) { HAM_BY_C[h.c] = h; });
 
   var buildMode = false;
+  var feedMode = false;
   var selected = null; // 物品 t 或仓鼠色 'ham:gray'
   var tickTimer = null;
   var gridEl = null;
   var cells = [];
+  var drag = null; // {ham, el, x, y, lastGx, lastGy}
+  var feedTimer = null;
 
   /* ---------- 音效：仓鼠吱吱 ---------- */
   var audioCtx = null;
@@ -105,13 +110,22 @@
   }
 
   /* ---------- 物品视觉 ---------- */
-  function itemHtml(t) {
+  function itemHtml(it) {
+    var t = it.t;
     if (t === 'cage2') return '<div class="pet-cage big"></div>';
     if (t === 'cage1') return '<div class="pet-cage small"></div>';
     if (t === 'pipe') return '<div class="pet-pipe"></div>';
     if (t === 'wheel') return '<div class="pet-wheel"><div class="pet-wheel-ring"><span class="pet-wheel-spoke s1"></span><span class="pet-wheel-spoke s2"></span><span class="pet-wheel-spoke s3"></span><span class="pet-wheel-spoke s4"></span></div><div class="pet-wheel-stand"></div></div>';
-    if (t === 'bowl' || t === 'bowl2') return '<div class="pet-bowl ' + t + '"><span class="pet-food"></span><span class="pet-food f2"></span></div>';
+    if (t === 'bowl' || t === 'bowl2') {
+      var n = Math.max(1, it.foodN || 1);
+      var seeds = '';
+      for (var i = 0; i < n; i++) {
+        seeds += '<span class="pet-food" style="left:' + (24 + i * 18) + '%;"></span>';
+      }
+      return '<div class="pet-bowl ' + t + '">' + seeds + '</div>';
+    }
     if (t === 'ball') return '<div class="pet-ball"></div>';
+    if (t === 'food') return '<div class="pet-food-ground">🥜</div>';
     return '';
   }
 
@@ -125,9 +139,11 @@
 
   function occupied(x, y) {
     // 检查该格是否被任何物品占用（含大笼子从格）
-    if (save.items[key(x, y)]) return true;
+    var it0 = save.items[key(x, y)];
+    if (it0 && it0.t !== 'food') return true;
     for (var k in save.items) {
       var it = save.items[k];
+      if (it.t === 'food') continue;
       var m = ITEM_BY_T[it.t];
       var p = k.split(',');
       var ax = +p[0], ay = +p[1];
@@ -180,7 +196,7 @@
           if (m.w === 1 || (m.w === 2 && x === +key(x, y).split(',')[0] && y === +key(x, y).split(',')[1])) {
             cell.classList.add('has-item');
             if (m.w === 2) cell.classList.add('item-2x2');
-            cell.innerHTML = itemHtml(it.t);
+            cell.innerHTML = itemHtml(it);
           } else {
             cell.classList.add('occupied');
           }
@@ -194,10 +210,7 @@
             ham.className = 'pet-hamster ' + (h.st || 'walk') + (h.face < 0 ? ' flip' : '');
             ham.dataset.hidx = idx;
             ham.innerHTML = hamsterSvg(h);
-            ham.addEventListener('click', function (e) {
-              e.stopPropagation();
-              tapHamster(idx, ham);
-            });
+            ham.addEventListener('pointerdown', function (e) { hamPointerDown(e, idx, ham); });
             cell.appendChild(ham);
           }
         });
@@ -207,12 +220,92 @@
     }
   }
 
-  function tapHamster(idx, el) {
+  function hamPointerDown(e, idx, el) {
+    if (buildMode || feedMode) return;
+    e.preventDefault();
     initAudio();
-    squeak();
-    el.classList.remove('jump');
-    void el.offsetWidth;
-    el.classList.add('jump');
+    var h = save.hamsters[idx];
+    var startX = e.clientX, startY = e.clientY;
+    var longPress = false;
+    var moved = false;
+    var pressTimer = setTimeout(function () {
+      // 长按：开始拖拽
+      longPress = true;
+      drag = { idx: idx, gx: h.x, gy: h.y };
+      el.style.visibility = 'hidden';
+      var ghost = document.createElement('div');
+      ghost.className = 'pet-drag-ghost';
+      ghost.innerHTML = hamsterSvg(h);
+      document.body.appendChild(ghost);
+      drag.ghost = ghost;
+      moveGhost(startX, startY);
+    }, 450);
+
+    function moveGhost(cx, cy) {
+      if (!drag || !drag.ghost) return;
+      drag.ghost.style.left = (cx - 30) + 'px';
+      drag.ghost.style.top = (cy - 28) + 'px';
+      var rect = gridEl.getBoundingClientRect();
+      var gx = Math.floor((cx - rect.left) / (rect.width / GW));
+      var gy = Math.floor((cy - rect.top) / (rect.height / GH));
+      drag.gx = Math.max(0, Math.min(GW - 1, gx));
+      drag.gy = Math.max(0, Math.min(GH - 1, gy));
+    }
+
+    function onMove(ev) {
+      if (longPress && drag) {
+        moved = true;
+        moveGhost(ev.clientX, ev.clientY);
+      }
+    }
+    function onUp(ev) {
+      clearTimeout(pressTimer);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      if (drag) {
+        if (drag.ghost) drag.ghost.remove();
+        h.x = drag.gx;
+        h.y = drag.gy;
+        drag = null;
+        saveNow();
+        renderGrid();
+        App.toast('🐹 仓鼠搬到这里啦');
+        return;
+      }
+      if (!moved) {
+        // 快速点击 = 推一下（沿点击方向滑 2 格）+ 吱吱
+        var cell = gridEl.getBoundingClientRect();
+        var cx = h.x * (cell.width / GW) + cell.left + cell.width / GW / 2;
+        var cy = h.y * (cell.height / GH) + cell.top + cell.height / GH / 2;
+        var dx = ev.clientX - cx, dy = ev.clientY - cy;
+        var len = Math.hypot(dx, dy) || 1;
+        var oldX = h.x, oldY = h.y;
+        h.x = Math.max(0, Math.min(GW - 1, h.x + Math.round(dx / len * 2)));
+        h.y = Math.max(0, Math.min(GH - 1, h.y + Math.round(dy / len * 2)));
+        h.face = dx >= 0 ? 1 : -1;
+        squeak();
+        saveNow();
+        renderGrid();
+        // 滑入动画：从旧位置滑到新位置
+        var newEl = document.querySelector('.pet-cell[data-x="' + h.x + '"][data-y="' + h.y + '"] .pet-hamster');
+        if (newEl && newEl.animate) {
+          var cell2 = gridEl.getBoundingClientRect();
+          var offX = (oldX - h.x) * (cell2.width / GW);
+          var offY = (oldY - h.y) * (cell2.height / GH);
+          newEl.animate(
+            [{ transform: 'translateX(-50%) translate(' + offX + 'px,' + offY + 'px)' }, { transform: 'translateX(-50%) translate(0,0)' }],
+            { duration: 280, easing: 'ease-out' }
+          );
+        }
+        bubbleSqueak(newEl);
+      }
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function bubbleSqueak(el) {
+    if (!el) return;
     var bubble = document.createElement('div');
     bubble.className = 'pet-squeak';
     bubble.textContent = '吱吱！';
@@ -250,6 +343,10 @@
   }
 
   function onCellClick(cell) {
+    if (feedMode && !buildMode) {
+      dropFood(+cell.dataset.x, +cell.dataset.y);
+      return;
+    }
     if (!buildMode) return;
     var x = +cell.dataset.x, y = +cell.dataset.y;
     if (!selected) {
@@ -278,13 +375,64 @@
     renderGrid();
   }
 
+  function dropFood(x, y) {
+    if (buildMode) return;
+    initAudio();
+    var cell = document.querySelector('.pet-cell[data-x="' + x + '"][data-y="' + y + '"]');
+    if (!cell) return;
+    var r = cell.getBoundingClientRect();
+    var food = document.createElement('div');
+    food.className = 'pet-falling-food';
+    food.textContent = ['🥜', '🌰', '🍎'][Math.floor(Math.random() * 3)];
+    food.style.left = (r.left + r.width / 2) + 'px';
+    food.style.top = (r.top - 120) + 'px';
+    document.body.appendChild(food);
+    if (food.animate) {
+      food.animate(
+        [{ transform: 'translateY(0) rotate(0deg)' }, { transform: 'translateY(' + (120 + r.height / 2 - 20) + 'px) rotate(180deg)' }],
+        { duration: 650, easing: 'cubic-bezier(0.5, 0, 0.8, 0.4)', fill: 'forwards' }
+      );
+    }
+    setTimeout(function () {
+      food.remove();
+      var it = save.items[key(x, y)];
+      if (it && (it.t === 'bowl' || it.t === 'bowl2')) {
+        it.foodN = (it.foodN || 0) + 1;
+        saveNow();
+        renderGrid();
+        App.toast('🍚 食物掉进饭盒里啦！');
+        return;
+      }
+      // 仓鼠在格上：直接吃
+      var h = null;
+      save.hamsters.forEach(function (hh) { if (hh.x === x && hh.y === y) h = hh; });
+      if (h) {
+        h.st = 'eat';
+        h.until = Date.now() + 2200;
+        squeak();
+        saveNow();
+        renderGrid();
+        App.toast('🐹 仓鼠吃到食物啦！');
+        return;
+      }
+      // 落在地面
+      save.items[key(x, y)] = { t: 'food' };
+      saveNow();
+      renderGrid();
+      App.toast('🥜 食物掉到地上啦');
+    }, 700);
+  }
+
   function enterBuild() {
     buildMode = true;
+    feedMode = false;
     initAudio();
     App.el('buildBtn').classList.add('hidden');
     App.el('okBtn').classList.remove('hidden');
     App.el('petPalette').classList.remove('hidden');
     App.el('petTip').textContent = '🏗️ 选一个东西，点格子放置；再点已放的可以拆掉。布置好点「✅ OK」';
+    App.el('petInteract').classList.add('hidden');
+    App.el('feedBtn').classList.remove('on');
     renderPalette();
     renderGrid();
   }
@@ -296,6 +444,7 @@
     App.el('okBtn').classList.add('hidden');
     App.el('petPalette').classList.add('hidden');
     App.el('petTip').textContent = '🐹 小仓鼠开始玩耍啦！点仓鼠它会吱吱叫～';
+    App.el('petInteract').classList.remove('hidden');
     renderGrid();
   }
 
@@ -314,6 +463,12 @@
       if (it && (it.t === 'bowl' || it.t === 'bowl2')) {
         h.st = 'eat';
         h.until = Date.now() + 2000;
+        return;
+      }
+      if (it && it.t === 'food') {
+        h.st = 'eat';
+        h.until = Date.now() + 2200;
+        delete save.items[key(h.x, h.y)];
         return;
       }
       if (it && it.t === 'ball') {
@@ -363,6 +518,14 @@
   /* ---------- 初始化 ---------- */
   App.el('buildBtn').addEventListener('click', enterBuild);
   App.el('okBtn').addEventListener('click', exitBuild);
+  App.el('feedBtn').addEventListener('click', function () {
+    if (buildMode) return;
+    feedMode = !feedMode;
+    App.el('feedBtn').classList.toggle('on', feedMode);
+    App.el('petTip').textContent = feedMode
+      ? '🍎 喂食模式：点一下想放食物的位置（半空也行），食物会掉进饭盒或掉到地上！'
+      : '🐹 小仓鼠开始玩耍啦！长按拖拽它 · 点一下推它 · 🍎 喂食物';
+  });
 
   defaultLayout();
   renderGrid();
